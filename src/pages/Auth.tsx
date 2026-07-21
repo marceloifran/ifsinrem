@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Lock, ArrowRight, User, Eye, EyeOff, Phone, Shield, CheckCircle2, Clock, Users, Mic, Sparkles, FileSignature } from "lucide-react";
+import { Mail, Lock, ArrowRight, User, Eye, EyeOff, Phone, Shield, CheckCircle2, Clock, Users, Mic, Sparkles, FileSignature, Boxes } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Select,
@@ -27,6 +27,8 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [plan, setPlan] = useState<'starter' | 'professional' | 'enterprise'>('starter');
   const [isInvitedSignup, setIsInvitedSignup] = useState(false);
+  const [viewMode, setViewMode] = useState<'login' | 'signup' | 'forgot' | 'reset'>('login');
+  const [companyName, setCompanyName] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -35,6 +37,15 @@ const Auth = () => {
   }, [user, navigate]);
 
   useEffect(() => {
+    const hasRecoveryHash = window.location.hash.includes('type=recovery');
+    const hasRecoverySearch = window.location.search.includes('type=recovery') || new URLSearchParams(window.location.search).get('type') === 'recovery';
+    
+    if (hasRecoveryHash || hasRecoverySearch) {
+      setViewMode('reset');
+      setIsLogin(false);
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const invitedEmail = params.get('invited_email');
     const selectedPlan = params.get('plan') as 'starter' | 'professional' | 'enterprise';
@@ -42,32 +53,80 @@ const Auth = () => {
 
     if (invitedEmail) {
       setIsLogin(false);
+      setViewMode('signup');
       setIsInvitedSignup(true);
       setEmail(invitedEmail);
     } else if (selectedPlan) {
       setIsLogin(false);
+      setViewMode('signup');
       setPlan(selectedPlan);
     } else if (mode === 'signup') {
       setIsLogin(false);
+      setViewMode('signup');
     }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (viewMode === 'forgot') {
+      if (!email) {
+        toast.error("Por favor ingresa tu correo electrónico");
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth?type=recovery`,
+        });
+        if (error) throw error;
+        toast.success("Correo de recuperación enviado con éxito. Revisá tu bandeja de entrada.");
+        setViewMode('login');
+        setIsLogin(true);
+      } catch (err: any) {
+        toast.error(`Error: ${err.message || err}`);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    if (viewMode === 'reset') {
+      if (!password) {
+        toast.error("Por favor ingresa tu nueva contraseña");
+        return;
+      }
+      if (password.length < 6) {
+        toast.error("La contraseña debe tener al menos 6 caracteres");
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        toast.success("Contraseña actualizada con éxito");
+        navigate('/dashboard');
+      } catch (err: any) {
+        toast.error(`Error: ${err.message || err}`);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (!email || !password) {
       toast.error("Por favor completa todos los campos");
       return;
     }
 
-    if (!isLogin) {
+    if (viewMode === 'signup') {
       if (isInvitedSignup) {
         if (!name) {
           toast.error("Por favor completa tu nombre");
           return;
         }
       } else {
-        if (!name || !phone) {
+        if (!name || !phone || !companyName) {
           toast.error("Por favor completa todos los campos");
           return;
         }
@@ -80,7 +139,7 @@ const Auth = () => {
     }
 
     const phoneRegex = /^[\d\s\-\+\(\)]{8,20}$/;
-    if (!isLogin && !isInvitedSignup && !phoneRegex.test(phone)) {
+    if (viewMode === 'signup' && !isInvitedSignup && !phoneRegex.test(phone)) {
       toast.error("Por favor ingresa un número de teléfono válido");
       return;
     }
@@ -88,7 +147,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      if (isLogin) {
+      if (viewMode === 'login') {
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
@@ -101,7 +160,7 @@ const Auth = () => {
         toast.success("Bienvenido de vuelta");
         navigate('/dashboard');
       } else {
-        const { data, error } = await signUp(email, password, name, phone, plan, undefined);
+        const { data, error } = await signUp(email, password, name, phone, plan, companyName || undefined);
         if (error) {
           console.error("Signup error returned:", error);
           if (error.message.includes('already registered')) {
@@ -119,6 +178,7 @@ const Auth = () => {
         }
         if (!data.session) {
           toast.success("Revisá tu correo para confirmar la cuenta y luego iniciá sesión.");
+          setViewMode('login');
           setIsLogin(true);
           return;
         }
@@ -226,23 +286,34 @@ const Auth = () => {
           </div>
 
           <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 font-sans">
               <Shield className="w-3.5 h-3.5" />
-              {isLogin ? "Acceso Seguro" : "Prueba de 15 días gratis"}
+              {viewMode === 'login' || viewMode === 'forgot' || viewMode === 'reset' ? "Acceso Seguro" : "Prueba de 15 días gratis"}
             </div>
             <h2 className="text-2xl font-black text-white">
-              {isLogin ? "¡Hola de nuevo!" : "Registrar Empresa"}
+              {viewMode === 'login' 
+                ? "¡Hola de nuevo!" 
+                : viewMode === 'signup' 
+                  ? "Registrar Empresa" 
+                  : viewMode === 'forgot'
+                    ? "Recuperar Contraseña"
+                    : "Nueva Contraseña"
+              }
             </h2>
-            <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-              {isLogin
+            <p className="text-slate-400 text-xs mt-1 leading-relaxed font-sans font-medium">
+              {viewMode === 'login'
                 ? "Ingresá tus credenciales corporativas para continuar"
-                : "Creá tu cuenta de supervisor y digitalizá tu stock"
+                : viewMode === 'signup'
+                  ? "Creá tu cuenta de supervisor y digitalizá tu stock"
+                  : viewMode === 'forgot'
+                    ? "Te enviaremos un email con el enlace para restablecerla"
+                    : "Ingresá tu nueva clave de acceso"
               }
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+          <form onSubmit={handleSubmit} className="space-y-4 font-sans">
+            {viewMode === 'signup' && (
               <>
                 <div className="space-y-1">
                   <Label htmlFor="name" className="text-xs font-bold text-slate-400 uppercase">Nombre del Responsable *</Label>
@@ -261,6 +332,21 @@ const Auth = () => {
 
                 {!isInvitedSignup && (
                   <>
+                    <div className="space-y-1">
+                      <Label htmlFor="companyName" className="text-xs font-bold text-slate-400 uppercase">Nombre de la Empresa *</Label>
+                      <div className="relative">
+                        <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <Input
+                          id="companyName"
+                          type="text"
+                          placeholder="Ej: Constructora Sentinel S.A."
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-1">
                       <Label htmlFor="phone" className="text-xs font-bold text-slate-400 uppercase">Celular / Teléfono *</Label>
                       <div className="relative">
@@ -288,77 +374,123 @@ const Auth = () => {
                           <SelectItem value="enterprise">Corporativo (Operarios ilimitados)</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-[10px] text-emerald-400/80 font-bold mt-1">Prueba gratis ilimitada durante los primeros 15 días</p>
+                      <p className="text-[10px] text-emerald-400/80 font-bold mt-1 font-sans">Prueba gratis ilimitada durante los primeros 15 días</p>
                     </div>
                   </>
                 )}
               </>
             )}
 
-            <div className="space-y-1">
-              <Label htmlFor="email" className="text-xs font-bold text-slate-400 uppercase">Email Corporativo *</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="ejemplo@constructora.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
-                  readOnly={isInvitedSignup}
-                />
+            {viewMode !== 'reset' && (
+              <div className="space-y-1">
+                <Label htmlFor="email" className="text-xs font-bold text-slate-400 uppercase">Email Corporativo *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="ejemplo@constructora.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                    readOnly={isInvitedSignup}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-1">
-              <Label htmlFor="password" className="text-xs font-bold text-slate-400 uppercase">Contraseña *</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Mínimo 6 caracteres"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 pl-9 pr-10 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            {viewMode !== 'forgot' && (
+              <div className="space-y-1">
+                <Label htmlFor="password" className="text-xs font-bold text-slate-400 uppercase">
+                  {viewMode === 'reset' ? "Nueva Contraseña *" : "Contraseña *"}
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Mínimo 6 caracteres"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 pl-9 pr-10 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <Button
               type="submit"
               className="w-full h-11 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-2 mt-6 rounded-xl border-0 shadow-lg shadow-emerald-500/15"
               disabled={isLoading}
             >
-              {isLoading ? "Procesando..." : (isLogin ? "Acceder al Dashboard" : "Registrar Empresa")}
+              {isLoading 
+                ? "Procesando..." 
+                : viewMode === 'login' 
+                  ? "Acceder al Dashboard" 
+                  : viewMode === 'signup' 
+                    ? "Registrar Empresa" 
+                    : viewMode === 'forgot'
+                      ? "Enviar Enlace de Recuperación"
+                      : "Actualizar Contraseña"
+              }
               {!isLoading && <ArrowRight className="w-4 h-4" />}
             </Button>
           </form>
 
-          <div className="mt-5 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setName("");
-                setPhone("");
-                setIsInvitedSignup(false);
-              }}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
-            >
-              {isLogin
-                ? "¿No tenés una cuenta? Registrate gratis"
-                : "¿Ya tenés una cuenta? Iniciar Sesión"
-              }
-            </button>
+          <div className="mt-5 text-center flex flex-col gap-2.5 font-sans">
+            {viewMode !== 'forgot' && viewMode !== 'reset' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const targetMode = viewMode === 'login' ? 'signup' : 'login';
+                  setViewMode(targetMode);
+                  setIsLogin(targetMode === 'login');
+                  setName("");
+                  setPhone("");
+                  setCompanyName("");
+                  setIsInvitedSignup(false);
+                }}
+                className="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
+              >
+                {viewMode === 'login'
+                  ? "¿No tenés una cuenta? Registrate gratis"
+                  : "¿Ya tenés una cuenta? Iniciar Sesión"
+                }
+              </button>
+            )}
+
+            {viewMode === 'login' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('forgot');
+                  setIsLogin(false);
+                }}
+                className="text-xs text-slate-500 hover:text-slate-400 font-semibold transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
+
+            {(viewMode === 'forgot' || viewMode === 'reset') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('login');
+                  setIsLogin(true);
+                }}
+                className="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors animate-fade-in"
+              >
+                Volver al Inicio de Sesión
+              </button>
+            )}
           </div>
 
           {!isLogin && !isInvitedSignup && (
