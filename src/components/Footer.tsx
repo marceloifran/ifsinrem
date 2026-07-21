@@ -16,8 +16,8 @@ const Footer = () => {
           {/* brand */}
           <div>
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                <Shield className="text-emerald-400 h-5 w-5" />
+              <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
               </div>
               <span className="text-base font-bold text-white tracking-tight">ifsin<span className="text-emerald-400">rem</span></span>
             </div>

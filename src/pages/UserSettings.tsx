@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Mail, Lock, Save, ArrowLeft, Lightbulb, Sun, Moon } from 'lucide-react';
+import { User, Mail, Lock, Save, ArrowLeft, Lightbulb, Sun, Moon, Users } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { getAllUsers, UserWithRole, roleLabels } from '@/services/userService';
 
 const UserSettings = () => {
     const navigate = useNavigate();
@@ -19,6 +20,8 @@ const UserSettings = () => {
     const [name, setName] = useState(profile?.name || '');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [companyUsers, setCompanyUsers] = useState<UserWithRole[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
 
     // Theme local state for UI sync
     const [activeTheme, setActiveTheme] = useState(() => {
@@ -33,6 +36,22 @@ const UserSettings = () => {
             setName(profile.name);
         }
     }, [profile]);
+
+    useEffect(() => {
+        const fetchCompanyUsers = async () => {
+            if (!user) return;
+            try {
+                setLoadingUsers(true);
+                const data = await getAllUsers();
+                setCompanyUsers(data);
+            } catch (error) {
+                console.error('Error fetching company users:', error);
+            } finally {
+                setLoadingUsers(false);
+            }
+        };
+        fetchCompanyUsers();
+    }, [user]);
 
     useEffect(() => {
         const handleGlobalThemeChange = (e: any) => {
@@ -220,6 +239,81 @@ const UserSettings = () => {
                                     >
                                         Descartar
                                     </Button>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Organization details */}
+                    <Card className="p-6 border-primary/10 shadow-md bg-card">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                <Users className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-foreground">Mi Organización</h2>
+                                <p className="text-sm text-muted-foreground">Datos de tu empresa y miembros del equipo</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Empresa / Razón Social</Label>
+                                <p className="text-lg font-bold text-foreground mt-1">
+                                    {profile?.company_name || 'Sin empresa configurada'}
+                                </p>
+                            </div>
+
+                            <div className="border-t border-border/50 pt-4">
+                                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                    <span>Miembros de la Organización</span>
+                                    <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
+                                        {companyUsers.length}
+                                    </span>
+                                </h3>
+                                
+                                {loadingUsers ? (
+                                    <div className="py-4 text-center text-xs text-muted-foreground">Cargando miembros...</div>
+                                ) : companyUsers.length === 0 ? (
+                                    <div className="py-4 text-center text-xs text-muted-foreground">No se encontraron otros miembros.</div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {companyUsers.map((u) => {
+                                            const isCurrentUser = u.id === user?.id;
+                                            return (
+                                                <div 
+                                                    key={u.id} 
+                                                    className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20"
+                                                >
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+                                                            {u.name ? u.name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-1.5 font-sans">
+                                                                <p className="text-sm font-bold text-foreground truncate">{u.name || 'Usuario'}</p>
+                                                                {isCurrentUser && (
+                                                                    <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold">
+                                                                        Tú
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                                                            u.role === 'admin' || u.role === 'owner'
+                                                                ? 'bg-rose-500/10 text-rose-500 border border-rose-500/10'
+                                                                : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/10'
+                                                        }`}>
+                                                            {roleLabels[u.role] || u.role}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 )}
                             </div>
                         </div>

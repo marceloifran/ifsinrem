@@ -410,13 +410,13 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Helper card */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-900 bg-gradient-to-br from-slate-900 to-slate-950 p-5 text-white shadow-md relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl pointer-events-none" />
-              <h3 className="text-lg font-black text-white">Dictá por voz</h3>
-              <p className="text-sm text-slate-300 mt-2 leading-relaxed">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-900 bg-white dark:bg-[#080b11] p-5 text-slate-800 dark:text-white shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Dictá por voz</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed font-sans font-medium">
                 ¿Estás ocupado o con las manos llenas? Tocá el micrófono abajo a la derecha y decile al asistente qué estás entregando y a quién. Se cargará solo.
               </p>
-              <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold uppercase mt-4">
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase mt-4">
                 <CheckCircle2 size={14} /> Manos Libres · Optimizado
               </div>
             </div>

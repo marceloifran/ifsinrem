@@ -400,3 +400,23 @@ body,
     font-size: 16px !important;
   }
 }
+
+/* Custom Scrollbars for premium appearance */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.08);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: rgba(4, 6, 10, 0.35);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.45);
+}
