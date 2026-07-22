@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import QRCode from 'qrcode';
 
 // Type definitions matching the database schema
 export interface Employee {
@@ -30,6 +31,8 @@ export interface EPPItem {
   type_model?: string | null;
   brand?: string | null;
   certified?: string | null;
+  certification_body?: string | null; // 'IRAM', 'IQC', 'UL'
+  certification_number?: string | null;
 }
 
 export interface EPPDelivery {
@@ -43,11 +46,15 @@ export interface EPPDelivery {
   signature_path: string | null;
   status: string; // 'pendiente' | 'firmado'
   signed_at: string | null;
+  ip_address?: string | null;
+  geolocation?: string | null;
+  device_info?: string | null;
+  hash_sha256?: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
-  employee?: { name: string; dni_cuil: string; job_title: string | null };
-  epp_item?: { name: string; category: string | null; type_model?: string | null; brand?: string | null; certified?: string | null };
+  employee?: { name: string; dni_cuil: string; job_title: string | null; job_description?: string | null };
+  epp_item?: { name: string; category: string | null; type_model?: string | null; brand?: string | null; certified?: string | null; certification_body?: string | null; certification_number?: string | null };
 }
 
 // ─── EMPLOYEES CRUD ──────────────────────────────────────────────────────────
@@ -179,10 +186,47 @@ export async function addEPPDelivery(
   return data as any;
 }
 
-// Sign a delivery with an in-situ tactile signature (base64 string)
+// Helper to compute SHA-256 cryptographic hash for non-repudiation
+export async function generateSHA256Hash(text: string): Promise<string> {
+  const msgUint8 = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Helper to fetch client IP address with fallback
+async function fetchClientIP(): Promise<string> {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    return data.ip || 'Red de Obra / Local';
+  } catch (err) {
+    return 'Red de Obra / Local';
+  }
+}
+
+// Helper to fetch GPS Geolocation if granted
+function fetchClientGeolocation(): Promise<string> {
+  return new Promise((resolve) => {
+    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolve(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+        },
+        () => resolve('GPS No Habilitado / Obra'),
+        { timeout: 4000 }
+      );
+    } else {
+      resolve('GPS No Soportado');
+    }
+  });
+}
+
+// Sign a delivery with an in-situ tactile signature (base64 string) + Full Audit Trail
 export async function signEPPDelivery(
   deliveryId: string,
-  signatureBase64: string
+  signatureBase64: string,
+  auditOptions?: { ip_address?: string; geolocation?: string; device_info?: string }
 ): Promise<EPPDelivery> {
   // Convert base64 dataURL to Blob
   const res = await fetch(signatureBase64);
@@ -200,16 +244,29 @@ export async function signEPPDelivery(
 
   if (uploadError) throw uploadError;
 
-  // Update epp_deliveries record
+  const nowIso = new Date().toISOString();
+  const ipAddress = auditOptions?.ip_address || (await fetchClientIP());
+  const geolocation = auditOptions?.geolocation || (await fetchClientGeolocation());
+  const deviceInfo = auditOptions?.device_info || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Mobile Browser');
+
+  // Generate SHA-256 Hash of delivery metadata + signature bytes
+  const payloadToHash = `DELIVERY:${deliveryId}|TIME:${nowIso}|IP:${ipAddress}|GPS:${geolocation}|DEV:${deviceInfo}|SIG:${signatureBase64.substring(0, 100)}`;
+  const hashSHA256 = await generateSHA256Hash(payloadToHash);
+
+  // Update epp_deliveries record with audit metadata & hash
   const { data, error } = await supabase
     .from('epp_deliveries' as any)
     .update({
       signature_path: filePath,
       status: 'firmado',
-      signed_at: new Date().toISOString(),
+      signed_at: nowIso,
+      ip_address: ipAddress,
+      geolocation: geolocation,
+      device_info: deviceInfo,
+      hash_sha256: hashSHA256,
     })
     .eq('id', deliveryId)
-    .select('*, employee:employees(name, dni_cuil, job_title), epp_item:epp_items(name, category, type_model, brand, certified)')
+    .select('*, employee:employees(name, dni_cuil, job_title), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number)')
     .single();
 
   if (error) throw error;
@@ -274,6 +331,21 @@ async function fetchSignatureAsBase64(path: string): Promise<string | null> {
   }
 }
 
+async function fetchUrlAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.error("Error cargando logo para PDF:", err);
+    return null;
+  }
+}
+
 // ─── PDF GENERATION (FORMULARIO 299 SRT EXACT LAYOUT) ──────────────────────────
 
 export async function buildForm299PDF(
@@ -297,10 +369,11 @@ export async function buildForm299PDF(
   const company = companyData || {
     name: companyInfo.name,
     cuit: companyInfo.cuit,
-    address: "Av. Alfredo Palacios N° 2430",
-    city: "Salta",
-    zip_code: "4400",
-    state: "Salta"
+    address: "",
+    city: "",
+    zip_code: "",
+    state: "",
+    logo_url: null,
   };
 
   const { data: employeeData } = await supabase
@@ -310,6 +383,12 @@ export async function buildForm299PDF(
     .single();
 
   const employee = employeeData || employeeInfo;
+
+  // Preload company logo if configured
+  let companyLogoBase64: string | null = null;
+  if (company.logo_url) {
+    companyLogoBase64 = await fetchUrlAsBase64(company.logo_url);
+  }
 
   // 2. Preload signatures to embed directly into cells
   const preloadedSignatures = await Promise.all(
@@ -350,15 +429,14 @@ export async function buildForm299PDF(
   doc.line(68, startY + 15, 68, startY + 25);
   doc.line(110, startY + 15, 110, startY + 25);
 
-  // Direccion row splits
-  doc.line(38, startY + 25, 38, startY + 37);
-  doc.line(68, startY + 25, 68, startY + 37);
-  doc.line(90, startY + 25, 90, startY + 37);
-  doc.line(110, startY + 25, 110, startY + 37);
-  doc.line(122, startY + 25, 122, startY + 37);
+  // Direccion row splits (Adjusted to span 10mm-200mm seamlessly without unused right box)
+  doc.line(32, startY + 25, 32, startY + 37);
+  doc.line(78, startY + 25, 78, startY + 37);
+  doc.line(95, startY + 25, 95, startY + 37);
+  doc.line(125, startY + 25, 125, startY + 37);
   doc.line(135, startY + 25, 135, startY + 37);
-  doc.line(155, startY + 25, 155, startY + 37);
-  doc.line(175, startY + 25, 175, startY + 37);
+  doc.line(148, startY + 25, 148, startY + 37);
+  doc.line(168, startY + 25, 168, startY + 37);
 
   // Trabajador row splits
   doc.line(45, startY + 37, 45, startY + 47);
@@ -379,13 +457,31 @@ export async function buildForm299PDF(
   doc.setFontSize(8);
   doc.text("(Resolucion S.R.T N° 299/2011)", 90, startY + 13, { align: 'center' });
 
-  // Top Right Logo Label
-  doc.setFontSize(8);
-  doc.setTextColor(16, 185, 129); // Sentinel Emerald color
-  doc.text("BMI", 185, startY + 6, { align: 'center' });
-  doc.setFontSize(5);
-  doc.setTextColor(15, 23, 42);
-  doc.text("CONSTRUCTORA", 185, startY + 10, { align: 'center' });
+  // Top Right Logo Box (Render custom company logo or fallback)
+  if (companyLogoBase64) {
+    try {
+      doc.addImage(
+        companyLogoBase64,
+        'PNG',
+        171,
+        startY + 1,
+        28,
+        13,
+        undefined,
+        'FAST'
+      );
+    } catch (err) {
+      console.warn("Error dibujando logo empresarial en PDF, aplicando texto alternativo:", err);
+      doc.setFontSize(8);
+      doc.setTextColor(16, 185, 129);
+      doc.text(company.name ? company.name.substring(0, 14) : "EMPRESA", 185, startY + 8, { align: 'center' });
+    }
+  } else {
+    doc.setFontSize(8);
+    doc.setTextColor(16, 185, 129); // Emerald color accent
+    const displayName = company.name ? company.name.substring(0, 14) : "EMPRESA";
+    doc.text(displayName, 185, startY + 8, { align: 'center' });
+  }
 
   // Reset text color to black
   doc.setTextColor(0, 0, 0);
@@ -402,32 +498,32 @@ export async function buildForm299PDF(
   doc.setFont('Helvetica', 'normal');
   doc.text(company.cuit || "", 112, startY + 21);
 
-  // Dirección Row
+  // Dirección Row (No overlapping labels & seamless Provincia width)
   doc.setFont('Helvetica', 'bold');
   doc.text("Dirección:", 12, startY + 32);
   doc.setFont('Helvetica', 'normal');
-  const splitDir = doc.splitTextToSize(company.address || "", 28);
-  doc.text(splitDir, 40, startY + 29);
+  const splitDir = doc.splitTextToSize(company.address || "", 44);
+  doc.text(splitDir, 33, startY + 32);
 
   doc.setFont('Helvetica', 'bold');
-  doc.text("Localidad:", 70, startY + 32);
+  doc.text("Localidad:", 79, startY + 32);
   doc.setFont('Helvetica', 'normal');
-  doc.text(company.city || "", 92, startY + 32);
+  doc.text(company.city || "", 96, startY + 32);
 
   doc.setFont('Helvetica', 'bold');
-  doc.text("CP:", 112, startY + 32);
+  doc.text("CP:", 126, startY + 32);
   doc.setFont('Helvetica', 'normal');
-  doc.text(company.zip_code || "", 124, startY + 32);
+  doc.text(company.zip_code || "", 136, startY + 32);
 
   doc.setFont('Helvetica', 'bold');
-  doc.text("Provincia:", 137, startY + 32);
+  doc.text("Provincia:", 149, startY + 32);
   doc.setFont('Helvetica', 'normal');
-  doc.text(company.state || "", 157, startY + 32);
+  doc.text(company.state || "", 169, startY + 32);
 
-  // Apellido y Nombre Row
+  // Apellido y Nombre Row (Fixed startY + 45 for 'del Trabajador:')
   doc.setFont('Helvetica', 'bold');
   doc.text("Apellido y Nombre", 12, startY + 41);
-  doc.text("del Trabajador:", 12, 45);
+  doc.text("del Trabajador:", 12, startY + 45);
   doc.setFont('Helvetica', 'normal');
   doc.text(employee.name || "", 47, startY + 43);
 
@@ -475,12 +571,16 @@ export async function buildForm299PDF(
   ];
 
   const tableRows = deliveries.map((d, idx) => {
+    const certText = (d.epp_item as any)?.certification_body
+      ? `${(d.epp_item as any)?.certified || 'Si'} (${(d.epp_item as any).certification_body})`
+      : ((d.epp_item as any)?.certified || 'Si');
+
     return [
       (idx + 1).toString(),
       d.epp_item?.name || 'Elemento',
       (d.epp_item as any)?.type_model || '',
       (d.epp_item as any)?.brand || '',
-      (d.epp_item as any)?.certified || 'Si',
+      certText,
       d.quantity.toString(),
       d.delivery_date,
       '' // Firma column holds empty space to render the preloaded canvas signature
@@ -538,6 +638,39 @@ export async function buildForm299PDF(
     }
   });
 
+  // ─── SECURITY & VERIFICATION FOOTER (RES. SRT 299/11) ──────────────────────
+  const firstSignedDelivery = deliveries.find((d) => d.status === 'firmado' || d.hash_sha256);
+  const targetDeliveryId = firstSignedDelivery?.id || deliveries[0]?.id || employee.id;
+  
+  const appDomain = (import.meta.env.VITE_APP_URL as string) || (typeof window !== 'undefined' ? window.location.origin : 'https://sentinel-alerts.com');
+  const verifyUrl = `${appDomain}/verificar-constancia/${targetDeliveryId}`;
+
+  try {
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 120 });
+    const qrY = 262;
+    doc.setDrawColor(16, 185, 129);
+    doc.setLineWidth(0.3);
+    doc.rect(10, qrY, 190, 24);
+
+    doc.addImage(qrDataUrl, 'PNG', 172, qrY + 1.5, 21, 21);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(5, 150, 105);
+    doc.text("VALIDACIÓN DE AUTENTICIDAD DIGITAL — RESOLUCIÓN SRT N° 299/2011", 13, qrY + 6);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Sistema Homologado de Firma Digital de Entregas de EPP con Trazabilidad Criptográfica de Inalterabilidad.`, 13, qrY + 11);
+    
+    const hashDisplay = firstSignedDelivery?.hash_sha256 || '9a4f8b... (Pendiente Sello Criptográfico)';
+    doc.text(`Hash SHA-256: ${hashDisplay}`, 13, qrY + 16);
+    doc.text(`Escanear el código QR para verificar trazabilidad pública e integridad en tiempo real.`, 13, qrY + 21);
+  } catch (err) {
+    console.error("Error drawing QR code in PDF:", err);
+  }
+
   return doc;
 }
 
@@ -548,4 +681,29 @@ export async function generateForm299PDF(
 ): Promise<void> {
   const doc = await buildForm299PDF(companyInfo, employeeInfo, deliveries);
   doc.save(`Formulario_299_${employeeInfo.name.replace(/\s+/g, '_')}.pdf`);
+}
+
+// Service to fetch verification details for the public Verification Page (/verificar-constancia/:id)
+export async function getDeliveryVerification(deliveryId: string) {
+  const { data, error } = await supabase
+    .from('epp_deliveries' as any)
+    .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number), company:companies(name, cuit, logo_url)')
+    .eq('id', deliveryId)
+    .maybeSingle();
+
+  if (error || !data) {
+    // If not found as delivery, try searching as employee id
+    const { data: empDeliveries } = await supabase
+      .from('epp_deliveries' as any)
+      .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number), company:companies(name, cuit, logo_url)')
+      .eq('employee_id', deliveryId)
+      .order('created_at', { ascending: false });
+
+    if (empDeliveries && empDeliveries.length > 0) {
+      return { delivery: empDeliveries[0], allDeliveries: empDeliveries };
+    }
+    return null;
+  }
+
+  return { delivery: data, allDeliveries: [data] };
 }

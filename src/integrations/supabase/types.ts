@@ -124,6 +124,7 @@ export type Database = {
           created_at: string
           cuit: string | null
           id: string
+          logo_url: string | null
           name: string
           plan: Database["public"]["Enums"]["user_plan"]
           state: string | null
@@ -136,6 +137,7 @@ export type Database = {
           created_at?: string
           cuit?: string | null
           id?: string
+          logo_url?: string | null
           name: string
           plan?: Database["public"]["Enums"]["user_plan"]
           state?: string | null
@@ -148,6 +150,7 @@ export type Database = {
           created_at?: string
           cuit?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           plan?: Database["public"]["Enums"]["user_plan"]
           state?: string | null
@@ -250,9 +253,13 @@ export type Database = {
           company_id: string
           created_at: string
           delivery_date: string
+          device_info: string | null
           employee_id: string
           epp_item_id: string
+          geolocation: string | null
+          hash_sha256: string | null
           id: string
+          ip_address: string | null
           notes: string | null
           quantity: number
           signature_path: string | null
@@ -265,9 +272,13 @@ export type Database = {
           company_id: string
           created_at?: string
           delivery_date?: string
+          device_info?: string | null
           employee_id: string
           epp_item_id: string
+          geolocation?: string | null
+          hash_sha256?: string | null
           id?: string
+          ip_address?: string | null
           notes?: string | null
           quantity?: number
           signature_path?: string | null
@@ -280,9 +291,13 @@ export type Database = {
           company_id?: string
           created_at?: string
           delivery_date?: string
+          device_info?: string | null
           employee_id?: string
           epp_item_id?: string
+          geolocation?: string | null
+          hash_sha256?: string | null
           id?: string
+          ip_address?: string | null
           notes?: string | null
           quantity?: number
           signature_path?: string | null
@@ -319,6 +334,8 @@ export type Database = {
         Row: {
           brand: string | null
           category: string | null
+          certification_body: string | null
+          certification_number: string | null
           certified: string | null
           company_id: string
           created_at: string
@@ -332,6 +349,8 @@ export type Database = {
         Insert: {
           brand?: string | null
           category?: string | null
+          certification_body?: string | null
+          certification_number?: string | null
           certified?: string | null
           company_id: string
           created_at?: string
@@ -345,6 +364,8 @@ export type Database = {
         Update: {
           brand?: string | null
           category?: string | null
+          certification_body?: string | null
+          certification_number?: string | null
           certified?: string | null
           company_id?: string
           created_at?: string

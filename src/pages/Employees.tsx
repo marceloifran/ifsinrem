@@ -127,25 +127,38 @@ export default function Employees() {
     sigUrlsRef.current = sigUrls;
   }, [sigUrls]);
 
-  // Load signature URLs whenever deliveries change
+  // Load signature URLs whenever deliveries change concurrently
   useEffect(() => {
     const loadUrls = async () => {
-      const urls: Record<string, string> = {};
       const signedDels = allDeliveries.filter((d) => d.status === "firmado" && d.signature_path);
-      for (const del of signedDels) {
-        if (del.signature_path && !sigUrlsRef.current[del.id]) {
+      const toFetch = signedDels.filter((del) => del.signature_path && !sigUrlsRef.current[del.id]);
+
+      if (toFetch.length === 0) return;
+
+      const results = await Promise.all(
+        toFetch.map(async (del) => {
           try {
-            const url = await getSignatureUrl(del.signature_path);
-            urls[del.id] = url;
+            const url = await getSignatureUrl(del.signature_path!);
+            return { id: del.id, url };
           } catch (err) {
-            console.error(err);
+            console.error("Error fetching signature URL:", err);
+            return null;
           }
+        })
+      );
+
+      const newUrls: Record<string, string> = {};
+      for (const res of results) {
+        if (res) {
+          newUrls[res.id] = res.url;
         }
       }
-      if (Object.keys(urls).length > 0) {
-        setSigUrls((prev) => ({ ...prev, ...urls }));
+
+      if (Object.keys(newUrls).length > 0) {
+        setSigUrls((prev) => ({ ...prev, ...newUrls }));
       }
     };
+
     loadUrls();
   }, [allDeliveries]);
 
@@ -1010,9 +1023,14 @@ export default function Employees() {
                       <p className="text-sm font-black uppercase text-slate-900 dark:text-white">Constancia de Entrega de Ropa de Trabajo y Elementos de Protección Personal</p>
                       <p className="text-[10px] text-slate-500 mt-0.5">(Resolución S.R.T. N° 299/2011)</p>
                     </div>
-                    <div className="col-span-2 border-l border-black dark:border-slate-700 p-2 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 leading-none">BMI</span>
-                      <span className="text-[6px] font-bold text-slate-550 leading-none mt-0.5">CONSTRUCTORA</span>
+                    <div className="col-span-2 border-l border-black dark:border-slate-700 p-2 flex items-center justify-center text-center">
+                      {previewCompany?.logo_url ? (
+                        <img src={previewCompany.logo_url} alt="Logo" className="max-h-8 max-w-full object-contain" />
+                      ) : (
+                        <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 leading-none uppercase truncate">
+                          {previewCompany?.name || profile?.company_name || 'EMPRESA'}
+                        </span>
+                      )}
                     </div>
                   </div>
 

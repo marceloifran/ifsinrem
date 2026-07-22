@@ -14,6 +14,8 @@ import {
   Smartphone,
   Sparkles,
   Mail,
+  QrCode,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
@@ -178,6 +180,14 @@ const Index = () => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
 
+  // Automatic carousel timer: advances active step every 4 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 4);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   const steps = [
     {
       id: 0,
@@ -190,9 +200,9 @@ const Index = () => {
     },
     {
       id: 1,
-      title: "2. Firma Digital Inmediata",
-      subtitle: "Validez legal con firma manuscrita digital",
-      desc: "El operario dibuja su firma con el dedo directamente en la pantalla de la tablet o celular. Blindado legalmente y sin necesidad de imprimir.",
+      title: "2. Firma Digital & Audit Trail",
+      subtitle: "IP, Geolocalización GPS y Registro Muestra",
+      desc: "El operario dibuja su firma táctil. El sistema registra la IP de la obra, ubicación GPS y sello de inalterabilidad.",
       icon: <FileSignature className="text-teal-400" size={20} />,
       bubbleText: "Operario Carlos Gómez firmando...",
       simulationType: "signature"
@@ -201,10 +211,19 @@ const Index = () => {
       id: 2,
       title: "3. Planilla 299/11 Oficial",
       subtitle: "Cumplimiento legal automático",
-      desc: "El sistema genera al instante el PDF oficial con el formato exacto exigido por la Superintendencia de Riesgos del Trabajo (SRT) listo para descargar.",
+      desc: "El sistema genera al instante el PDF oficial con el formato exacto exigido por la Superintendencia de Riesgos del Trabajo (SRT).",
       icon: <Boxes className="text-indigo-400" size={20} />,
       bubbleText: "Descargar Formulario 299/11 SRT Oficial",
       simulationType: "pdf"
+    },
+    {
+      id: 3,
+      title: "4. Código QR & Verificación Pública",
+      subtitle: "Sello Criptográfico SHA-256 e Inspección ART",
+      desc: "Cada planilla incluye un código QR único. Al escanearlo desde cualquier teléfono, se valida la constancia inalterable en tiempo real ante la SRT/ART.",
+      icon: <QrCode className="text-emerald-400" size={20} />,
+      bubbleText: "Verificando Constancia Criptográfica...",
+      simulationType: "qr"
     }
   ];
 
@@ -387,6 +406,48 @@ const Index = () => {
             </div>
           </motion.div>
         );
+      case 3:
+        return (
+          <motion.div
+            key="step-3"
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.25 }}
+            className="h-full flex flex-col justify-between p-6"
+          >
+            <div className="flex items-center justify-between border-b border-slate-900/60 pb-3 mb-4">
+              <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-widest uppercase">Validación QR & Hash SHA-256</span>
+              <span className="text-[10px] text-slate-500 font-mono">Trazabilidad SRT</span>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center items-center my-2">
+              <div className="relative p-3 rounded-2xl border border-emerald-500/30 bg-[#060911] shadow-xl text-center space-y-2">
+                <div className="mx-auto w-24 h-24 rounded-xl border border-emerald-500/40 bg-slate-950 p-2 flex items-center justify-center relative overflow-hidden">
+                  <QrCode className="w-20 h-20 text-emerald-400 animate-pulse" />
+                  <motion.div 
+                    className="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_8px_#10b981]"
+                    animate={{ top: ["10%", "90%", "10%"] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-[9px] font-bold text-emerald-400 uppercase">
+                  <ShieldCheck size={12} />
+                  Constancia Auténtica 299/11
+                </div>
+                <p className="text-[9px] font-mono text-slate-400 truncate max-w-[200px]">
+                  Hash: 9a4f8b2c1e8d7f6a5b4c...
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-[#090d16]/50 border border-slate-900/60 p-3 text-center font-sans">
+              <p className="text-[11px] text-slate-400 font-medium">
+                📱 <span className="font-bold text-slate-300">Acceso Público:</span> Cualquier inspector o auditor valida la entrega escaneando el QR sin requerir usuario ni contraseña.
+              </p>
+            </div>
+          </motion.div>
+        );
       default:
         return null;
     }
@@ -441,37 +502,49 @@ const Index = () => {
 
         <div className="relative mx-auto max-w-4xl z-10">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/5 px-4 py-1.5 text-xs font-bold text-emerald-400 mb-8 uppercase tracking-widest"
+            className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-400 mb-6 uppercase tracking-widest shadow-lg shadow-emerald-950/20"
           >
-            <Sparkles size={12} className="text-emerald-400 animate-spin" style={{ animationDuration: '3s' }} />
-            ¡OFICIAL & LEGAL! — Registro y Firma Digital de EPP 100% Homologados
+            <Sparkles size={14} className="text-emerald-400 animate-spin" style={{ animationDuration: '3s' }} />
+            Res. SRT 299/11 · Firma Digital en Obra
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-6 text-white"
+            className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-5 text-white"
           >
-            Digitalizá la Entrega de EPP.
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
-              Firma Digital en Campo
-            </span>
-            <br />
-            y Planilla 299/11 Automática.
+            Entrega de EPP y{" "}
+            <motion.span
+              animate={{
+                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              style={{
+                backgroundImage: "linear-gradient(90deg, #10b981, #34d399, #06b6d4, #10b981)",
+                backgroundSize: "200% auto",
+              }}
+              className="text-transparent bg-clip-text"
+            >
+              Planilla 299 SRT
+            </motion.span>{" "}
+            en 1 Clic.
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.25 }}
-            className="text-base sm:text-lg text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed font-sans font-medium"
+            className="text-base sm:text-lg text-slate-400 mb-8 max-w-xl mx-auto leading-relaxed font-sans font-medium"
           >
-            El único sistema móvil que te permite registrar entregas de seguridad por voz en el campo, hacer que el operario firme con el dedo en tu celular y exportar la Planilla SRT 299/11 oficial en PDF en un clic. Cumplimiento legal asegurado, sin papeles.
+            Registrá entregas por voz en obra, recolectá la firma táctil del trabajador en tu celular y generá la constancia legal inalterable con código QR.
           </motion.p>
 
           <motion.div
@@ -595,7 +668,7 @@ const Index = () => {
                   <FadeIn key={step.id} delay={idx * 0.1} y={10}>
                     <button
                       onClick={() => setActiveStep(step.id)}
-                      className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 flex items-start gap-4 ${
+                      className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 flex items-start gap-4 relative overflow-hidden ${
                         isActive 
                           ? "bg-[#090d16] border-emerald-500/40 shadow-lg shadow-emerald-500/5" 
                           : "bg-[#06080e]/40 border-slate-900 hover:border-slate-800 hover:bg-[#06080e]/80"
@@ -617,6 +690,17 @@ const Index = () => {
                           {step.desc}
                         </p>
                       </div>
+
+                      {/* Animated Progress Bar indicating auto-rotation timer */}
+                      {isActive && (
+                        <motion.div
+                          key={`step-progress-${activeStep}`}
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: 4, ease: "linear" }}
+                          className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-b-2xl"
+                        />
+                      )}
                     </button>
                   </FadeIn>
                 );

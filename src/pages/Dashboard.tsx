@@ -70,24 +70,38 @@ export default function Dashboard() {
     sigUrlsRef.current = sigUrls;
   }, [sigUrls]);
 
+  // Load signature URLs whenever deliveries change concurrently
   useEffect(() => {
     const loadUrls = async () => {
-      const urls: Record<string, string> = {};
       const signedDels = deliveries.filter((d) => d.status === "firmado" && d.signature_path);
-      for (const del of signedDels) {
-        if (del.signature_path && !sigUrlsRef.current[del.id]) {
+      const toFetch = signedDels.filter((del) => del.signature_path && !sigUrlsRef.current[del.id]);
+
+      if (toFetch.length === 0) return;
+
+      const results = await Promise.all(
+        toFetch.map(async (del) => {
           try {
-            const url = await getSignatureUrl(del.signature_path);
-            urls[del.id] = url;
+            const url = await getSignatureUrl(del.signature_path!);
+            return { id: del.id, url };
           } catch (err) {
-            console.error(err);
+            console.error("Error fetching signature URL:", err);
+            return null;
           }
+        })
+      );
+
+      const newUrls: Record<string, string> = {};
+      for (const res of results) {
+        if (res) {
+          newUrls[res.id] = res.url;
         }
       }
-      if (Object.keys(urls).length > 0) {
-        setSigUrls((prev) => ({ ...prev, ...urls }));
+
+      if (Object.keys(newUrls).length > 0) {
+        setSigUrls((prev) => ({ ...prev, ...newUrls }));
       }
     };
+
     loadUrls();
   }, [deliveries]);
 

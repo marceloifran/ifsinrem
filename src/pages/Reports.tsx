@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEmployees, useEPPItems, useEPPDeliveries } from "@/hooks/useEPPData";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend
@@ -120,11 +121,11 @@ const Reports = () => {
   const { user, profile, isAdmin, signOut } = useAuth();
   const companyId = profile?.company_id;
 
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [eppItems, setEppItems] = useState<EPPItem[]>([]);
-  const [deliveries, setDeliveries] = useState<EPPDelivery[]>([]);
+  const { data: employees = [], isLoading: loadingEmp } = useEmployees(companyId);
+  const { data: eppItems = [], isLoading: loadingItems } = useEPPItems(companyId);
+  const { data: deliveries = [], isLoading: loadingDel } = useEPPDeliveries(companyId);
   
-  const [loading, setLoading] = useState(true);
+  const loading = loadingEmp || loadingItems || loadingDel;
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isExporting, setIsExporting] = useState(false);
 
@@ -137,11 +138,6 @@ const Reports = () => {
   });
 
   useEffect(() => {
-    if (!companyId) return;
-    loadReportData();
-  }, [companyId]);
-
-  useEffect(() => {
     const handleThemeGlobal = () => {
       setIsDark(document.documentElement.classList.contains("dark"));
     };
@@ -150,24 +146,6 @@ const Reports = () => {
       window.removeEventListener("theme-changed", handleThemeGlobal);
     };
   }, []);
-
-  const loadReportData = async () => {
-    try {
-      setLoading(true);
-      const [empList, eppList, delList] = await Promise.all([
-        getEmployees(companyId!),
-        getEPPItems(companyId!),
-        getEPPDeliveries(companyId!),
-      ]);
-      setEmployees(empList);
-      setEppItems(eppList);
-      setDeliveries(delList);
-    } catch (e: any) {
-      toast.error("Error al cargar reportes: " + e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filter deliveries by EPP category if needed
   const filteredDeliveries = useMemo(() => {

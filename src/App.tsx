@@ -13,6 +13,7 @@ import Reports from "./pages/Reports";
 import Welcome from "./pages/Welcome";
 import Employees from "./pages/Employees";
 import EPPInventory from "./pages/EPPInventory";
+import VerifyDelivery from "./pages/VerifyDelivery";
 import NotFound from "./pages/NotFound";
 
 import { useEffect } from "react";
@@ -46,6 +47,7 @@ const App = () => {
                 <Route path="/configuracion" element={<UserSettings />} />
                 <Route path="/reportes" element={<Reports />} />
                 <Route path="/bienvenida" element={<Welcome />} />
+                <Route path="/verificar-constancia/:id" element={<VerifyDelivery />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

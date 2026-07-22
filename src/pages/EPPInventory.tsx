@@ -19,13 +19,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  getEPPItems,
   addEPPItem,
   updateEPPItem,
   deleteEPPItem,
   type EPPItem,
 } from "@/services/eppService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEPPItems, eppKeys } from "@/hooks/useEPPData";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   Plus,
@@ -50,11 +51,11 @@ const CATEGORIES = [
 
 export default function EPPInventory() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, profile, isAdmin, signOut } = useAuth();
   const companyId = profile?.company_id;
 
-  const [items, setItems] = useState<EPPItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: items = [], isLoading: loading } = useEPPItems(companyId);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -71,32 +72,11 @@ export default function EPPInventory() {
   const [typeModel, setTypeModel] = useState("");
   const [brand, setBrand] = useState("");
   const [certified, setCertified] = useState("Si");
-
-  useEffect(() => {
-    if (!companyId) return;
-    loadItems();
-
-    // Auto-reload data on voice change event
-    const handleDataChange = () => {
-      loadItems();
-    };
-
-    window.addEventListener("epp-data-changed", handleDataChange);
-    return () => {
-      window.removeEventListener("epp-data-changed", handleDataChange);
-    };
-  }, [companyId]);
+  const [certificationBody, setCertificationBody] = useState("IRAM 3620");
+  const [certificationNumber, setCertificationNumber] = useState("");
 
   const loadItems = async () => {
-    try {
-      setLoading(true);
-      const data = await getEPPItems(companyId!);
-      setItems(data);
-    } catch (err: any) {
-      toast.error("Error al cargar inventario: " + err.message);
-    } finally {
-      setLoading(false);
-    }
+    await queryClient.invalidateQueries({ queryKey: eppKeys.all });
   };
 
   const handleLogout = async () => {
@@ -112,6 +92,8 @@ export default function EPPInventory() {
     setTypeModel("");
     setBrand("");
     setCertified("Si");
+    setCertificationBody("IRAM 3620");
+    setCertificationNumber("");
     setIsOpenAdd(true);
   };
 
@@ -130,6 +112,8 @@ export default function EPPInventory() {
         type_model: typeModel || null,
         brand: brand || null,
         certified,
+        certification_body: certificationBody || null,
+        certification_number: certificationNumber || null,
       });
       toast.success("Elemento catalogado con éxito");
       setIsOpenAdd(false);
@@ -143,11 +127,13 @@ export default function EPPInventory() {
     setActiveItem(item);
     setName(item.name);
     setDescription(item.description || "");
-    setCategory(item.category);
+    setCategory(item.category || "cabeza");
     setStock(item.stock);
     setTypeModel(item.type_model || "");
     setBrand(item.brand || "");
-    setCertified(item.certified);
+    setCertified(item.certified || "Si");
+    setCertificationBody(item.certification_body || "IRAM 3620");
+    setCertificationNumber(item.certification_number || "");
     setIsOpenEdit(true);
   };
 
@@ -167,12 +153,14 @@ export default function EPPInventory() {
         type_model: typeModel || null,
         brand: brand || null,
         certified,
+        certification_body: certificationBody || null,
+        certification_number: certificationNumber || null,
       });
-      toast.success("Catálogo actualizado");
+      toast.success("Elemento actualizado con éxito");
       setIsOpenEdit(false);
       loadItems();
     } catch (err: any) {
-      toast.error("Error al actualizar: " + err.message);
+      toast.error("Error al editar: " + err.message);
     }
   };
 

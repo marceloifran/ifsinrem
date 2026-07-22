@@ -16,6 +16,9 @@ interface AuthContextType {
     plan: 'starter' | 'professional' | 'enterprise';
     max_users: number;
     company_id: string | null;
+    company_name?: string | null;
+    company_cuit?: string | null;
+    logo_url?: string | null;
   } | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string, phone?: string, plan?: 'starter' | 'professional' | 'enterprise', companyName?: string) => Promise<{ data: { user: User | null; session: Session | null } | null; error: Error | null }>;
@@ -39,6 +42,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     plan: 'starter' | 'professional' | 'enterprise';
     max_users: number;
     company_id: string | null;
+    company_name?: string | null;
+    company_cuit?: string | null;
+    logo_url?: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -84,6 +90,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (profileData) {
+        let companyName: string | null = null;
+        let companyCuit: string | null = null;
+        let logoUrl: string | null = null;
+
+        if (profileData.company_id) {
+          const { data: companyData } = await supabase
+            .from('companies')
+            .select('name, cuit, logo_url')
+            .eq('id', profileData.company_id)
+            .maybeSingle();
+
+          if (companyData) {
+            companyName = companyData.name;
+            companyCuit = companyData.cuit;
+            logoUrl = companyData.logo_url;
+          }
+        }
+
         setProfile({
           id: profileData.id,
           name: profileData.name,
@@ -93,6 +117,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           plan: profileData.plan as 'starter' | 'professional' | 'enterprise',
           max_users: profileData.max_users ?? 10,
           company_id: profileData.company_id || null,
+          company_name: companyName || profileData.name,
+          company_cuit: companyCuit || null,
+          logo_url: logoUrl || null,
         });
       }
 
