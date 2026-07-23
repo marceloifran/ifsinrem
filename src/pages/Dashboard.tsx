@@ -226,7 +226,73 @@ export default function Dashboard() {
       />
 
       <main className="mx-auto max-w-5xl px-4 py-8 md:px-8 space-y-6">
-        {/* Greetings and CTA */}
+        {loading ? (
+          <div className="space-y-6 animate-pulse">
+            {/* Greetings & CTA Skeleton */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-2">
+                <div className="h-8 bg-slate-200 dark:bg-slate-800/80 rounded-xl w-64"></div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-800/60 rounded-lg w-80"></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-11 bg-slate-200 dark:bg-slate-800/80 rounded-xl w-32"></div>
+                <div className="h-11 bg-slate-200 dark:bg-slate-800/80 rounded-xl w-36"></div>
+              </div>
+            </div>
+
+            {/* 4 Stats Cards Skeleton */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#080b11] shadow-sm flex flex-col justify-between h-36">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800/80 rounded w-28"></div>
+                    <div className="h-6 w-6 bg-slate-200 dark:bg-slate-800/80 rounded-full"></div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <div className="h-9 bg-slate-200 dark:bg-slate-800/80 rounded-lg w-20"></div>
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800/60 rounded w-36"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Feed & Catalog Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 bg-white dark:bg-[#080b11] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-900 pb-3">
+                  <div className="h-5 bg-slate-200 dark:bg-slate-800/80 rounded w-48"></div>
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800/60 rounded w-16"></div>
+                </div>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3.5 border-b border-slate-100 dark:border-slate-900/60">
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800/80 rounded w-44"></div>
+                      <div className="h-3 bg-slate-200 dark:bg-slate-800/60 rounded w-60"></div>
+                    </div>
+                    <div className="h-8 bg-slate-200 dark:bg-slate-800/80 rounded-xl w-24"></div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-6">
+                <div className="bg-white dark:bg-[#080b11] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-900 pb-3">
+                    <div className="h-5 bg-slate-200 dark:bg-slate-800/80 rounded w-36"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800/60 rounded w-16"></div>
+                  </div>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex justify-between items-center p-3 border border-slate-100 dark:border-slate-900 rounded-xl">
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800/80 rounded w-28"></div>
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800/80 rounded w-12"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Greetings and CTA */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
@@ -436,6 +502,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </main>
 
       {/* AI Assistant Button in the lower right */}
