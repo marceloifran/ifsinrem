@@ -1,20 +1,20 @@
-# 🛡️ Sentinel Alerts / IfsinRem — Arquitectura y Documentación Técnica
+# 🛡️ IfsinRem — Arquitectura y Documentación Técnica
 
-Bienvenido a la documentación técnica oficial a nivel de código de **Sentinel Alerts / IfsinRem**. Este documento detalla la arquitectura de software, stack tecnológico, estructura del proyecto, esquema de base de datos, flujos criptográficos de verificación y procedimientos de despliegue.
+Bienvenido a la documentación técnica oficial a nivel de código de **IfsinRem**. Este documento detalla la arquitectura de software, stack tecnológico, estructura del proyecto, esquema de base de datos, flujos criptográficos de verificación y procedimientos de despliegue.
 
 ---
 
 ## 📐 1. Visión General del Sistema
 
-**Sentinel Alerts / IfsinRem** es un sistema SaaS **Multi-tenant** diseñado para la **Gestión Inteligente de Vencimientos y Alertas** (laborales, fiscales, contractuales y normativas) y el **Control Legal de Entregas de Equipos de Protección Personal (EPP)** con firma digitalizada, certificación criptográfica y verificación pública por código QR.
+**IfsinRem** es un sistema SaaS **Multi-tenant** diseñado para la **Gestión Inteligente de Vencimientos y Alertas** (laborales, fiscales, contractuales y normativas) y el **Control Legal de Entregas de Equipos de Protección Personal (EPP)** con firma digitalizada, certificación criptográfica y verificación pública por código QR.
 
 ### Core Business Capabilities:
 1. **Gestión de Alertas y Obligaciones**: Monitorización de vencimientos recurrentes con cálculo dinámico de puntuación de cumplimiento (*Compliance Score*).
 2. **Control y Emisión de EPP (Formulario 299/11 SRT)**: Registro de entregas de ropa de trabajo y elementos de seguridad laboral a operarios.
 3. **Firma Digitalizada & Integridad Criptográfica**: Captura de firmas en pantalla mediante HTML5 Canvas, generación de **Hash SHA-256** derivado de metadata legal (IDs, timestamp, IP, geolocalización) y almacenamiento inmutable.
 4. **Verificación Pública de Constancias (QR / URL)**: Portal público protegido por RLS donde auditores externos o inspectores pueden escanear el código QR impreso en la constancia PDF y validar su validez digital en tiempo real.
-5. **Notificaciones Omnicanal**: Envío de alertas automatizadas vía **Email** (Resend API) y **WhatsApp** (Twilio API).
-6. **Asistente Normativo con IA**: Integración con Deno Edge Functions y LLMs (Anthropic Claude / OpenAI) para absolver consultas normativas e interpretación de leyes laborales/fiscales.
+5. **Notificaciones Omnicanal**: Envío de alertas automatizadas vía **Email** (Resend API) y **WhatsApp** (servicio Edge Function).
+6. **Asistente Normativo con IA**: Integración con Deno Edge Functions y LLMs para absolver consultas normativas e interpretación de leyes laborales/fiscales.
 7. **PWA (Progressive Web App)**: Funcionalidad ejecutable como aplicación nativa en dispositivos móviles y de escritorio mediante Service Workers.
 
 ---
@@ -39,10 +39,8 @@ Bienvenido a la documentación técnica oficial a nivel de código de **Sentinel
 * **Storage**: Supabase Storage Buckets (Logos de empresas, firmas digitalizadas).
 * **Edge Functions (Deno Runtime)**:
   - `send-email`: Envío transaccional y de alertas vía Resend SDK.
-  - `send-whatsapp`: Despacho de alertas a WhatsApp mediante Twilio REST API.
-  - `mp-webhook`: Webhook listener para cobros y suscripciones de Mercado Pago.
+  - `send-whatsapp`: Despacho de alertas a WhatsApp.
   - `ai-assistant`: Asistente de inteligencia artificial para normativas.
-  - `google-calendar-sync` / `google-oauth-callback`: Sincronización de eventos con Google Calendar.
   - `create-user`: Provisionamiento seguro de usuarios administrativos.
 
 ---
@@ -50,7 +48,7 @@ Bienvenido a la documentación técnica oficial a nivel de código de **Sentinel
 ## 📁 3. Estructura del Código Fuente
 
 ```text
-sentinel-alerts/
+ifsinrem/
 ├── public/                     # Archivos estáticos y manifest PWA
 ├── scripts/                    # Scripts de soporte/mantenimiento
 ├── supabase/                   # Configuración del Backend Supabase
@@ -58,11 +56,8 @@ sentinel-alerts/
 │   ├── functions/              # Deno Edge Functions
 │   │   ├── ai-assistant/       # Edge function para consultas con IA
 │   │   ├── create-user/        # Alta administrativa de usuarios
-│   │   ├── google-calendar-sync/ # Sincronización bidireccional de calendario
-│   │   ├── google-oauth-callback/
-│   │   ├── mp-webhook/         # Webhook de suscripciones Mercado Pago
 │   │   ├── send-email/         # Integración Resend API
-│   │   └── send-whatsapp/      # Integración Twilio API
+│   │   └── send-whatsapp/      # Integración WhatsApp API
 │   └── migrations/             # Migraciones SQL de PostgreSQL (RLS, Triggers, Views)
 ├── src/
 │   ├── components/             # Componentes reutilizables
@@ -92,8 +87,7 @@ sentinel-alerts/
 │   │   ├── eppService.ts       # CRUD EPP, entregas, cálculo de Hash SHA-256 y PDF generator
 │   │   ├── userService.ts      # Gestión de usuarios, roles y permisos
 │   │   ├── companyService.ts   # Configuración y branding multi-empresa
-│   │   ├── emailService.ts     # Invoca Edge Function de Email
-│   │   └── googleCalendarSync.ts
+│   │   └── emailService.ts     # Invoca Edge Function de Email
 │   ├── App.tsx                 # Configuración de Router y Providers
 │   ├── main.tsx                # Punto de entrada Vite React
 │   └── index.css               # Estilos globales y tokens CSS de Tailwind
@@ -122,7 +116,7 @@ Toda la información operativa pertenece a una **Empresa** (`company_id`). El ar
   - `geolocation`, `ip_address`, `device_info`: Evidencia de auditoría.
 * **`obligations` & `obligation_notifications`**: Reglas de alerta para impuestos, licencias, capacitaciones o vencimientos legales.
 
-### Seguridad y Polícas RLS (Row Level Security)
+### Seguridad y Políticas RLS (Row Level Security)
 1. **Acceso Autenticado Multi-tenant**: Un usuario solo puede leer/modificar filas donde `company_id` coincida con el `company_id` de su perfil.
 2. **Acceso Público de Verificación (`20260723_public_verification_rls.sql`)**: 
    - La tabla `epp_deliveries` cuenta con una política RLS permisiva de **lectura anónima** orientada *exclusivamente* a consultas de verificación mediante la vista/función pública `/verificar-constancia/:id`.
@@ -153,7 +147,7 @@ Toda la información operativa pertenece a una **Empresa** (`company_id`). El ar
 ### C. Sistema de Notificaciones de Vencimiento (`send-email` y `send-whatsapp`)
 1. Las Edge Functions leen la fecha de vencimiento (`daysUntilDue`) y el destinatario.
 2. `send-email` envía una plantilla HTML estilizada mediante **Resend**.
-3. `send-whatsapp` da formato al número telefónico y realiza un `POST` a la API de **Twilio Messages**, incluyendo emoticones de urgencia según la proximidad del vencimiento (🚨 Vencida, ⚠️ Vence hoy, 📅 Próximo).
+3. `send-whatsapp` da formato al número telefónico y envía el mensaje de WhatsApp incluyendo emoticones de urgencia según la proximidad del vencimiento (🚨 Vencida, ⚠️ Vence hoy, 📅 Próximo).
 
 ---
 
@@ -173,10 +167,6 @@ VITE_RESEND_FROM_EMAIL="IfsinRem <no-reply@tu-dominio.com>"
 
 # Edge Functions Secrets (Configurables en Supabase Dashboard -> Secrets)
 RESEND_API_KEY="re_..."
-TWILIO_ACCOUNT_SID="AC..."
-TWILIO_AUTH_TOKEN="..."
-TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"
-MERCADOPAGO_ACCESS_TOKEN="APP_USR-..."
 ```
 
 ---
@@ -191,7 +181,7 @@ MERCADOPAGO_ACCESS_TOKEN="APP_USR-..."
 1. **Clonar el repositorio**:
    ```bash
    git clone <repository-url>
-   cd sentinel-alerts
+   cd ifsinrem
    ```
 
 2. **Instalar dependencias**:
