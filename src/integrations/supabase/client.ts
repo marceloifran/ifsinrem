@@ -2,11 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://rrxdlswuqwhoeojcksvs.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+if (!SUPABASE_PUBLISHABLE_KEY) {
+  console.error("⚠️ Faltan las variables de entorno VITE_SUPABASE_PUBLISHABLE_KEY o VITE_SUPABASE_ANON_KEY en el build/despliegue.");
+}
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

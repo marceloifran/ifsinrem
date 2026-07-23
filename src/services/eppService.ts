@@ -685,25 +685,48 @@ export async function generateForm299PDF(
 
 // Service to fetch verification details for the public Verification Page (/verificar-constancia/:id)
 export async function getDeliveryVerification(deliveryId: string) {
-  const { data, error } = await supabase
+  let mainDelivery: any = null;
+
+  // 1. Try fetching exact delivery by ID with extended fields
+  const extRes = await supabase
     .from('epp_deliveries' as any)
     .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number), company:companies(name, cuit, logo_url)')
     .eq('id', deliveryId)
     .maybeSingle();
 
-  if (error || !data) {
-    // If not found as delivery, try searching as employee id
-    const { data: empDeliveries } = await supabase
+  if (!extRes.error && extRes.data) {
+    mainDelivery = extRes.data;
+  } else {
+    // Fallback to basic query if extended schema fields don't exist yet
+    const basicRes = await supabase
       .from('epp_deliveries' as any)
-      .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number), company:companies(name, cuit, logo_url)')
-      .eq('employee_id', deliveryId)
-      .order('created_at', { ascending: false });
-
-    if (empDeliveries && empDeliveries.length > 0) {
-      return { delivery: empDeliveries[0], allDeliveries: empDeliveries };
-    }
-    return null;
+      .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category), company:companies(name, cuit, logo_url)')
+      .eq('id', deliveryId)
+      .maybeSingle();
+    mainDelivery = basicRes.data;
   }
 
-  return { delivery: data, allDeliveries: [data] };
+  // Determine target employee ID
+  const employeeId = mainDelivery?.employee_id || deliveryId;
+
+  // 2. Fetch ALL deliveries for this worker so the full EPP list can be validated
+  let allDeliveries: any[] = [];
+  const { data: empDeliveries } = await supabase
+    .from('epp_deliveries' as any)
+    .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number), company:companies(name, cuit, logo_url)')
+    .eq('employee_id', employeeId)
+    .order('created_at', { ascending: false });
+
+  if (empDeliveries && empDeliveries.length > 0) {
+    allDeliveries = empDeliveries;
+    if (!mainDelivery) {
+      mainDelivery = empDeliveries[0];
+    }
+  } else if (mainDelivery) {
+    allDeliveries = [mainDelivery];
+  }
+
+  if (!mainDelivery) return null;
+
+  return { delivery: mainDelivery, allDeliveries };
 }

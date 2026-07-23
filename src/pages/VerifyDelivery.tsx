@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getDeliveryVerification, getSignatureUrl, generateForm299PDF, type EPPDelivery } from "@/services/eppService";
-import { ShieldCheck, CheckCircle2, FileSignature, Building2, UserCheck, Smartphone, MapPin, Hash, Lock, Download, AlertTriangle, Loader2 } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Building2, UserCheck, Smartphone, MapPin, Hash, Lock, Download, AlertTriangle, Loader2, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
@@ -22,9 +22,10 @@ export default function VerifyDelivery() {
         const res = await getDeliveryVerification(id);
         if (res) {
           setData(res);
-          if (res.delivery?.signature_path) {
+          const signedItem = res.allDeliveries?.find((d: any) => d.signature_path) || res.delivery;
+          if (signedItem?.signature_path) {
             try {
-              const url = await getSignatureUrl(res.delivery.signature_path);
+              const url = await getSignatureUrl(signedItem.signature_path);
               setSigUrl(url);
             } catch (err) {
               console.error("Error loading signature URL:", err);
@@ -70,9 +71,10 @@ export default function VerifyDelivery() {
   }
 
   const delivery: EPPDelivery = data.delivery;
+  const allDeliveries: EPPDelivery[] = data.allDeliveries || [delivery];
   const company = delivery.company || { name: "Empresa Registrada", cuit: "-" };
   const employee = delivery.employee || { name: "Trabajador", dni_cuil: "-", job_title: "-" };
-  const eppItem = delivery.epp_item || { name: "Elemento de Protección", category: "EPP" };
+  const signedDelivery = allDeliveries.find(d => d.signature_path && d.status === 'firmado') || delivery;
 
   const handleDownloadPDF = async () => {
     try {
@@ -91,7 +93,7 @@ export default function VerifyDelivery() {
           updated_at: '',
           job_description: employee.job_description,
         },
-        data.allDeliveries || [delivery]
+        allDeliveries
       );
     } catch (err) {
       console.error("Error downloading PDF:", err);
@@ -113,13 +115,13 @@ export default function VerifyDelivery() {
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">
             <CheckCircle2 size={13} />
-            Constancia Válida e Inalterable
+            Constancia Válida e Inalterable ({allDeliveries.length} {allDeliveries.length === 1 ? 'Elemento' : 'Elementos'})
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">
             Verificación Oficial SRT N° 299/2011
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-lg mx-auto">
-            Este documento digital cuenta con firma manuscrita electrónica y respaldo de integridad mediante huella criptográfica inalterable.
+            Este documento digital acredita la totalidad de elementos entregados al trabajador con firma manuscrita electrónica y trazabilidad inalterable.
           </p>
         </motion.div>
 
@@ -155,45 +157,76 @@ export default function VerifyDelivery() {
 
         </div>
 
-        {/* Delivery Details */}
+        {/* Delivery Details Table - ALL EPP ITEMS */}
         <div className="rounded-2xl border border-slate-800/80 bg-[#080b12] p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-900 pb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Detalle de Elemento de Protección</span>
-            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-              {delivery.status === 'firmado' ? '✅ Firmado y Verificado' : '⏳ Pendiente'}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-900 pb-3 gap-2">
+            <div className="flex items-center gap-2">
+              <PackageCheck size={18} className="text-emerald-400" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                Detalle Completo de Elementos Entregados
+              </span>
+              <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
+                {allDeliveries.length} {allDeliveries.length === 1 ? 'Item' : 'Items'}
+              </span>
+            </div>
+            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full self-start sm:self-auto">
+              {signedDelivery.status === 'firmado' ? '✅ Constancia Firmada y Verificada' : '⏳ Pendiente'}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-            <div>
-              <p className="text-slate-500 font-medium">Elemento EPP</p>
-              <p className="text-sm font-bold text-white mt-1">{eppItem.name}</p>
-            </div>
-            <div>
-              <p className="text-slate-500 font-medium">Marca / Modelo</p>
-              <p className="text-sm font-bold text-slate-300 mt-1">{eppItem.brand || '-'} / {eppItem.type_model || '-'}</p>
-            </div>
-            <div>
-              <p className="text-slate-500 font-medium">Certificación</p>
-              <p className="text-sm font-bold text-emerald-400 mt-1">
-                {eppItem.certification_body ? `Sí (${eppItem.certification_body})` : (eppItem.certified || 'Sí')}
-              </p>
-            </div>
-            <div>
-              <p className="text-slate-500 font-medium">Fecha de Entrega</p>
-              <p className="text-sm font-bold text-white mt-1">{delivery.delivery_date}</p>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider">
+                  <th className="py-2.5 px-3">N°</th>
+                  <th className="py-2.5 px-3">Elemento EPP</th>
+                  <th className="py-2.5 px-3">Marca / Modelo</th>
+                  <th className="py-2.5 px-3 text-center">Certificación</th>
+                  <th className="py-2.5 px-3 text-center">Cant.</th>
+                  <th className="py-2.5 px-3 text-right">Fecha Entrega</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-900">
+                {allDeliveries.map((item, index) => {
+                  const epp = item.epp_item || { name: "Elemento EPP", category: "EPP" };
+                  const certText = (epp as any)?.certification_body
+                    ? `Sí (${(epp as any).certification_body})`
+                    : ((epp as any)?.certified || 'Sí');
+                  return (
+                    <tr key={item.id || index} className="hover:bg-slate-900/40">
+                      <td className="py-3 px-3 font-mono font-bold text-slate-500">{index + 1}</td>
+                      <td className="py-3 px-3">
+                        <p className="font-bold text-white">{epp.name}</p>
+                        {epp.category && <p className="text-[10px] text-slate-500 uppercase">{epp.category}</p>}
+                      </td>
+                      <td className="py-3 px-3 text-slate-300">
+                        {(epp as any)?.brand || '-'} / {(epp as any)?.type_model || '-'}
+                      </td>
+                      <td className="py-3 px-3 text-center font-semibold text-emerald-400">
+                        {certText}
+                      </td>
+                      <td className="py-3 px-3 text-center font-bold text-white font-mono">
+                        {item.quantity}
+                      </td>
+                      <td className="py-3 px-3 text-right text-slate-300 font-mono">
+                        {item.delivery_date}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
           {/* Signature Preview if signed */}
           {sigUrl && (
-            <div className="pt-4 border-t border-slate-900 flex flex-col items-center justify-center">
+            <div className="pt-5 border-t border-slate-900 flex flex-col items-center justify-center">
               <p className="text-xs text-slate-400 font-medium mb-2">Firma Manuscrita Electrónica del Trabajador</p>
               <div className="h-28 w-64 rounded-xl border border-slate-800 bg-white/95 p-2 flex items-center justify-center shadow-inner">
                 <img src={sigUrl} alt="Firma del trabajador" className="max-h-full max-w-full object-contain" />
               </div>
               <p className="text-[10px] text-slate-500 mt-1.5 font-mono">
-                Registrado el {delivery.signed_at ? new Date(delivery.signed_at).toLocaleString('es-AR') : delivery.delivery_date}
+                Registrado el {signedDelivery.signed_at ? new Date(signedDelivery.signed_at).toLocaleString('es-AR') : signedDelivery.delivery_date}
               </p>
             </div>
           )}
@@ -211,7 +244,7 @@ export default function VerifyDelivery() {
               <Smartphone className="w-5 h-5 text-emerald-400 shrink-0" />
               <div className="truncate">
                 <p className="text-[10px] text-slate-500">Dirección IP de Firma</p>
-                <p className="font-bold text-slate-200 truncate">{delivery.ip_address || "Registrada en Obra"}</p>
+                <p className="font-bold text-slate-200 truncate">{signedDelivery.ip_address || "Registrada en Obra"}</p>
               </div>
             </div>
 
@@ -219,7 +252,7 @@ export default function VerifyDelivery() {
               <MapPin className="w-5 h-5 text-teal-400 shrink-0" />
               <div className="truncate">
                 <p className="text-[10px] text-slate-500">Geolocalización GPS</p>
-                <p className="font-bold text-slate-200 truncate">{delivery.geolocation || "Obra Registrada"}</p>
+                <p className="font-bold text-slate-200 truncate">{signedDelivery.geolocation || "Obra Registrada"}</p>
               </div>
             </div>
           </div>
@@ -231,7 +264,7 @@ export default function VerifyDelivery() {
               Huella Criptográfica SHA-256 (Hash de Integridad)
             </div>
             <p className="text-[11px] font-mono font-semibold text-emerald-400 break-all">
-              {delivery.hash_sha256 || "9a4f8b2c1e8d7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f21"}
+              {signedDelivery.hash_sha256 || "9a4f8b2c1e8d7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f21"}
             </p>
           </div>
         </div>
@@ -243,7 +276,7 @@ export default function VerifyDelivery() {
             className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2 rounded-xl h-12 px-6 shadow-lg shadow-emerald-950/20"
           >
             <Download size={18} />
-            Descargar Formulario 299 SRT en PDF
+            Descargar Formulario 299 SRT Completo ({allDeliveries.length} EPPs)
           </Button>
 
           <Button

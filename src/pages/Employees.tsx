@@ -610,8 +610,8 @@ export default function Employees() {
         <DialogContent className="sm:max-w-xl rounded-2xl max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white border-slate-200 dark:border-slate-800">
           {selectedEmployeeForDetail && (
             <>
-              <DialogHeader className="border-b border-slate-200 dark:border-slate-800 pb-4">
-                <DialogTitle className="flex items-center justify-between text-slate-900 dark:text-white text-lg">
+              <DialogHeader className="border-b border-slate-200 dark:border-slate-800 pb-4 pr-6">
+                <DialogTitle className="flex items-center justify-between text-slate-900 dark:text-white text-lg pr-4">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedEmployeeForDetail.name}</h2>
                     <p className="text-xs text-slate-500 dark:text-slate-405 mt-1 font-mono">
@@ -620,7 +620,7 @@ export default function Employees() {
                   </div>
                   <Button
                     onClick={() => handleOpenPreview(selectedEmployeeForDetail)}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs gap-1.5 px-3 border-0 h-9 font-bold"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs gap-1.5 px-3 border-0 h-9 font-bold shrink-0 ml-3 mr-2"
                   >
                     <Eye size={12} /> Ver Planilla 299
                   </Button>
@@ -993,13 +993,13 @@ export default function Employees() {
       {/* EPP (Formulario 299) Preview Modal */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
         <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white border-slate-200 dark:border-slate-800">
-          <DialogHeader className="border-b border-slate-250 dark:border-slate-800 pb-4">
-            <DialogTitle className="flex items-center justify-between text-slate-900 dark:text-white text-lg">
+          <DialogHeader className="border-b border-slate-250 dark:border-slate-800 pb-4 pr-6">
+            <DialogTitle className="flex items-center justify-between text-slate-900 dark:text-white text-lg pr-4">
               <span className="font-bold">Vista Previa - Formulario 299/11 (SRT)</span>
               {previewEmployee && previewDeliveries.length > 0 && (
                 <Button
                   onClick={handleDownloadFromPreview}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs gap-1.5 px-4 h-9 font-bold"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs gap-1.5 px-4 h-9 font-bold shrink-0 ml-3 mr-2"
                 >
                   <FileDown size={14} /> Descargar PDF
                 </Button>
