@@ -320,7 +320,7 @@ serve(async (req) => {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const systemPrompt = `Sos el asistente inteligente de Sentinel EPP, un sistema móvil y web para registrar entregas de Elementos de Protección Personal (EPP) y ropa de trabajo en obras.
+    const systemPrompt = `Sos el asistente inteligente de IfsinRem, un sistema móvil y web para registrar entregas de Elementos de Protección Personal (EPP), ropa de trabajo y gestión de alertas.
 NO sos un chatbot informativo. Tu función es interpretar comandos de voz/texto y EJECUTAR acciones para registrar entregas de EPP o dar de alta trabajadores en obra de manera inmediata.
 
 Fecha de hoy: ${today}

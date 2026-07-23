@@ -348,12 +348,12 @@ export default function Employees() {
         .single();
 
       setPreviewCompany(companyData || {
-        name: profile?.company_name || "Constructora Sentinel",
+        name: profile?.company_name || "Mi Empresa",
         cuit: profile?.company_cuit || "30-12345678-9",
-        address: "Av. Alfredo Palacios N° 2430",
-        city: "Salta",
-        zip_code: "4400",
-        state: "Salta"
+        address: "Av. Principal N° 1234",
+        city: "Buenos Aires",
+        zip_code: "1000",
+        state: "Buenos Aires"
       });
     } catch (err: any) {
       toast.error("Error al cargar la vista previa: " + err.message);
@@ -373,7 +373,7 @@ export default function Employees() {
       }
 
       const companyInfo = {
-        name: previewCompany?.name || profile?.company_name || "Constructora Sentinel",
+        name: previewCompany?.name || profile?.company_name || "Mi Empresa",
         cuit: previewCompany?.cuit || profile?.company_cuit || "30-12345678-9",
       };
       await generateForm299PDF(companyInfo, previewEmployee, previewDeliveries);

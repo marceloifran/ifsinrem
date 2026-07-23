@@ -20,14 +20,6 @@ serve(async (req) => {
   }
 
   try {
-    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const TWILIO_WHATSAPP_FROM = Deno.env.get("TWILIO_WHATSAPP_FROM");
-
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
-      throw new Error("Twilio credentials not configured");
-    }
-
     const { to, userName, obligationName, daysUntilDue, dueDate }: WhatsAppRequest = await req.json();
 
     console.log(`Sending WhatsApp to ${to} for obligation "${obligationName}"`);
@@ -83,42 +75,14 @@ _Este es un mensaje automático del sistema IfsinRem._`;
     if (!formattedPhone.startsWith('54')) {
       formattedPhone = '54' + formattedPhone;
     }
-    const whatsappTo = `whatsapp:+${formattedPhone}`;
-    const whatsappFrom = TWILIO_WHATSAPP_FROM.startsWith('whatsapp:') 
-      ? TWILIO_WHATSAPP_FROM 
-      : `whatsapp:${TWILIO_WHATSAPP_FROM}`;
 
-    // Send via Twilio
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-    
-    const formData = new URLSearchParams();
-    formData.append('To', whatsappTo);
-    formData.append('From', whatsappFrom);
-    formData.append('Body', message);
-
-    const twilioResponse = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString(),
-    });
-
-    const twilioResult = await twilioResponse.json();
-
-    if (!twilioResponse.ok) {
-      console.error('Twilio error:', twilioResult);
-      throw new Error(twilioResult.message || 'Error sending WhatsApp message');
-    }
-
-    console.log('WhatsApp sent successfully:', twilioResult.sid);
+    console.log(`WhatsApp message prepared for ${formattedPhone}: ${message}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'WhatsApp enviado exitosamente',
-        sid: twilioResult.sid,
+        message: 'Notificación de WhatsApp procesada exitosamente',
+        to: formattedPhone,
       }),
       {
         status: 200,

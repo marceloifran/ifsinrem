@@ -289,7 +289,7 @@ export default function VerifyDelivery() {
         </div>
 
         <p className="text-center text-[11px] text-slate-600 pt-4">
-          Sentinel EPP — Sistema de Gestión y Firma Digital de EPP Homologado conforme a Res. SRT N° 299/2011.
+          IfsinRem — Sistema de Gestión y Firma Digital de EPP Homologado conforme a Res. SRT N° 299/2011.
         </p>
 
       </div>

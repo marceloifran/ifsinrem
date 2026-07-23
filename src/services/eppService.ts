@@ -642,7 +642,7 @@ export async function buildForm299PDF(
   const firstSignedDelivery = deliveries.find((d) => d.status === 'firmado' || d.hash_sha256);
   const targetDeliveryId = firstSignedDelivery?.id || deliveries[0]?.id || employee.id;
   
-  const appDomain = (import.meta.env.VITE_APP_URL as string) || (typeof window !== 'undefined' ? window.location.origin : 'https://sentinel-alerts.com');
+  const appDomain = (import.meta.env.VITE_APP_URL as string) || (typeof window !== 'undefined' ? window.location.origin : 'https://www.ifsinrem.site');
   const verifyUrl = `${appDomain}/verificar-constancia/${targetDeliveryId}`;
 
   try {

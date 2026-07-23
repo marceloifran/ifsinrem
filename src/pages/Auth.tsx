@@ -339,7 +339,7 @@ const Auth = () => {
                         <Input
                           id="companyName"
                           type="text"
-                          placeholder="Ej: Constructora Sentinel S.A."
+                          placeholder="Ej: Empresa S.A."
                           value={companyName}
                           onChange={(e) => setCompanyName(e.target.value)}
                           className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
