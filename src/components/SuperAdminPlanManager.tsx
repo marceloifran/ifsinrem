@@ -4,10 +4,10 @@ import {
   updateCompanyPlanAndLimits,
   updateCompanyStatus,
   deleteCompany,
+  getPlanMaxUsers,
   CompanyPlanOverview,
 } from "@/services/userService";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -36,7 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ShieldAlert, Sparkles, Save, Infinity, Building2, Users, Loader2, Snowflake, Flame, Trash2, ShieldCheck } from "lucide-react";
+import { ShieldAlert, Save, Building2, Users, Loader2, Snowflake, Flame, Trash2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function SuperAdminPlanManager() {
@@ -49,7 +49,6 @@ export function SuperAdminPlanManager() {
 
   // Editable local state per company
   const [plans, setPlans] = useState<Record<string, 'starter' | 'professional' | 'enterprise'>>({});
-  const [maxUsers, setMaxUsers] = useState<Record<string, number>>({});
 
   useEffect(() => {
     loadCompanies();
@@ -62,15 +61,11 @@ export function SuperAdminPlanManager() {
       setCompanies(data);
 
       const initialPlans: Record<string, 'starter' | 'professional' | 'enterprise'> = {};
-      const initialMaxUsers: Record<string, number> = {};
-
       data.forEach((c) => {
         initialPlans[c.id] = c.plan;
-        initialMaxUsers[c.id] = c.max_users;
       });
 
       setPlans(initialPlans);
-      setMaxUsers(initialMaxUsers);
     } catch (err: any) {
       console.error("Error loading companies overview:", err);
       toast.error("Error al cargar las empresas");
@@ -80,36 +75,23 @@ export function SuperAdminPlanManager() {
   };
 
   const handleSave = async (companyId: string) => {
-    const plan = plans[companyId] || 'starter';
-    const limit = maxUsers[companyId] ?? 10;
+    const selectedPlan = plans[companyId] || 'starter';
+    const newMaxUsers = getPlanMaxUsers(selectedPlan);
 
     setSavingId(companyId);
     try {
-      await updateCompanyPlanAndLimits(companyId, plan, limit);
-      toast.success(`Plan y límites actualizados con éxito`);
+      await updateCompanyPlanAndLimits(companyId, selectedPlan);
+      setCompanies((prev) =>
+        prev.map((c) =>
+          c.id === companyId ? { ...c, plan: selectedPlan, max_users: newMaxUsers } : c
+        )
+      );
+      toast.success(`Plan de la empresa actualizado a ${selectedPlan.toUpperCase()}`);
       await refreshProfile();
       await loadCompanies();
     } catch (err: any) {
       console.error("Error updating plan:", err);
-      toast.error(err.message || "Error al actualizar los límites de la empresa");
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  const handleSetUnlimited = async (companyId: string) => {
-    setMaxUsers((prev) => ({ ...prev, [companyId]: -1 }));
-    setPlans((prev) => ({ ...prev, [companyId]: 'enterprise' }));
-    
-    setSavingId(companyId);
-    try {
-      await updateCompanyPlanAndLimits(companyId, 'enterprise', -1);
-      toast.success("¡Plan configurado como Enterprise / Ilimitado!");
-      await refreshProfile();
-      await loadCompanies();
-    } catch (err: any) {
-      console.error("Error setting unlimited:", err);
-      toast.error(err.message || "Error al establecer ilimitado");
+      toast.error(err.message || "Error al actualizar el plan de la empresa");
     } finally {
       setSavingId(null);
     }
@@ -164,10 +146,10 @@ export function SuperAdminPlanManager() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              Panel SuperAdmin: Gestión de Planes, Usuarios y Estado
+              Panel SuperAdmin: Gestión de Planes y Cuentas
             </h3>
             <p className="text-xs text-muted-foreground">
-              Modificá planes, aumentá límites de usuarios, congelá cuentas o eliminá empresas.
+              Asigná planes corporativos (el límite de usuarios se calcula automáticamente según el plan), congelá cuentas o eliminá empresas.
             </p>
           </div>
         </div>
@@ -178,17 +160,16 @@ export function SuperAdminPlanManager() {
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead>Empresa & Estado</TableHead>
-              <TableHead>Usuarios Actuales</TableHead>
+              <TableHead>Usuarios Actuales / Límite</TableHead>
               <TableHead>Plan Activo</TableHead>
-              <TableHead>Límite Máximo</TableHead>
               <TableHead className="text-right">Acciones SuperAdmin</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {companies.map((company) => {
               const currentPlan = plans[company.id] || company.plan;
-              const currentLimit = maxUsers[company.id] ?? company.max_users;
-              const isUnlimited = currentLimit === -1;
+              const expectedLimit = getPlanMaxUsers(currentPlan);
+              const isUnlimited = expectedLimit === -1;
               const isSaving = savingId === company.id;
               const isFreezing = freezingId === company.id;
               const isDeleting = deletingId === company.id;
@@ -222,9 +203,9 @@ export function SuperAdminPlanManager() {
                   <TableCell>
                     <div className="flex items-center gap-1.5 font-semibold text-sm">
                       <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="font-bold">{company.user_count}</span>
+                      <span className="font-bold text-foreground">{company.user_count}</span>
                       <span className="text-xs text-muted-foreground font-normal">
-                        / {isUnlimited ? "∞" : currentLimit}
+                        / {isUnlimited ? "∞ (Ilimitado)" : `${expectedLimit} usuarios`}
                       </span>
                     </div>
                   </TableCell>
@@ -234,72 +215,35 @@ export function SuperAdminPlanManager() {
                       value={currentPlan}
                       onValueChange={(val: 'starter' | 'professional' | 'enterprise') => {
                         setPlans((prev) => ({ ...prev, [company.id]: val }));
-                        if (val === 'enterprise') {
-                          setMaxUsers((prev) => ({ ...prev, [company.id]: -1 }));
-                        }
                       }}
                     >
-                      <SelectTrigger className="w-[150px] h-9 text-xs">
+                      <SelectTrigger className="w-[210px] h-9 text-xs font-medium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="starter">🌱 Starter (5 us.)</SelectItem>
-                        <SelectItem value="professional">⚡ Professional (10 us.)</SelectItem>
+                        <SelectItem value="starter">🌱 Starter (Hasta 5 us.)</SelectItem>
+                        <SelectItem value="professional">⚡ Professional (Hasta 15 us.)</SelectItem>
                         <SelectItem value="enterprise">👑 Enterprise (Ilimitado)</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
 
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={currentLimit}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          setMaxUsers((prev) => ({ ...prev, [company.id]: isNaN(val) ? -1 : val }));
-                        }}
-                        className="w-24 h-9 text-xs font-mono"
-                        placeholder="-1 = Ilimitado"
-                      />
-                      {isUnlimited && (
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-bold">
-                          <Infinity className="w-3 h-3 mr-1" /> Sin Límite
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                      {/* Set Unlimited */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSetUnlimited(company.id)}
-                        disabled={isSaving || isFreezing || isDeleting}
-                        className="h-8 text-xs gap-1 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
-                        title="Asignar automáticamente plan Enterprise y usuarios ilimitados"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Ilimitado
-                      </Button>
-
-                      {/* Save Plan & Limits */}
+                    <div className="flex items-center justify-end gap-2 flex-wrap">
+                      {/* Save Plan */}
                       <Button
                         type="button"
                         size="sm"
                         onClick={() => handleSave(company.id)}
                         disabled={isSaving || isFreezing || isDeleting}
-                        className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                        className="h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3"
                       >
                         {isSaving ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <Save className="w-3.5 h-3.5" />
                         )}
-                        Guardar
+                        Guardar Plan
                       </Button>
 
                       {/* Freeze / Unfreeze toggle */}
@@ -309,7 +253,7 @@ export function SuperAdminPlanManager() {
                         size="sm"
                         onClick={() => handleToggleFreeze(company)}
                         disabled={isSaving || isFreezing || isDeleting}
-                        className={`h-8 text-xs gap-1 ${
+                        className={`h-8 text-xs gap-1.5 ${
                           isFrozen
                             ? "border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
                             : "border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"

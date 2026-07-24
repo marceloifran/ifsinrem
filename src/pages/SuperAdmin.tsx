@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShieldAlert, ArrowLeft, Lock, KeyRound, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, Lock, KeyRound, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SuperAdmin() {
@@ -50,13 +50,6 @@ export default function SuperAdmin() {
       />
 
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6 text-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Volver al dashboard
-        </button>
 
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">

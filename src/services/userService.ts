@@ -193,6 +193,17 @@ export async function updateUserRole(
     if (insertError) throw insertError;
 }
 
+export const PLAN_USER_LIMITS: Record<string, number> = {
+    starter: 5,
+    professional: 15,
+    enterprise: -1,
+};
+
+export function getPlanMaxUsers(plan: string | null | undefined): number {
+    if (!plan) return 5;
+    return PLAN_USER_LIMITS[plan] ?? 5;
+}
+
 export async function inviteUser(
     email: string,
     name: string,
@@ -206,7 +217,7 @@ export async function inviteUser(
     // Get inviter's company and limits
     const { data: profile } = await supabase
         .from('profiles')
-        .select('max_users, company_id')
+        .select('plan, max_users, company_id')
         .eq('id', user.id)
         .single();
 
@@ -214,7 +225,9 @@ export async function inviteUser(
         return { success: false, message: 'No se encontró el perfil de la empresa' };
     }
 
-    if (profile.max_users !== -1) {
+    const maxAllowedUsers = getPlanMaxUsers(profile.plan);
+
+    if (maxAllowedUsers !== -1) {
         // Count current team members in the company
         const { count } = await supabase
             .from('profiles')
@@ -223,10 +236,10 @@ export async function inviteUser(
 
         const currentTeamSize = (count || 0);
 
-        if (currentTeamSize >= profile.max_users) {
+        if (currentTeamSize >= maxAllowedUsers) {
             return {
                 success: false,
-                message: `Has alcanzado el límite de ${profile.max_users} usuarios de tu plan. Actualiza tu plan para invitar más usuarios.`,
+                message: `Has alcanzado el límite de ${maxAllowedUsers} usuarios de tu plan ${profile.plan?.toUpperCase() || 'STARTER'}. Actualiza el plan en SuperAdmin para invitar más usuarios.`,
             };
         }
     }
@@ -442,23 +455,40 @@ export async function getAllCompaniesOverview(): Promise<CompanyPlanOverview[]> 
         }
     });
 
-    return companies.map(c => ({
-        id: c.id,
-        name: c.name,
-        cuit: c.cuit,
-        plan: c.plan as any || 'starter',
-        max_users: companyMaxUsers.get(c.id) ?? (c.plan === 'enterprise' ? -1 : c.plan === 'professional' ? 10 : 5),
-        user_count: companyUserCounts.get(c.id) || 0,
-        status: ((c as any).status as 'active' | 'frozen') || 'active',
-        created_at: c.created_at,
-    }));
+    return companies.map(c => {
+        const companyPlan = c.plan as any || 'starter';
+        return {
+            id: c.id,
+            name: c.name,
+            cuit: c.cuit,
+            plan: companyPlan,
+            max_users: getPlanMaxUsers(companyPlan),
+            user_count: companyUserCounts.get(c.id) || 0,
+            status: ((c as any).status as 'active' | 'frozen') || 'active',
+            created_at: c.created_at,
+        };
+    });
 }
 
 export async function updateCompanyPlanAndLimits(
     companyId: string,
-    plan: 'starter' | 'professional' | 'enterprise',
-    maxUsers: number
+    plan: 'starter' | 'professional' | 'enterprise'
 ): Promise<void> {
+    const calculatedMaxUsers = getPlanMaxUsers(plan);
+
+    // 1. Try RPC first (SECURITY DEFINER bypasses RLS for cross-company updates)
+    try {
+        const { error: rpcError } = await (supabase as any).rpc('update_company_plan_and_limits', {
+            p_company_id: companyId,
+            p_plan: plan,
+            p_max_users: calculatedMaxUsers,
+        });
+        if (!rpcError) return;
+    } catch (e) {
+        console.warn("RPC update_company_plan_and_limits fallback:", e);
+    }
+
+    // 2. Fallback direct updates
     const { error: companyError } = await supabase
         .from('companies')
         .update({ plan, updated_at: new Date().toISOString() })
@@ -468,7 +498,7 @@ export async function updateCompanyPlanAndLimits(
 
     const { error: profileError } = await supabase
         .from('profiles')
-        .update({ plan, max_users: maxUsers })
+        .update({ plan, max_users: calculatedMaxUsers })
         .eq('company_id', companyId);
 
     if (profileError) throw profileError;
@@ -507,7 +537,6 @@ export async function deleteCompany(companyId: string): Promise<void> {
     }
 
     await supabase.from('user_invitations').delete().eq('company_id', companyId);
-    await supabase.from('obligations').delete().eq('company_id', companyId);
     await supabase.from('epp_deliveries').delete().eq('company_id', companyId);
     await supabase.from('epp_items').delete().eq('company_id', companyId);
     await supabase.from('employees').delete().eq('company_id', companyId);
