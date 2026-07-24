@@ -221,7 +221,7 @@ export function SuperAdminPlanManager() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="starter">🌱 Starter (Hasta 5 us.)</SelectItem>
+                        <SelectItem value="starter">🌱 Starter (Hasta 3 us.)</SelectItem>
                         <SelectItem value="professional">⚡ Professional (Hasta 15 us.)</SelectItem>
                         <SelectItem value="enterprise">👑 Enterprise (Ilimitado)</SelectItem>
                       </SelectContent>

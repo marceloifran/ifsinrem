@@ -194,14 +194,14 @@ export async function updateUserRole(
 }
 
 export const PLAN_USER_LIMITS: Record<string, number> = {
-    starter: 5,
+    starter: 3,
     professional: 15,
     enterprise: -1,
 };
 
 export function getPlanMaxUsers(plan: string | null | undefined): number {
-    if (!plan) return 5;
-    return PLAN_USER_LIMITS[plan] ?? 5;
+    if (!plan) return 3;
+    return PLAN_USER_LIMITS[plan] ?? 3;
 }
 
 export async function inviteUser(
