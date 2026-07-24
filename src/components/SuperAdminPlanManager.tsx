@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import {
   getAllCompaniesOverview,
   updateCompanyPlanAndLimits,
+  updateCompanyStatus,
+  deleteCompany,
   CompanyPlanOverview,
 } from "@/services/userService";
 import { Button } from "@/components/ui/button";
@@ -22,8 +24,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ShieldAlert, Sparkles, Save, Infinity, Building2, Users, Loader2 } from "lucide-react";
+import { ShieldAlert, Sparkles, Save, Infinity, Building2, Users, Loader2, Snowflake, Flame, Trash2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function SuperAdminPlanManager() {
@@ -31,6 +44,8 @@ export function SuperAdminPlanManager() {
   const [companies, setCompanies] = useState<CompanyPlanOverview[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [freezingId, setFreezingId] = useState<string | null>(null);
 
   // Editable local state per company
   const [plans, setPlans] = useState<Record<string, 'starter' | 'professional' | 'enterprise'>>({});
@@ -100,6 +115,37 @@ export function SuperAdminPlanManager() {
     }
   };
 
+  const handleToggleFreeze = async (company: CompanyPlanOverview) => {
+    const newStatus = company.status === 'frozen' ? 'active' : 'frozen';
+    setFreezingId(company.id);
+    try {
+      await updateCompanyStatus(company.id, newStatus);
+      toast.success(newStatus === 'frozen' ? `Empresa "${company.name}" congelada` : `Empresa "${company.name}" reactivada`);
+      await refreshProfile();
+      await loadCompanies();
+    } catch (err: any) {
+      console.error("Error updating company status:", err);
+      toast.error("Error al cambiar el estado de la empresa");
+    } finally {
+      setFreezingId(null);
+    }
+  };
+
+  const handleDeleteCompany = async (company: CompanyPlanOverview) => {
+    setDeletingId(company.id);
+    try {
+      await deleteCompany(company.id);
+      toast.success(`Empresa "${company.name}" eliminada correctamente`);
+      await refreshProfile();
+      await loadCompanies();
+    } catch (err: any) {
+      console.error("Error deleting company:", err);
+      toast.error(err.message || "Error al eliminar la empresa");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="card-elevated p-8 text-center flex items-center justify-center gap-3">
@@ -118,10 +164,10 @@ export function SuperAdminPlanManager() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              Panel SuperAdmin: Gestión de Planes y Límites de Usuarios
+              Panel SuperAdmin: Gestión de Planes, Usuarios y Estado
             </h3>
             <p className="text-xs text-muted-foreground">
-              Modificá el plan asignado y aumentá los límites máximos de usuarios activos por empresa.
+              Modificá planes, aumentá límites de usuarios, congelá cuentas o eliminá empresas.
             </p>
           </div>
         </div>
@@ -131,10 +177,10 @@ export function SuperAdminPlanManager() {
         <Table>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead>Empresa</TableHead>
+              <TableHead>Empresa & Estado</TableHead>
               <TableHead>Usuarios Actuales</TableHead>
               <TableHead>Plan Activo</TableHead>
-              <TableHead>Límite Máximo de Usuarios</TableHead>
+              <TableHead>Límite Máximo</TableHead>
               <TableHead className="text-right">Acciones SuperAdmin</TableHead>
             </TableRow>
           </TableHeader>
@@ -144,16 +190,30 @@ export function SuperAdminPlanManager() {
               const currentLimit = maxUsers[company.id] ?? company.max_users;
               const isUnlimited = currentLimit === -1;
               const isSaving = savingId === company.id;
+              const isFreezing = freezingId === company.id;
+              const isDeleting = deletingId === company.id;
+              const isFrozen = company.status === 'frozen';
 
               return (
-                <TableRow key={company.id} className="hover:bg-muted/30">
+                <TableRow key={company.id} className={`hover:bg-muted/30 ${isFrozen ? 'bg-cyan-950/20' : ''}`}>
                   <TableCell>
-                    <div className="flex items-center gap-2.5">
-                      <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="flex items-start gap-2.5">
+                      <Building2 className={`w-4 h-4 mt-1 shrink-0 ${isFrozen ? 'text-cyan-400' : 'text-muted-foreground'}`} />
                       <div>
-                        <div className="font-bold text-foreground">{company.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-foreground">{company.name}</span>
+                          {isFrozen ? (
+                            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-[10px] font-bold gap-1">
+                              <Snowflake className="w-3 h-3 text-cyan-400" /> Congelada
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px] font-bold gap-1">
+                              <ShieldCheck className="w-3 h-3 text-emerald-400" /> Activa
+                            </Badge>
+                          )}
+                        </div>
                         {company.cuit && (
-                          <div className="text-[11px] text-muted-foreground font-mono">CUIT: {company.cuit}</div>
+                          <div className="text-[11px] text-muted-foreground font-mono mt-0.5">CUIT: {company.cuit}</div>
                         )}
                       </div>
                     </div>
@@ -162,7 +222,7 @@ export function SuperAdminPlanManager() {
                   <TableCell>
                     <div className="flex items-center gap-1.5 font-semibold text-sm">
                       <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>{company.user_count}</span>
+                      <span className="font-bold">{company.user_count}</span>
                       <span className="text-xs text-muted-foreground font-normal">
                         / {isUnlimited ? "∞" : currentLimit}
                       </span>
@@ -211,26 +271,28 @@ export function SuperAdminPlanManager() {
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      {/* Set Unlimited */}
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => handleSetUnlimited(company.id)}
-                        disabled={isSaving}
+                        disabled={isSaving || isFreezing || isDeleting}
                         className="h-8 text-xs gap-1 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
                         title="Asignar automáticamente plan Enterprise y usuarios ilimitados"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        Hacer Ilimitado
+                        Ilimitado
                       </Button>
 
+                      {/* Save Plan & Limits */}
                       <Button
                         type="button"
                         size="sm"
                         onClick={() => handleSave(company.id)}
-                        disabled={isSaving}
-                        className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        disabled={isSaving || isFreezing || isDeleting}
+                        className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                       >
                         {isSaving ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -239,6 +301,77 @@ export function SuperAdminPlanManager() {
                         )}
                         Guardar
                       </Button>
+
+                      {/* Freeze / Unfreeze toggle */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleFreeze(company)}
+                        disabled={isSaving || isFreezing || isDeleting}
+                        className={`h-8 text-xs gap-1 ${
+                          isFrozen
+                            ? "border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+                            : "border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
+                        }`}
+                        title={isFrozen ? "Descongelar empresa" : "Congelar empresa (modo lectura)"}
+                      >
+                        {isFreezing ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : isFrozen ? (
+                          <>
+                            <Flame className="w-3.5 h-3.5 text-emerald-400" />
+                            Activar
+                          </>
+                        ) : (
+                          <>
+                            <Snowflake className="w-3.5 h-3.5 text-cyan-400" />
+                            Congelar
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Delete Company */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={isSaving || isFreezing || isDeleting}
+                            className="h-8 px-2.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                            title="Eliminar empresa"
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-slate-950 border-slate-800 text-white">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-lg font-bold text-rose-400 flex items-center gap-2">
+                              <Trash2 className="w-5 h-5 text-rose-400" />
+                              ¿Eliminar empresa {company.name}?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-400 text-sm mt-2">
+                              Esta acción eliminará permanentemente la empresa <strong className="text-white">{company.name}</strong>, sus usuarios registrados, legajos de operarios, entregas de EPP y obligaciones asociadas. Esta acción no se puede deshacer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="mt-4">
+                            <AlertDialogCancel className="bg-slate-900 border-slate-800 text-white hover:bg-slate-800">
+                              Cancelar
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteCompany(company)}
+                              className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                            >
+                              Eliminar Empresa
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>

@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BarChart3, Users, Boxes, Shield, Sun, Moon, Menu, X } from "lucide-react";
+import { LogOut, User, LayoutDashboard, BarChart3, Users, Boxes, Shield, Sun, Moon, Menu, X, Snowflake, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
+import { checkRolePermission } from "@/services/permissionService";
 
 interface HeaderProps {
   userName?: string;
@@ -11,13 +12,13 @@ interface HeaderProps {
   userPlan?: string;
 }
 
-import { checkRolePermission } from "@/services/permissionService";
-
 const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: HeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, isLoading: authLoading } = useAuth();
   const [permissionsVer, setPermissionsVer] = useState(0);
+
+  const isSuperAdminPage = location.pathname === '/superadmin';
 
   // Effective role derived from profile to eliminate microsecond flash
   const effectiveRole = profile?.role || (isAdmin ? "admin" : "operativo");
@@ -70,7 +71,8 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
     window.dispatchEvent(new CustomEvent("theme-changed", { detail: nextTheme }));
   };
 
-  const navItems = [
+  // If on SuperAdmin portal, hide normal user company navigation
+  const navItems = isSuperAdminPage ? [] : [
     ...(checkRolePermission(effectiveRole, "view_dashboard", companyId) ? [{
       path: '/dashboard',
       label: 'Dashboard',
@@ -107,7 +109,7 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => {
               setMobileMenuOpen(false);
-              navigate('/dashboard');
+              navigate(isSuperAdminPage ? '/superadmin' : '/dashboard');
             }}
           >
             <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center overflow-hidden">
@@ -116,34 +118,42 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
             <span className="text-xl font-bold text-foreground dark:text-white tracking-tight">
               ifsin<span className="text-emerald-500">rem</span>
             </span>
+            {isSuperAdminPage && (
+              <span className="ml-2 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                <ShieldAlert className="w-3 h-3 text-amber-400" />
+                SuperAdmin
+              </span>
+            )}
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
-            <nav className="flex items-center gap-1 bg-muted/50 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-200/20 dark:border-slate-800/40">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+            {navItems.length > 0 && (
+              <nav className="flex items-center gap-1 bg-muted/50 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-200/20 dark:border-slate-800/40">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
 
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={`
-                      flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-semibold
-                      transition-all duration-200
-                      ${isActive
-                        ? 'bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white shadow-sm border border-slate-200/10 dark:border-slate-800/30'
-                        : 'text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-800/40'
-                      }
-                    `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate(item.path)}
+                      className={`
+                        flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-semibold
+                        transition-all duration-200
+                        ${isActive
+                          ? 'bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white shadow-sm border border-slate-200/10 dark:border-slate-800/30'
+                          : 'text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-800/40'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
 
             <Button
               variant="ghost"
@@ -155,21 +165,24 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
               {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </Button>
 
-            <button
-              onClick={() => navigate('/configuracion')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary dark:bg-[#0d1220] hover:bg-secondary/80 dark:hover:bg-[#12192c] border border-transparent dark:border-slate-800/35 transition-colors cursor-pointer"
-            >
-              <User className="w-4 h-4 text-muted-foreground dark:text-slate-400" />
-              <span className="text-sm font-medium text-secondary-foreground dark:text-slate-350">
-                {userName}
-              </span>
-            </button>
+            {!isSuperAdminPage && (
+              <button
+                onClick={() => navigate('/configuracion')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary dark:bg-[#0d1220] hover:bg-secondary/80 dark:hover:bg-[#12192c] border border-transparent dark:border-slate-800/35 transition-colors cursor-pointer"
+              >
+                <User className="w-4 h-4 text-muted-foreground dark:text-slate-400" />
+                <span className="text-sm font-medium text-secondary-foreground dark:text-slate-350">
+                  {userName}
+                </span>
+              </button>
+            )}
 
             <Button
               variant="ghost"
               size="icon"
               onClick={onLogout}
               className="text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-white"
+              title="Cerrar sesión"
             >
               <LogOut className="w-4 h-4" />
             </Button>
@@ -227,18 +240,20 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
               );
             })}
 
-            <div className="h-px bg-border dark:bg-slate-800/80 my-2" />
+            {navItems.length > 0 && <div className="h-px bg-border dark:bg-slate-800/80 my-2" />}
 
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                navigate('/configuracion');
-              }}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground dark:text-slate-400 hover:bg-muted/50 dark:hover:bg-slate-900/60"
-            >
-              <User className="w-5 h-5 shrink-0" />
-              <span>Mi Perfil ({userName})</span>
-            </button>
+            {!isSuperAdminPage && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/configuracion');
+                }}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground dark:text-slate-400 hover:bg-muted/50 dark:hover:bg-slate-900/60"
+              >
+                <User className="w-5 h-5 shrink-0" />
+                <span>Mi Perfil ({userName})</span>
+              </button>
+            )}
 
             <button
               onClick={() => {
@@ -251,6 +266,13 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
               <span>Cerrar Sesión</span>
             </button>
           </nav>
+        </div>
+      )}
+
+      {profile?.is_frozen && !isSuperAdminPage && (
+        <div className="bg-cyan-950/90 border-t border-b border-cyan-500/30 text-cyan-200 px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 shadow-inner">
+          <Snowflake className="w-4 h-4 text-cyan-400 shrink-0 animate-pulse" />
+          <span>EMPRESA SUSPENDIDA / CONGELADA: Tu cuenta fue congelada por el Administrador. Podés ingresar y consultar datos, pero la edición y creación están restringidas.</span>
         </div>
       )}
     </header>

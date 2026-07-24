@@ -393,10 +393,31 @@ export interface CompanyPlanOverview {
     plan: 'starter' | 'professional' | 'enterprise';
     max_users: number;
     user_count: number;
+    status: 'active' | 'frozen';
     created_at: string;
 }
 
 export async function getAllCompaniesOverview(): Promise<CompanyPlanOverview[]> {
+    // 1. Try RPC call first (security definer bypasses RLS to get accurate user counts and status)
+    try {
+        const { data: rpcData, error: rpcError } = await (supabase as any).rpc('get_superadmin_companies_overview');
+        if (!rpcError && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+            return rpcData.map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                cuit: c.cuit,
+                plan: c.plan || 'starter',
+                max_users: c.max_users,
+                user_count: Number(c.user_count || 0),
+                status: (c.status as 'active' | 'frozen') || 'active',
+                created_at: c.created_at,
+            }));
+        }
+    } catch (e) {
+        console.warn("RPC get_superadmin_companies_overview error/fallback:", e);
+    }
+
+    // 2. Fallback: Query tables directly
     const { data: companies, error: compError } = await supabase
         .from('companies')
         .select('*')
@@ -405,11 +426,9 @@ export async function getAllCompaniesOverview(): Promise<CompanyPlanOverview[]> 
     if (compError) throw compError;
     if (!companies) return [];
 
-    const { data: profiles, error: profError } = await supabase
+    const { data: profiles } = await supabase
         .from('profiles')
         .select('company_id, max_users');
-
-    if (profError) throw profError;
 
     const companyUserCounts = new Map<string, number>();
     const companyMaxUsers = new Map<string, number>();
@@ -430,6 +449,7 @@ export async function getAllCompaniesOverview(): Promise<CompanyPlanOverview[]> 
         plan: c.plan as any || 'starter',
         max_users: companyMaxUsers.get(c.id) ?? (c.plan === 'enterprise' ? -1 : c.plan === 'professional' ? 10 : 5),
         user_count: companyUserCounts.get(c.id) || 0,
+        status: ((c as any).status as 'active' | 'frozen') || 'active',
         created_at: c.created_at,
     }));
 }
@@ -439,7 +459,6 @@ export async function updateCompanyPlanAndLimits(
     plan: 'starter' | 'professional' | 'enterprise',
     maxUsers: number
 ): Promise<void> {
-    // 1. Update company record
     const { error: companyError } = await supabase
         .from('companies')
         .update({ plan, updated_at: new Date().toISOString() })
@@ -447,13 +466,69 @@ export async function updateCompanyPlanAndLimits(
 
     if (companyError) throw companyError;
 
-    // 2. Update profiles for that company
     const { error: profileError } = await supabase
         .from('profiles')
         .update({ plan, max_users: maxUsers })
         .eq('company_id', companyId);
 
     if (profileError) throw profileError;
+}
+
+export async function updateCompanyStatus(
+    companyId: string,
+    status: 'active' | 'frozen'
+): Promise<void> {
+    try {
+        const { error: rpcError } = await (supabase as any).rpc('set_company_status', {
+            p_company_id: companyId,
+            p_status: status,
+        });
+        if (!rpcError) return;
+    } catch (e) {
+        console.warn("RPC set_company_status fallback:", e);
+    }
+
+    const { error } = await supabase
+        .from('companies')
+        .update({ status } as any)
+        .eq('id', companyId);
+
+    if (error) throw error;
+}
+
+export async function deleteCompany(companyId: string): Promise<void> {
+    try {
+        const { error: rpcError } = await (supabase as any).rpc('delete_company_cascade', {
+            p_company_id: companyId,
+        });
+        if (!rpcError) return;
+    } catch (e) {
+        console.warn("RPC delete_company_cascade fallback:", e);
+    }
+
+    await supabase.from('user_invitations').delete().eq('company_id', companyId);
+    await supabase.from('obligations').delete().eq('company_id', companyId);
+    await supabase.from('epp_deliveries').delete().eq('company_id', companyId);
+    await supabase.from('epp_items').delete().eq('company_id', companyId);
+    await supabase.from('employees').delete().eq('company_id', companyId);
+
+    const { data: companyProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('company_id', companyId);
+
+    if (companyProfiles && companyProfiles.length > 0) {
+        const profileIds = companyProfiles.map(p => p.id);
+        await supabase.from('user_roles').delete().in('user_id', profileIds);
+        await supabase.from('profiles').delete().eq('company_id', companyId);
+    }
+
+    const { error: deleteCompError } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyId);
+
+    if (deleteCompError) throw deleteCompError;
 }
 
 export type { AppRole };

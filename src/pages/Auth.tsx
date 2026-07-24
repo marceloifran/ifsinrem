@@ -6,13 +6,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail, Lock, ArrowRight, User, Eye, EyeOff, Phone, Shield, CheckCircle2, Clock, Users, Mic, Sparkles, FileSignature, Boxes } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { motion } from "framer-motion";
 
 const Auth = () => {
@@ -126,8 +119,8 @@ const Auth = () => {
           return;
         }
       } else {
-        if (!name || !phone || !companyName) {
-          toast.error("Por favor completa todos los campos");
+        if (!name || !companyName) {
+          toast.error("Por favor completa los campos obligatorios");
           return;
         }
       }
@@ -139,7 +132,7 @@ const Auth = () => {
     }
 
     const phoneRegex = /^[\d\s\-\+\(\)]{8,20}$/;
-    if (viewMode === 'signup' && !isInvitedSignup && !phoneRegex.test(phone)) {
+    if (viewMode === 'signup' && !isInvitedSignup && phone.trim() !== '' && !phoneRegex.test(phone)) {
       toast.error("Por favor ingresa un número de teléfono válido");
       return;
     }
@@ -348,7 +341,7 @@ const Auth = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="phone" className="text-xs font-bold text-slate-400 uppercase">Celular / Teléfono *</Label>
+                      <Label htmlFor="phone" className="text-xs font-bold text-slate-400 uppercase">Celular / Teléfono</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                         <Input
@@ -360,21 +353,6 @@ const Auth = () => {
                           className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
                         />
                       </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="plan" className="text-xs font-bold text-slate-400 uppercase">Escala de Operarios</Label>
-                      <Select value={plan} onValueChange={(val: any) => setPlan(val)}>
-                        <SelectTrigger className="h-11 bg-slate-950/80 border-slate-900 text-white focus:ring-0">
-                          <SelectValue placeholder="Seleccioná un plan" />
-                        </SelectTrigger>
-                        <SelectContent className="z-[9999]">
-                          <SelectItem value="starter">Obra Chica (Hasta 15 operarios)</SelectItem>
-                          <SelectItem value="professional">Constructora (Hasta 60 operarios)</SelectItem>
-                          <SelectItem value="enterprise">Corporativo (Operarios ilimitados)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-[10px] text-emerald-400/80 font-bold mt-1 font-sans">Prueba gratis ilimitada durante los primeros 15 días</p>
                     </div>
                   </>
                 )}

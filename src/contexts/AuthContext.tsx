@@ -20,6 +20,7 @@ interface AuthContextType {
     company_cuit?: string | null;
     logo_url?: string | null;
     role?: string;
+    is_frozen?: boolean;
   } | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string, phone?: string, plan?: 'starter' | 'professional' | 'enterprise', companyName?: string) => Promise<{ data: { user: User | null; session: Session | null } | null; error: Error | null }>;
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     company_cuit?: string | null;
     logo_url?: string | null;
     role?: string;
+    is_frozen?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -101,10 +103,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let companyCuit: string | null = null;
         let logoUrl: string | null = null;
 
+        let isFrozen = false;
+
         if (profileData.company_id) {
           const { data: companyData } = await supabase
             .from('companies')
-            .select('name, cuit, logo_url')
+            .select('*')
             .eq('id', profileData.company_id)
             .maybeSingle();
 
@@ -112,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             companyName = companyData.name;
             companyCuit = companyData.cuit;
             logoUrl = companyData.logo_url;
+            isFrozen = (companyData as any)?.status === 'frozen';
           }
         }
 
@@ -128,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           company_cuit: companyCuit || null,
           logo_url: logoUrl || null,
           role: userRole,
+          is_frozen: isFrozen,
         });
       }
     } catch (error) {
