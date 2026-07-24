@@ -11,11 +11,19 @@ interface HeaderProps {
   userPlan?: string;
 }
 
+import { checkRolePermission } from "@/services/permissionService";
+
 const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: HeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  
+  const { user, profile, isLoading: authLoading } = useAuth();
+  const [permissionsVer, setPermissionsVer] = useState(0);
+
+  // Effective role derived from profile to eliminate microsecond flash
+  const effectiveRole = profile?.role || (isAdmin ? "admin" : "operativo");
+  const companyId = profile?.company_id;
+  const isUserAdminOrOwner = profile?.role === "owner" || profile?.role === "admin" || checkRolePermission(effectiveRole, "manage_users_roles", companyId);
+
   // Theme state synced with documentElement class list and localStorage
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
@@ -25,6 +33,16 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
   });
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handlePermissionsUpdated = () => {
+      setPermissionsVer((v) => v + 1);
+    };
+    window.addEventListener("permissions-updated", handlePermissionsUpdated);
+    return () => {
+      window.removeEventListener("permissions-updated", handlePermissionsUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -53,26 +71,31 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
   };
 
   const navItems = [
-    {
+    ...(checkRolePermission(effectiveRole, "view_dashboard", companyId) ? [{
       path: '/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
-    },
-    {
+    }] : []),
+    ...(checkRolePermission(effectiveRole, "view_operarios", companyId) ? [{
       path: '/operarios',
       label: 'Operarios',
       icon: Users,
-    },
-    {
+    }] : []),
+    ...(checkRolePermission(effectiveRole, "view_inventario", companyId) ? [{
       path: '/inventario',
       label: 'Inventario EPP',
       icon: Boxes,
-    },
-    {
+    }] : []),
+    ...(checkRolePermission(effectiveRole, "view_reportes", companyId) ? [{
       path: '/reportes',
       label: 'Reportes',
       icon: BarChart3,
-    },
+    }] : []),
+    ...(isUserAdminOrOwner ? [{
+      path: '/usuarios',
+      label: 'Usuarios',
+      icon: Shield,
+    }] : []),
   ];
 
   return (

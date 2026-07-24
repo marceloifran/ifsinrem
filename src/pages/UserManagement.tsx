@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import UserTable from "@/components/UserTable";
 import InviteUserDialog from "@/components/InviteUserDialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,34 +15,41 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllUsers, getPendingInvitations, deleteInvitation, UserWithRole, AppRole } from "@/services/userService";
-import { Search, ArrowLeft, Loader2, Users, Shield, Eye, Clock, Mail, X, Crown } from "lucide-react";
+import { Search, ArrowLeft, Loader2, Users, Shield, Eye, Clock, Mail, X, Crown, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+
+import { RolePermissionsManager } from "@/components/RolePermissionsManager";
+import { checkRolePermission } from "@/services/permissionService";
 
 const UserManagement = () => {
     const navigate = useNavigate();
     const { user, profile, isAdmin, isLoading: authLoading, signOut } = useAuth();
     const [users, setUsers] = useState<UserWithRole[]>([]);
     const [pendingInvitations, setPendingInvitations] = useState<{ email: string; created_at: string }[]>([]);
+    const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState<string>("all");
 
+    const userRole = profile?.role || (isAdmin ? "admin" : "operativo");
+    const canAccessUsers = isAdmin || checkRolePermission(userRole, "manage_users_roles", profile?.company_id);
+
     useEffect(() => {
         if (!authLoading && !user) {
             navigate('/auth');
+            return;
         }
-        if (!authLoading && user && !isAdmin) {
+        if (!authLoading && user && !canAccessUsers) {
             toast.error("Solo los administradores pueden acceder a esta página");
             navigate('/dashboard');
         }
-
-    }, [user, authLoading, isAdmin, profile, navigate]);
+    }, [user, authLoading, isAdmin, canAccessUsers, profile, navigate]);
 
     useEffect(() => {
-        if (user && isAdmin) {
+        if (user && canAccessUsers) {
             loadUsers();
         }
-    }, [user, isAdmin]);
+    }, [user, canAccessUsers]);
 
     const loadUsers = async () => {
         try {
@@ -127,8 +135,24 @@ const UserManagement = () => {
                         </div>
                     </div>
 
-                    <InviteUserDialog onUserInvited={loadUsers} />
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsPermissionsOpen(true)}
+                            className="gap-2 border-purple-500/30 text-purple-600 hover:bg-purple-500/10 font-bold"
+                        >
+                            <ShieldCheck className="w-4 h-4 text-purple-500" />
+                            Matriz de Permisos por Rol
+                        </Button>
+                        <InviteUserDialog onUserInvited={loadUsers} />
+                    </div>
                 </div>
+
+                <RolePermissionsManager
+                    companyId={profile?.company_id || ""}
+                    open={isPermissionsOpen}
+                    onOpenChange={setIsPermissionsOpen}
+                />
 
                 {/* Filters */}
                 <div className="card-elevated p-4 mb-6 animate-fade-in">
@@ -157,14 +181,20 @@ const UserManagement = () => {
                                 </SelectItem>
                                 <SelectItem value="admin">
                                     <div className="flex items-center gap-2">
-                                        <Shield className="w-4 h-4" />
+                                        <Shield className="w-4 h-4 text-blue-600" />
                                         Administradores
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="responsable">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldCheck className="w-4 h-4 text-purple-600" />
+                                        Supervisores
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="operativo">
                                     <div className="flex items-center gap-2">
-                                        <Eye className="w-4 h-4" />
-                                        Operativos
+                                        <Eye className="w-4 h-4 text-emerald-600" />
+                                        Operarios
                                     </div>
                                 </SelectItem>
                             </SelectContent>

@@ -84,6 +84,21 @@ export async function addEmployee(
   return data as Employee;
 }
 
+export async function addEmployeesBulk(
+  companyId: string,
+  employees: Omit<Employee, 'id' | 'company_id' | 'created_at' | 'updated_at'>[]
+): Promise<number> {
+  if (!employees.length) return 0;
+  const rowsToInsert = employees.map(emp => ({ ...emp, company_id: companyId }));
+  const { data, error } = await supabase
+    .from('employees' as any)
+    .insert(rowsToInsert)
+    .select('id');
+
+  if (error) throw error;
+  return data?.length || 0;
+}
+
 export async function updateEmployee(
   employeeId: string,
   updates: Partial<Omit<Employee, 'id' | 'company_id' | 'created_at' | 'updated_at'>>
@@ -133,6 +148,21 @@ export async function addEPPItem(
 
   if (error) throw error;
   return data as EPPItem;
+}
+
+export async function addEPPItemsBulk(
+  companyId: string,
+  items: Omit<EPPItem, 'id' | 'company_id' | 'created_at' | 'updated_at'>[]
+): Promise<number> {
+  if (!items.length) return 0;
+  const rowsToInsert = items.map(item => ({ ...item, company_id: companyId }));
+  const { data, error } = await supabase
+    .from('epp_items' as any)
+    .insert(rowsToInsert)
+    .select('id');
+
+  if (error) throw error;
+  return data?.length || 0;
 }
 
 export async function updateEPPItem(

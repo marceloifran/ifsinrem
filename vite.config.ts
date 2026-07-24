@@ -9,6 +9,19 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      "/api/resend": {
+        target: "https://api.resend.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/resend/, "/emails"),
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq) => {
+            const apiKey = process.env.VITE_RESEND_API_KEY || "re_cz9y4uqL_4xYFfjgx3XeV1pRkc6BJQq2V";
+            proxyReq.setHeader("Authorization", `Bearer ${apiKey}`);
+          });
+        },
+      },
+    },
   },
   plugins: [
     react(),

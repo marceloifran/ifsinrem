@@ -19,6 +19,7 @@ interface AuthContextType {
     company_name?: string | null;
     company_cuit?: string | null;
     logo_url?: string | null;
+    role?: string;
   } | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string, phone?: string, plan?: 'starter' | 'professional' | 'enterprise', companyName?: string) => Promise<{ data: { user: User | null; session: Session | null } | null; error: Error | null }>;
@@ -45,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     company_name?: string | null;
     company_cuit?: string | null;
     logo_url?: string | null;
+    role?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -55,24 +57,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Defer fetching additional data
-          setTimeout(() => {
-            fetchUserData(session.user.id);
-          }, 0);
+          // Fetch data synchronously
+          fetchUserData(session.user.id);
         } else {
           setProfile(null);
           setIsAdmin(false);
+          setIsLoading(false);
         }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        fetchUserData(session.user.id);
+        await fetchUserData(session.user.id);
       }
       setIsLoading(false);
     });
@@ -82,12 +83,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      const [profileRes, roleRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle()
+      ]);
+
+      const profileData = profileRes.data;
+      const roleData = roleRes.data;
+
+      const userRole = (roleData?.role as string) || 'owner';
+      const isUserAdmin = userRole === 'admin' || userRole === 'owner';
+
+      setIsAdmin(isUserAdmin);
 
       if (profileData) {
         let companyName: string | null = null;
@@ -120,17 +127,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           company_name: companyName || profileData.name,
           company_cuit: companyCuit || null,
           logo_url: logoUrl || null,
+          role: userRole,
         });
       }
-
-      // Fetch role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      setIsAdmin(roleData?.role === 'admin' || (roleData?.role as string) === 'owner');
     } catch (error) {
       console.error('Error fetching user data:', error);
     }

@@ -18,7 +18,7 @@ import {
 import { updateUserRole, AppRole, roleLabels } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Shield, Eye, Crown } from "lucide-react";
+import { Loader2, Shield, Eye, Crown, ShieldCheck } from "lucide-react";
 
 interface RoleSelectorProps {
     userId: string;
@@ -96,13 +96,19 @@ const RoleSelector = ({ userId, userName, currentRole, onRoleChanged }: RoleSele
                                 )}
                                 <SelectItem value="admin">
                                     <div className="flex items-center gap-2">
-                                        <Shield className="w-4 h-4" />
+                                        <Shield className="w-4 h-4 text-blue-600" />
                                         {roleLabels.admin}
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="responsable">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldCheck className="w-4 h-4 text-purple-600" />
+                                        {roleLabels.responsable}
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="operativo">
                                     <div className="flex items-center gap-2">
-                                        <Eye className="w-4 h-4" />
+                                        <Eye className="w-4 h-4 text-emerald-600" />
                                         {roleLabels.operativo}
                                     </div>
                                 </SelectItem>

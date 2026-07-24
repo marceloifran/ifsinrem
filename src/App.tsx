@@ -14,6 +14,8 @@ import Welcome from "./pages/Welcome";
 import Employees from "./pages/Employees";
 import EPPInventory from "./pages/EPPInventory";
 import VerifyDelivery from "./pages/VerifyDelivery";
+import UserManagement from "./pages/UserManagement";
+import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
 import { useEffect } from "react";
@@ -45,6 +47,8 @@ const App = () => {
                 <Route path="/operarios" element={<Employees />} />
                 <Route path="/inventario" element={<EPPInventory />} />
                 <Route path="/configuracion" element={<UserSettings />} />
+                <Route path="/usuarios" element={<UserManagement />} />
+                <Route path="/superadmin" element={<SuperAdmin />} />
                 <Route path="/reportes" element={<Reports />} />
                 <Route path="/bienvenida" element={<Welcome />} />
                 <Route path="/verificar-constancia/:id" element={<VerifyDelivery />} />

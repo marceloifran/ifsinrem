@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import { checkRolePermission } from "@/services/permissionService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +28,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useEPPItems, eppKeys } from "@/hooks/useEPPData";
 import { useQueryClient } from "@tanstack/react-query";
+import { ExcelImportModal } from "@/components/ExcelImportModal";
 import {
   Search,
   Plus,
@@ -34,6 +36,7 @@ import {
   Trash2,
   Boxes,
   PackageCheck,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +58,7 @@ export default function EPPInventory() {
   const { user, profile, isAdmin, signOut } = useAuth();
   const companyId = profile?.company_id;
 
+  const [isOpenExcelModal, setIsOpenExcelModal] = useState(false);
   const { data: items = [], isLoading: loading } = useEPPItems(companyId);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -204,12 +208,24 @@ export default function EPPInventory() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Catálogo de EPP</h1>
             <p className="text-sm text-slate-400 dark:text-slate-550">Administrá el stock y tipos de Elementos de Protección Personal habilitados.</p>
           </div>
-          <Button
-            onClick={handleOpenAdd}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 px-5 font-semibold text-sm shadow-sm border-0"
-          >
-            <Plus size={16} /> Catalogar EPP
-          </Button>
+          {checkRolePermission(profile?.role || (isAdmin ? "admin" : "operativo"), "manage_inventario", profile?.company_id) && (
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsOpenExcelModal(true)}
+                variant="outline"
+                className="gap-2 rounded-xl h-11 px-4 border-slate-250 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-900"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                Importar Excel
+              </Button>
+              <Button
+                onClick={handleOpenAdd}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 px-5 font-semibold text-sm shadow-sm border-0"
+              >
+                <Plus size={16} /> Catalogar EPP
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Filter and search */}
@@ -589,6 +605,14 @@ export default function EPPInventory() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ExcelImportModal
+        open={isOpenExcelModal}
+        onOpenChange={setIsOpenExcelModal}
+        type="epp"
+        companyId={companyId || ""}
+        onSuccess={loadItems}
+      />
     </div>
   );
 }

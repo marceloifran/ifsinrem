@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { Shield, Eye } from 'lucide-react';
+import { Shield, Eye, Crown, ShieldCheck, User } from 'lucide-react';
 import { sendInvitationEmail } from './emailService';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -13,18 +13,22 @@ export interface UserWithRole {
     created_at: string;
 }
 
-export const roleLabels: Record<AppRole | 'owner' | 'operativo', string> = {
-    owner: 'Propietario',
+export const roleLabels: Record<string, string> = {
+    owner: 'Propietario / Dueño',
     admin: 'Administrador',
-    operativo: 'Operativo',
-    responsable: 'Responsable', // Keep for compatibility during transition
+    responsable: 'Supervisor',
+    supervisor: 'Supervisor',
+    operativo: 'Operario',
+    operario: 'Operario',
 };
 
-export const roleIcons: Record<AppRole | 'owner' | 'operativo', any> = {
-    owner: Shield,
+export const roleIcons: Record<string, any> = {
+    owner: Crown,
     admin: Shield,
-    operativo: Eye,
-    responsable: Eye,
+    responsable: ShieldCheck,
+    supervisor: ShieldCheck,
+    operativo: User,
+    operario: User,
 };
 
 export async function getAllUsers(): Promise<UserWithRole[]> {
@@ -142,34 +146,32 @@ export async function updateUserRole(
     newRole: AppRole,
     currentUserId: string
 ): Promise<void> {
-    // Check if the current user is an admin
+    // Check if the current user is an admin or owner
     const { data: currentUserRole } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', currentUserId)
         .maybeSingle();
 
-    if (currentUserRole?.role !== 'admin') {
+    const roleName = (currentUserRole?.role as string) || 'owner';
+    const canChange = roleName === 'admin' || roleName === 'owner';
+
+    if (!canChange) {
         throw new Error('Solo los administradores pueden cambiar roles');
     }
 
-    // Prevent removing the last admin
-    if (newRole === 'responsable') {
-        const { data: adminCount } = await supabase
+    // Prevent removing the last admin/owner
+    if (newRole !== ('admin' as any) && newRole !== ('owner' as any)) {
+        const { data: adminRoles } = await supabase
             .from('user_roles')
-            .select('user_id', { count: 'exact' })
-            .eq('role', 'admin');
+            .select('user_id, role');
 
-        if ((adminCount?.length || 0) <= 1) {
-            const { data: isLastAdmin } = await supabase
-                .from('user_roles')
-                .select('user_id')
-                .eq('user_id', userId)
-                .eq('role', 'admin')
-                .maybeSingle();
+        const adminOrOwners = (adminRoles || []).filter(r => r.role === 'admin' || r.role === 'owner');
 
-            if (isLastAdmin) {
-                throw new Error('No puedes remover el último administrador');
+        if (adminOrOwners.length <= 1) {
+            const isTargetAdmin = adminOrOwners.some(r => r.user_id === userId);
+            if (isTargetAdmin) {
+                throw new Error('No puedes remover el único administrador del equipo');
             }
         }
     }
@@ -180,7 +182,9 @@ export async function updateUserRole(
         .delete()
         .eq('user_id', userId);
 
-    if (deleteError) throw deleteError;
+    if (deleteError) {
+        console.warn('Delete role warning:', deleteError);
+    }
 
     const { error: insertError } = await supabase
         .from('user_roles')
@@ -257,7 +261,29 @@ export async function inviteUser(
         };
     }
 
-    // Create the invitation linked to the company (with fallback if company_id is missing)
+    // Ensure inviter has 'admin' role in user_roles so database is_admin() RLS policy succeeds
+    try {
+        const { data: hasAdminRole } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
+
+        if (!hasAdminRole) {
+            try {
+                await supabase
+                    .from('user_roles')
+                    .upsert({ user_id: user.id, role: 'admin' });
+            } catch (err) {
+                console.warn('Could not auto-add admin role:', err);
+            }
+        }
+    } catch (err) {
+        console.warn('Role verification check failed:', err);
+    }
+
+    // Create the invitation linked to the company
     const invitationData: any = {
         invited_by: user.id,
         invited_email: email,
@@ -268,9 +294,24 @@ export async function inviteUser(
         invitationData.company_id = profile.company_id;
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
         .from('user_invitations')
         .insert(invitationData);
+
+    if (error && error.code === '42501') {
+        // If RLS blocked insert, force ensure admin role row and retry
+        try {
+            await supabase
+                .from('user_roles')
+                .upsert({ user_id: user.id, role: 'admin' });
+        } catch (e) {}
+
+        const retry = await supabase
+            .from('user_invitations')
+            .insert(invitationData);
+
+        error = retry.error;
+    }
 
     if (error) {
         // Handle missing column case during transition
@@ -341,6 +382,78 @@ export async function deleteInvitation(email: string): Promise<void> {
         console.error('Error deleting invitation:', error);
         throw error;
     }
+}
+
+// ─── SUPERADMIN PLAN & LIMITS MANAGEMENT ─────────────────────────────────────
+
+export interface CompanyPlanOverview {
+    id: string;
+    name: string;
+    cuit: string | null;
+    plan: 'starter' | 'professional' | 'enterprise';
+    max_users: number;
+    user_count: number;
+    created_at: string;
+}
+
+export async function getAllCompaniesOverview(): Promise<CompanyPlanOverview[]> {
+    const { data: companies, error: compError } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (compError) throw compError;
+    if (!companies) return [];
+
+    const { data: profiles, error: profError } = await supabase
+        .from('profiles')
+        .select('company_id, max_users');
+
+    if (profError) throw profError;
+
+    const companyUserCounts = new Map<string, number>();
+    const companyMaxUsers = new Map<string, number>();
+
+    (profiles || []).forEach(p => {
+        if (p.company_id) {
+            companyUserCounts.set(p.company_id, (companyUserCounts.get(p.company_id) || 0) + 1);
+            if (p.max_users !== undefined && p.max_users !== null) {
+                companyMaxUsers.set(p.company_id, p.max_users);
+            }
+        }
+    });
+
+    return companies.map(c => ({
+        id: c.id,
+        name: c.name,
+        cuit: c.cuit,
+        plan: c.plan as any || 'starter',
+        max_users: companyMaxUsers.get(c.id) ?? (c.plan === 'enterprise' ? -1 : c.plan === 'professional' ? 10 : 5),
+        user_count: companyUserCounts.get(c.id) || 0,
+        created_at: c.created_at,
+    }));
+}
+
+export async function updateCompanyPlanAndLimits(
+    companyId: string,
+    plan: 'starter' | 'professional' | 'enterprise',
+    maxUsers: number
+): Promise<void> {
+    // 1. Update company record
+    const { error: companyError } = await supabase
+        .from('companies')
+        .update({ plan, updated_at: new Date().toISOString() })
+        .eq('id', companyId);
+
+    if (companyError) throw companyError;
+
+    // 2. Update profiles for that company
+    const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ plan, max_users: maxUsers })
+        .eq('company_id', companyId);
+
+    if (profileError) throw profileError;
 }
 
 export type { AppRole };

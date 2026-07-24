@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Mail, Lock, Save, ArrowLeft, Users, Building2, Upload, Image as ImageIcon, Trash2, FileText, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, Save, ArrowLeft, Users, Building2, Upload, Image as ImageIcon, Trash2, FileText, Loader2, Shield } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getAllUsers, UserWithRole, roleLabels } from '@/services/userService';
 import { getCompanyDetails, updateCompanyDetails, uploadCompanyLogo, removeCompanyLogo, Company } from '@/services/companyService';
+import InviteUserDialog from '@/components/InviteUserDialog';
+import { checkRolePermission } from '@/services/permissionService';
 
 const SettingsSkeletonLoader = () => (
     <div className="space-y-6 animate-pulse">
@@ -638,12 +640,30 @@ const UserSettings = () => {
                                 </div>
 
                                 <div className="border-t border-border/50 pt-4">
-                                    <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                        <span>Miembros de la Organización</span>
-                                        <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
-                                            {companyUsers.length}
-                                        </span>
-                                    </h3>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                            <span>Miembros de la Organización</span>
+                                            <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
+                                                {companyUsers.length}
+                                            </span>
+                                        </h3>
+                                        {checkRolePermission(profile?.role || (isAdmin ? 'admin' : 'operativo'), 'manage_users_roles', profile?.company_id) && (
+                                            <div className="flex items-center gap-2">
+                                                <InviteUserDialog onUserInvited={() => {
+                                                    getAllUsers().then(setCompanyUsers).catch(console.error);
+                                                }} />
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => navigate('/usuarios')}
+                                                    className="gap-2 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold"
+                                                >
+                                                    <Shield className="w-3.5 h-3.5 text-primary" />
+                                                    Gestionar Usuarios y Roles
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
                                     
                                     {loadingUsers ? (
                                         <div className="py-4 text-center text-xs text-muted-foreground">Cargando miembros...</div>

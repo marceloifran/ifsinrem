@@ -17,10 +17,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { AppRole, roleLabels } from "@/services/userService";
+import { AppRole, roleLabels, inviteUser } from "@/services/userService";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Eye, EyeOff } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Loader2, MailPlus, Send } from "lucide-react";
 
 interface InviteUserDialogProps {
     onUserInvited: () => void;
@@ -30,24 +29,20 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
     const [role, setRole] = useState<AppRole | "operativo">("operativo");
-    const [isCreating, setIsCreating] = useState(false);
+    const [isSending, setIsSending] = useState(false);
 
     const resetForm = () => {
         setEmail("");
         setName("");
-        setPassword("");
         setRole("operativo" as AppRole);
-        setShowPassword(false);
     };
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!email || !name || !password) {
-            toast.error("Por favor completa todos los campos");
+        if (!email) {
+            toast.error("Por favor ingresa el correo electrónico del usuario");
             return;
         }
 
@@ -57,144 +52,119 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
             return;
         }
 
-        if (password.length < 6) {
-            toast.error("La contraseña debe tener al menos 6 caracteres");
-            return;
-        }
-
-        setIsCreating(true);
+        setIsSending(true);
         try {
-            // supabase.functions.invoke includes the auth token automatically
-            const { data, error } = await supabase.functions.invoke("create-user", {
-                body: { email, password, name, role },
-            });
+            const userName = name.trim() || email.split('@')[0];
+            const res = await inviteUser(email.trim().toLowerCase(), userName, role as any);
 
-            if (error) {
-                throw new Error(error.message || "Error al crear el usuario");
+            if (res.success) {
+                toast.success(res.message || `Invitación enviada exitosamente a ${email}`);
+                setIsOpen(false);
+                resetForm();
+                onUserInvited();
+            } else {
+                toast.error(res.message || "Error al procesar la invitación");
             }
-
-            if (!data?.success) {
-                toast.error(data?.error || "Error al crear el usuario");
-                return;
-            }
-
-            toast.success(data.message || `Usuario ${name} creado exitosamente`);
-            setIsOpen(false);
-            resetForm();
-            onUserInvited();
         } catch (error: any) {
-            console.error("Error creating user:", error);
-            toast.error(error.message || "Error al crear el usuario");
+            console.error("Error inviting user:", error);
+            toast.error(error.message || "Error al enviar la invitación");
         } finally {
-            setIsCreating(false);
+            setIsSending(false);
         }
     };
 
     return (
         <>
-            <Button onClick={() => setIsOpen(true)} className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                Crear Usuario
+            <Button onClick={() => setIsOpen(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+                <MailPlus className="w-4 h-4" />
+                Invitar Usuario
             </Button>
 
             <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Crear nuevo usuario</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2">
+                            <MailPlus className="w-5 h-5 text-emerald-600" />
+                            Invitar Usuario al Equipo
+                        </DialogTitle>
                         <DialogDescription>
-                            El usuario podrá iniciar sesión inmediatamente con las credenciales que definas.
+                            Enviá una invitación por correo. El usuario podrá ingresar mediante el enlace y definir su propia clave.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleCreate}>
+                    <form onSubmit={handleInvite}>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="create-name">Nombre completo</Label>
+                                <Label htmlFor="invite-email">Correo Electrónico (Obligatorio)</Label>
                                 <Input
-                                    id="create-name"
-                                    type="text"
-                                    placeholder="Juan Pérez"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="create-email">Email</Label>
-                                <Input
-                                    id="create-email"
+                                    id="invite-email"
                                     type="email"
                                     placeholder="usuario@empresa.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
+                                    autoFocus
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="create-password">Contraseña</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="create-password"
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="Mínimo 6 caracteres"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                        className="pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Compartí esta contraseña con el usuario para que pueda ingresar
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="create-role">Rol</Label>
+                                <Label htmlFor="invite-role">Rol asignado</Label>
                                 <Select
                                     value={role}
                                     onValueChange={(value: string) => setRole(value as AppRole)}
                                 >
-                                    <SelectTrigger id="create-role">
+                                    <SelectTrigger id="invite-role">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="operativo">
-                                            👤 {roleLabels.operativo}
-                                        </SelectItem>
                                         <SelectItem value="admin">
-                                            👑 {roleLabels.admin}
+                                            🛡️ {roleLabels.admin} (Control de la empresa y miembros)
+                                        </SelectItem>
+                                        <SelectItem value="responsable">
+                                            📋 {roleLabels.responsable} (Gestión operativa de personal e inventario)
+                                        </SelectItem>
+                                        <SelectItem value="operativo">
+                                            👤 {roleLabels.operativo} (Consulta y firmas operativas)
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="invite-name">Nombre o Referencia (Opcional)</Label>
+                                <Input
+                                    id="invite-name"
+                                    type="text"
+                                    placeholder="Ej. Juan Pérez"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                                <p className="text-[11px] text-muted-foreground">
+                                    El invitado completará su nombre y contraseña al ingresar al enlace enviado por email.
+                                </p>
+                            </div>
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="gap-2">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => { setIsOpen(false); resetForm(); }}
-                                disabled={isCreating}
+                                disabled={isSending}
                             >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={isCreating}>
-                                {isCreating ? (
+                            <Button type="submit" disabled={isSending} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                                {isSending ? (
                                     <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Creando...
+                                        Enviando invitación...
                                     </>
                                 ) : (
-                                    "Crear Usuario"
+                                    <>
+                                        <Send className="w-4 h-4" />
+                                        Enviar Invitación
+                                    </>
                                 )}
                             </Button>
                         </DialogFooter>

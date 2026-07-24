@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import { checkRolePermission } from "@/services/permissionService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,6 +36,7 @@ import {
 } from "@/services/eppService";
 import { useAuth } from "@/contexts/AuthContext";
 import { SignaturePad } from "@/components/SignaturePad";
+import { ExcelImportModal } from "@/components/ExcelImportModal";
 import {
   Search,
   Plus,
@@ -48,6 +50,7 @@ import {
   FileSignature,
   Eye,
   Check,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +58,8 @@ export default function Employees() {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut } = useAuth();
   const companyId = profile?.company_id;
+
+  const [isOpenExcelModal, setIsOpenExcelModal] = useState(false);
 
   // React Query queries
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees(companyId);
@@ -100,7 +105,6 @@ export default function Employees() {
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState("activo");
   const [jobDescription, setJobDescription] = useState("");
-  const [requiredEpps, setRequiredEpps] = useState("");
 
   useEffect(() => {
     if (!companyId) return;
@@ -175,7 +179,6 @@ export default function Employees() {
     setPhone("");
     setStatus("activo");
     setJobDescription("");
-    setRequiredEpps("");
     setIsOpenAdd(true);
   };
 
@@ -194,7 +197,6 @@ export default function Employees() {
         phone: phone || null,
         status,
         job_description: jobDescription || null,
-        required_epps: requiredEpps || null,
       });
       toast.success("Trabajador registrado con éxito");
       setIsOpenAdd(false);
@@ -213,7 +215,6 @@ export default function Employees() {
     setPhone(emp.phone || "");
     setStatus(emp.status);
     setJobDescription(emp.job_description || "");
-    setRequiredEpps(emp.required_epps || "");
     setIsOpenEdit(true);
   };
 
@@ -233,7 +234,6 @@ export default function Employees() {
         phone: phone || null,
         status,
         job_description: jobDescription || null,
-        required_epps: requiredEpps || null,
       });
       toast.success("Trabajador actualizado");
       setIsOpenEdit(false);
@@ -415,12 +415,24 @@ export default function Employees() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Operarios</h1>
             <p className="text-sm text-slate-400 dark:text-slate-500">Registrá y gestioná el personal para la entrega de EPP.</p>
           </div>
-          <Button
-            onClick={handleOpenAdd}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 px-5 font-semibold text-sm shadow-sm border-0"
-          >
-            <Plus size={16} /> Registrar Operario
-          </Button>
+          {checkRolePermission(profile?.role || (isAdmin ? "admin" : "operativo"), "manage_operarios", profile?.company_id) && (
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsOpenExcelModal(true)}
+                variant="outline"
+                className="gap-2 rounded-xl h-11 px-4 border-slate-250 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-900"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                Importar Excel
+              </Button>
+              <Button
+                onClick={handleOpenAdd}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 px-5 font-semibold text-sm shadow-sm border-0"
+              >
+                <Plus size={16} /> Registrar Operario
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Filter and search */}
@@ -642,12 +654,6 @@ export default function Employees() {
                       {selectedEmployeeForDetail.job_description || "Sin descripción cargada."}
                     </p>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase">EPP Requeridos</span>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                      {selectedEmployeeForDetail.required_epps || "Sin requerimientos cargados."}
-                    </p>
-                  </div>
                 </div>
 
                 {/* Record EPP Quick Form */}
@@ -847,16 +853,6 @@ export default function Employees() {
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-550 dark:text-slate-400 uppercase">EPPs Requeridos / Necesarios</label>
-              <textarea
-                placeholder="Ej. Casco de Seguridad / Gafas Transparentes / Guantes de Vaqueta / Protectores Auditivos..."
-                value={requiredEpps}
-                onChange={(e) => setRequiredEpps(e.target.value)}
-                className="w-full min-h-[70px] p-3 border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 rounded-xl text-slate-900 dark:text-white text-xs shadow-sm resize-none focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
             <DialogFooter className="pt-4 gap-2">
               <Button type="button" variant="outline" onClick={() => setIsOpenAdd(false)} className="rounded-xl border-slate-200 dark:border-slate-800 dark:text-slate-350">
                 Cancelar
@@ -941,16 +937,6 @@ export default function Employees() {
                 placeholder="Ej. Operario de Tareas Generales en Obra: Excavación Manual y Movimiento de Suelos..."
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                className="w-full min-h-[70px] p-3 border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 rounded-xl text-slate-900 dark:text-white text-xs shadow-sm resize-none focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-550 dark:text-slate-400 uppercase">EPPs Requeridos / Necesarios</label>
-              <textarea
-                placeholder="Ej. Casco de Seguridad / Gafas Transparentes / Guantes de Vaqueta / Protectores Auditivos..."
-                value={requiredEpps}
-                onChange={(e) => setRequiredEpps(e.target.value)}
                 className="w-full min-h-[70px] p-3 border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 rounded-xl text-slate-900 dark:text-white text-xs shadow-sm resize-none focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -1063,19 +1049,11 @@ export default function Employees() {
                   </div>
 
                   {/* Row 5: Job Description & Required EPP */}
-                  <div className="grid grid-cols-12">
-                    <div className="col-span-4 p-3 border-r border-black dark:border-slate-700 space-y-1">
-                      <p className="font-bold text-[10px] text-slate-500 uppercase tracking-wide">Breve descripción del puesto:</p>
-                      <p className="text-[10px] leading-relaxed text-slate-700 dark:text-slate-350">
-                        {previewEmployee.job_description || "Operario de Tareas Generales en Obra: Excavación Manual y Movimiento de Suelos..."}
-                      </p>
-                    </div>
-                    <div className="col-span-8 p-3 space-y-1">
-                      <p className="font-bold text-[10px] text-slate-500 uppercase tracking-wide">Elementos de Protección Personal necesarios:</p>
-                      <p className="text-[10px] leading-relaxed text-slate-700 dark:text-slate-355">
-                        {previewEmployee.required_epps || "Casco de Seguridad / Gafas de Seguridad Transparentes / Guantes de Vaqueta / Guantes de Acrilonitrilo / Botines de Seguridad con Puntera..."}
-                      </p>
-                    </div>
+                  <div className="p-3">
+                    <p className="font-bold text-[10px] text-slate-500 uppercase tracking-wide">Breve descripción del puesto:</p>
+                    <p className="text-[10px] leading-relaxed text-slate-700 dark:text-slate-350">
+                      {previewEmployee.job_description || "Operario de Tareas Generales"}
+                    </p>
                   </div>
                 </div>
 
@@ -1147,6 +1125,14 @@ export default function Employees() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ExcelImportModal
+        open={isOpenExcelModal}
+        onOpenChange={setIsOpenExcelModal}
+        type="employees"
+        companyId={companyId || ""}
+        onSuccess={loadData}
+      />
     </div>
   );
 }
