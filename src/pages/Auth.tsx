@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Lock, ArrowRight, User, Eye, EyeOff, Phone, Shield, CheckCircle2, Clock, Users, Mic, Sparkles, FileSignature, Boxes } from "lucide-react";
+import { Mail, Lock, ArrowRight, User, Eye, EyeOff, Phone, Shield, CheckCircle2, Clock, Users, Mic, Sparkles, FileSignature, Boxes, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 
@@ -24,7 +24,9 @@ const Auth = () => {
   const [companyName, setCompanyName] = useState("");
 
   useEffect(() => {
-    if (user) {
+    const params = new URLSearchParams(window.location.search);
+    const hasInvite = params.get('invited_email');
+    if (user && !hasInvite) {
       navigate('/dashboard');
     }
   }, [user, navigate]);
@@ -186,7 +188,8 @@ const Auth = () => {
     }
   };
 
-  if (user) return null;
+  const hasInviteUrlParam = new URLSearchParams(window.location.search).get('invited_email');
+  if (user && !hasInviteUrlParam) return null;
 
   return (
     <div className="min-h-screen bg-[#04060a] text-slate-100 flex relative overflow-hidden">
@@ -304,6 +307,29 @@ const Auth = () => {
               }
             </p>
           </div>
+
+          {user && (isInvitedSignup || hasInviteUrlParam) && (
+            <div className="mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-300 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-amber-400">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>Sesión activa iniciada ({user.email})</span>
+              </div>
+              <p className="text-slate-300 text-[11px] leading-relaxed">
+                Estás intentando registrar la invitación para <strong>{email}</strong>. Para continuar con el nuevo registro, es necesario cerrar la sesión actual.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                onClick={async () => {
+                  await signOut();
+                  toast.success("Sesión cerrada. Podés completar el registro del invitado.");
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold h-8 text-xs rounded-xl w-full"
+              >
+                Cerrar Sesión Actual para Registrar
+              </Button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4 font-sans">
             {viewMode === 'signup' && (
