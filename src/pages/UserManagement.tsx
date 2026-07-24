@@ -135,14 +135,14 @@ const UserManagement = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
                         <Button
                             variant="outline"
                             onClick={() => setIsPermissionsOpen(true)}
-                            className="gap-2 border-purple-500/30 text-purple-600 hover:bg-purple-500/10 font-bold"
+                            className="gap-2 border-purple-500/30 text-purple-600 hover:bg-purple-500/10 font-bold w-full sm:w-auto shrink-0"
                         >
-                            <ShieldCheck className="w-4 h-4 text-purple-500" />
-                            Matriz de Permisos por Rol
+                            <ShieldCheck className="w-4 h-4 text-purple-500 shrink-0" />
+                            <span className="whitespace-nowrap">Matriz de Permisos por Rol</span>
                         </Button>
                         <InviteUserDialog onUserInvited={loadUsers} />
                     </div>

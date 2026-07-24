@@ -34,18 +34,18 @@ const UserTable = ({ users, onRoleChanged }: UserTableProps) => {
                                 <div>
                                     <div className="font-bold text-foreground leading-tight">{user.name}</div>
                                     <span
-                                        className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${(user.role as string) === 'owner'
-                                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                                        className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 whitespace-nowrap ${(user.role as string) === 'owner'
+                                            ? 'bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-500/30'
                                             : user.role === 'admin'
-                                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                                : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                                ? 'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-500/30'
+                                                : 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-500/30'
                                             }`}
                                     >
                                         {(() => {
                                             const Icon = roleIcons[user.role] || User;
-                                            return <Icon className="w-3 h-3" />;
+                                            return <Icon className="w-3 h-3 shrink-0" />;
                                         })()}
-                                        {roleLabels[user.role]}
+                                        <span>{roleLabels[user.role]}</span>
                                     </span>
                                 </div>
                             </div>

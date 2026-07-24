@@ -648,7 +648,7 @@ const UserSettings = () => {
                                             </span>
                                         </h3>
                                         {checkRolePermission(profile?.role || (isAdmin ? 'admin' : 'operativo'), 'manage_users_roles', profile?.company_id) && (
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                                                 <InviteUserDialog onUserInvited={() => {
                                                     getAllUsers().then(setCompanyUsers).catch(console.error);
                                                 }} />
@@ -656,10 +656,10 @@ const UserSettings = () => {
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => navigate('/usuarios')}
-                                                    className="gap-2 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold"
+                                                    className="gap-2 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold w-full sm:w-auto shrink-0"
                                                 >
-                                                    <Shield className="w-3.5 h-3.5 text-primary" />
-                                                    Gestionar Usuarios y Roles
+                                                    <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
+                                                    <span className="whitespace-nowrap">Gestionar Usuarios y Roles</span>
                                                 </Button>
                                             </div>
                                         )}
@@ -676,17 +676,17 @@ const UserSettings = () => {
                                                 return (
                                                     <div 
                                                         key={u.id} 
-                                                        className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20"
+                                                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 gap-2"
                                                     >
                                                         <div className="flex items-center gap-3 min-w-0">
                                                             <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
                                                                 {u.name ? u.name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
                                                             </div>
-                                                            <div className="min-w-0">
+                                                            <div className="min-w-0 flex-1">
                                                                 <div className="flex items-center gap-1.5 font-sans">
                                                                     <p className="text-sm font-bold text-foreground truncate">{u.name || 'Usuario'}</p>
                                                                     {isCurrentUser && (
-                                                                        <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold">
+                                                                        <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold shrink-0">
                                                                             Tú
                                                                         </span>
                                                                     )}
@@ -694,8 +694,8 @@ const UserSettings = () => {
                                                                 <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
                                                             </div>
                                                         </div>
-                                                        <div className="text-right">
-                                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                                                        <div className="text-left sm:text-right shrink-0">
+                                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider inline-block whitespace-nowrap ${
                                                                 u.role === 'admin' || u.role === 'owner'
                                                                     ? 'bg-rose-500/10 text-rose-500 border border-rose-500/10'
                                                                     : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/10'

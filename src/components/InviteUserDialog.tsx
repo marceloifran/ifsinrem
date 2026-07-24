@@ -75,9 +75,9 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
 
     return (
         <>
-            <Button onClick={() => setIsOpen(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-                <MailPlus className="w-4 h-4" />
-                Invitar Usuario
+            <Button onClick={() => setIsOpen(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full sm:w-auto shrink-0">
+                <MailPlus className="w-4 h-4 shrink-0" />
+                <span className="whitespace-nowrap">Invitar Usuario</span>
             </Button>
 
             <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
