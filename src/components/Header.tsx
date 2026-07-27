@@ -22,10 +22,13 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
 
   const isSuperAdminPage = location.pathname === '/superadmin';
 
-  // Effective role derived from profile to eliminate microsecond flash
-  const effectiveRole = profile?.role || (isAdmin ? "admin" : "operativo");
+  // Effective role derived from profile, user metadata, or default to owner/admin while profile is loading
+  const effectiveRole = profile?.role || user?.user_metadata?.role || (isAdmin ? "admin" : "owner");
   const companyId = profile?.company_id;
-  const isUserAdminOrOwner = profile?.role === "owner" || profile?.role === "admin" || checkRolePermission(effectiveRole, "manage_users_roles", companyId);
+  const isUserAdminOrOwner = profile?.role === "owner" || profile?.role === "admin" || (!profile && authLoading) || checkRolePermission(effectiveRole, "manage_users_roles", companyId);
+
+  // User display name: profile name -> user metadata name -> userName prop (if not an email) -> null (shows skeleton)
+  const rawDisplayName = profile?.name || user?.user_metadata?.name || (userName && !userName.includes('@') ? userName : null);
 
   // Theme state synced with documentElement class list and localStorage
   const [theme, setTheme] = useState(() => {
@@ -177,9 +180,13 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary dark:bg-[#0d1220] hover:bg-secondary/80 dark:hover:bg-[#12192c] border border-transparent dark:border-slate-800/35 transition-colors cursor-pointer"
               >
                 <User className="w-4 h-4 text-muted-foreground dark:text-slate-400" />
-                <span className="text-sm font-medium text-secondary-foreground dark:text-slate-350">
-                  {userName}
-                </span>
+                {rawDisplayName ? (
+                  <span className="text-sm font-medium text-secondary-foreground dark:text-slate-350">
+                    {rawDisplayName}
+                  </span>
+                ) : (
+                  <div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800/80 animate-pulse rounded" />
+                )}
               </button>
             )}
 
@@ -257,7 +264,7 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
                 className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground dark:text-slate-400 hover:bg-muted/50 dark:hover:bg-slate-900/60"
               >
                 <User className="w-5 h-5 shrink-0" />
-                <span>Mi Perfil ({userName})</span>
+                <span>Mi Perfil {rawDisplayName ? `(${rawDisplayName})` : ''}</span>
               </button>
             )}
 

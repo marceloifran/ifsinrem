@@ -56,7 +56,7 @@ import { toast } from "sonner";
 
 export default function Employees() {
   const navigate = useNavigate();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const companyId = profile?.company_id;
 
   const [isOpenExcelModal, setIsOpenExcelModal] = useState(false);
@@ -66,7 +66,7 @@ export default function Employees() {
   const { data: eppItems = [], isLoading: loadingItems } = useEPPItems(companyId);
   const { data: allDeliveries = [], isLoading: loadingDeliveries } = useEPPDeliveries(companyId);
 
-  const loading = loadingEmployees || loadingItems || loadingDeliveries;
+  const loading = authLoading || !companyId || loadingEmployees || loadingItems || loadingDeliveries;
   const [searchQuery, setSearchQuery] = useState("");
 
   // Dialog states

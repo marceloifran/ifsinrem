@@ -37,7 +37,7 @@ import { AIAssistantButton } from "@/components/ai/AIAssistantButton";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const companyId = profile?.company_id;
 
   // React Query queries
@@ -45,7 +45,7 @@ export default function Dashboard() {
   const { data: eppItems = [], isLoading: loadingItems } = useEPPItems(companyId);
   const { data: deliveries = [], isLoading: loadingDeliveries } = useEPPDeliveries(companyId);
 
-  const loading = loadingEmployees || loadingItems || loadingDeliveries;
+  const loading = authLoading || !companyId || loadingEmployees || loadingItems || loadingDeliveries;
 
   // Form / Dialog states
   const [showDeliveryDialog, setShowDeliveryDialog] = useState(false);

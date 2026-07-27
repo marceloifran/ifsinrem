@@ -118,14 +118,14 @@ const PIE_LABEL = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any)
 
 const Reports = () => {
   const navigate = useNavigate();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const companyId = profile?.company_id;
 
   const { data: employees = [], isLoading: loadingEmp } = useEmployees(companyId);
   const { data: eppItems = [], isLoading: loadingItems } = useEPPItems(companyId);
   const { data: deliveries = [], isLoading: loadingDel } = useEPPDeliveries(companyId);
   
-  const loading = loadingEmp || loadingItems || loadingDel;
+  const loading = authLoading || !companyId || loadingEmp || loadingItems || loadingDel;
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isExporting, setIsExporting] = useState(false);
 

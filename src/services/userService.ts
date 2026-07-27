@@ -560,4 +560,60 @@ export async function deleteCompany(companyId: string): Promise<void> {
     if (deleteCompError) throw deleteCompError;
 }
 
+export async function createCompany(params: {
+    name: string;
+    cuit?: string;
+    plan: 'starter' | 'professional' | 'enterprise';
+    adminEmail?: string;
+}): Promise<CompanyPlanOverview> {
+    const { name, cuit, plan, adminEmail } = params;
+
+    const { data: newCompany, error: compError } = await supabase
+        .from('companies')
+        .insert({
+            name,
+            cuit: cuit || null,
+            plan,
+        } as any)
+        .select('*')
+        .single();
+
+    if (compError) throw compError;
+    if (!newCompany) throw new Error("No se pudo crear la empresa.");
+
+    let inviteCreated = false;
+    if (adminEmail && adminEmail.trim()) {
+        try {
+            const trimmedEmail = adminEmail.trim().toLowerCase();
+            const { data: userData } = await supabase.auth.getUser();
+            const inviterId = userData?.user?.id;
+
+            await supabase
+                .from('user_invitations')
+                .insert({
+                    invited_email: trimmedEmail,
+                    company_id: newCompany.id,
+                    role: 'admin',
+                    status: 'pending',
+                    invited_by: inviterId || null,
+                } as any);
+
+            inviteCreated = true;
+        } catch (invErr) {
+            console.warn("⚠️ No se pudo enviar invitación automática a la nueva empresa:", invErr);
+        }
+    }
+
+    return {
+        id: newCompany.id,
+        name: newCompany.name,
+        cuit: newCompany.cuit,
+        plan: newCompany.plan || plan,
+        max_users: getPlanMaxUsers(newCompany.plan || plan),
+        user_count: 0,
+        status: (newCompany.status as 'active' | 'frozen') || 'active',
+        created_at: newCompany.created_at,
+    };
+}
+
 export type { AppRole };

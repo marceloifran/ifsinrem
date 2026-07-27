@@ -55,11 +55,12 @@ const CATEGORIES = [
 export default function EPPInventory() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const companyId = profile?.company_id;
 
   const [isOpenExcelModal, setIsOpenExcelModal] = useState(false);
-  const { data: items = [], isLoading: loading } = useEPPItems(companyId);
+  const { data: items = [], isLoading: loadingItems } = useEPPItems(companyId);
+  const loading = authLoading || !companyId || loadingItems;
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 

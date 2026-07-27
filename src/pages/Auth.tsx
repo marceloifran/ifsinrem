@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Lock, ArrowRight, User, Eye, EyeOff, Phone, Shield, CheckCircle2, Clock, Users, Mic, Sparkles, FileSignature, Boxes, ShieldAlert } from "lucide-react";
+import { Mail, Lock, ArrowRight, User, Eye, EyeOff, Phone, Shield, CheckCircle2, Mic, Sparkles, FileSignature, Boxes, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, signOut, user } = useAuth();
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,22 +54,25 @@ const Auth = () => {
       setViewMode('signup');
       setIsInvitedSignup(true);
       setEmail(invitedEmail);
-    } else if (selectedPlan) {
+    } else if (selectedPlan || mode === 'signup') {
+      // Direct self-registration is disabled. Set viewMode to signup to show the restriction notice.
       setIsLogin(false);
       setViewMode('signup');
-      setPlan(selectedPlan);
-    } else if (mode === 'signup') {
-      setIsLogin(false);
-      setViewMode('signup');
+      setIsInvitedSignup(false);
     }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (viewMode === 'signup' && !isInvitedSignup) {
+      toast.error(t('auth.restrictedDesc'));
+      return;
+    }
+
     if (viewMode === 'forgot') {
       if (!email) {
-        toast.error("Por favor ingresa tu correo electrónico");
+        toast.error(t('auth.toastEnterEmail'));
         return;
       }
       setIsLoading(true);
@@ -75,7 +81,7 @@ const Auth = () => {
           redirectTo: `${window.location.origin}/auth?type=recovery`,
         });
         if (error) throw error;
-        toast.success("Correo de recuperación enviado con éxito. Revisá tu bandeja de entrada.");
+        toast.success(t('auth.toastResetSent'));
         setViewMode('login');
         setIsLogin(true);
       } catch (err: any) {
@@ -88,18 +94,18 @@ const Auth = () => {
 
     if (viewMode === 'reset') {
       if (!password) {
-        toast.error("Por favor ingresa tu nueva contraseña");
+        toast.error(t('auth.toastEnterNewPass'));
         return;
       }
       if (password.length < 6) {
-        toast.error("La contraseña debe tener al menos 6 caracteres");
+        toast.error(t('auth.toastPassLength'));
         return;
       }
       setIsLoading(true);
       try {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
-        toast.success("Contraseña actualizada con éxito");
+        toast.success(t('auth.toastPassUpdated'));
         navigate('/dashboard');
       } catch (err: any) {
         toast.error(`Error: ${err.message || err}`);
@@ -110,32 +116,32 @@ const Auth = () => {
     }
 
     if (!email || !password) {
-      toast.error("Por favor completa todos los campos");
+      toast.error(t('auth.toastFillAll'));
       return;
     }
 
     if (viewMode === 'signup') {
       if (isInvitedSignup) {
         if (!name) {
-          toast.error("Por favor completa tu nombre");
+          toast.error(t('auth.toastFillName'));
           return;
         }
       } else {
         if (!name || !companyName) {
-          toast.error("Por favor completa los campos obligatorios");
+          toast.error(t('auth.toastFillRequired'));
           return;
         }
       }
     }
 
     if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+      toast.error(t('auth.toastPassLength'));
       return;
     }
 
     const phoneRegex = /^[\d\s\-\+\(\)]{8,20}$/;
     if (viewMode === 'signup' && !isInvitedSignup && phone.trim() !== '' && !phoneRegex.test(phone)) {
-      toast.error("Por favor ingresa un número de teléfono válido");
+      toast.error(t('auth.toastInvalidPhone'));
       return;
     }
 
@@ -146,38 +152,38 @@ const Auth = () => {
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
-            toast.error("Credenciales incorrectas");
+            toast.error(t('auth.toastInvalidCreds'));
           } else {
             toast.error(error.message);
           }
           return;
         }
-        toast.success("Bienvenido de vuelta");
+        toast.success(t('auth.toastWelcomeBack'));
         navigate('/dashboard');
       } else {
         const { data, error } = await signUp(email, password, name, phone, plan, companyName || undefined);
         if (error) {
           console.error("Signup error returned:", error);
           if (error.message.includes('already registered')) {
-            toast.error("Este email ya está registrado");
+            toast.error(t('auth.toastEmailRegistered'));
           } else if (error.message.includes('rate limit')) {
-            toast.error("Límite de emails alcanzado. Esperá unos minutos o desactivá la confirmación por email en Supabase.");
+            toast.error(t('auth.toastRateLimit'));
           } else {
-            toast.error(`Error de registro: ${error.message}`);
+            toast.error(`${t('auth.toastSignupError')}: ${error.message}`);
           }
           return;
         }
         if (!data?.user || !data.user.identities?.length) {
-          toast.error("No se pudo crear la cuenta. Si ya tenés cuenta, iniciá sesión.");
+          toast.error(t('auth.toastAccountFail'));
           return;
         }
         if (!data.session) {
-          toast.success("Revisá tu correo para confirmar la cuenta y luego iniciá sesión.");
+          toast.success(t('auth.toastConfirmEmail'));
           setViewMode('login');
           setIsLogin(true);
           return;
         }
-        toast.success("Cuenta creada exitosamente");
+        toast.success(t('auth.toastAccountCreated'));
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -194,6 +200,11 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-[#04060a] text-slate-100 flex relative overflow-hidden">
       
+      {/* Top right language selector */}
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSelector />
+      </div>
+
       {/* Cyberpunk Grid Background */}
       <div 
         className="pointer-events-none absolute inset-0 opacity-[0.03]" 
@@ -224,13 +235,13 @@ const Auth = () => {
         <div className="relative z-10 space-y-6 max-w-lg">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/5 px-3.5 py-1 text-xs font-bold text-emerald-400 uppercase tracking-widest">
             <Sparkles size={11} className="text-emerald-400" />
-            Control Absoluto en Obra
+            {t('auth.badge')}
           </div>
           <h1 className="text-5xl font-black text-white leading-[1.1] tracking-tight">
-            Digitalizá el control de seguridad laboral.
+            {t('auth.heroTitle')}
           </h1>
           <p className="text-slate-400 text-lg leading-relaxed font-medium">
-            Entregá equipos de protección personal, firmá planillas oficiales 299/11 digitalmente y blindá tu empresa ante contingencias legales.
+            {t('auth.heroDesc')}
           </p>
         </div>
 
@@ -241,8 +252,8 @@ const Auth = () => {
               <FileSignature className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm">Firma digital manuscrita</h3>
-              <p className="text-slate-400 text-xs mt-0.5">El operario firma directo con el dedo desde el celular en obra</p>
+              <h3 className="font-bold text-white text-sm">{t('auth.feat1Title')}</h3>
+              <p className="text-slate-400 text-xs mt-0.5">{t('auth.feat1Desc')}</p>
             </div>
           </div>
 
@@ -251,8 +262,8 @@ const Auth = () => {
               <Mic className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm">Asistente por voz con IA</h3>
-              <p className="text-slate-400 text-xs mt-0.5">Dictá registros hablando: 'Casco amarillo para Carlos hoy'</p>
+              <h3 className="font-bold text-white text-sm">{t('auth.feat2Title')}</h3>
+              <p className="text-slate-400 text-xs mt-0.5">{t('auth.feat2Desc')}</p>
             </div>
           </div>
 
@@ -261,8 +272,8 @@ const Auth = () => {
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm">Planilla 299/11 automática</h3>
-              <p className="text-slate-400 text-xs mt-0.5">PDF oficial compilado al instante para auditorías y ART</p>
+              <h3 className="font-bold text-white text-sm">{t('auth.feat3Title')}</h3>
+              <p className="text-slate-400 text-xs mt-0.5">{t('auth.feat3Desc')}</p>
             </div>
           </div>
         </div>
@@ -284,26 +295,26 @@ const Auth = () => {
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 font-sans">
               <Shield className="w-3.5 h-3.5" />
-              {viewMode === 'login' || viewMode === 'forgot' || viewMode === 'reset' ? "Acceso Seguro" : "Prueba de 15 días gratis"}
+              {t('auth.secureAccess')}
             </div>
             <h2 className="text-2xl font-black text-white">
               {viewMode === 'login' 
-                ? "¡Hola de nuevo!" 
+                ? t('auth.welcomeBack') 
                 : viewMode === 'signup' 
-                  ? "Registrar Empresa" 
+                  ? (isInvitedSignup ? t('auth.registerCompany') : t('auth.restrictedTitle'))
                   : viewMode === 'forgot'
-                    ? "Recuperar Contraseña"
-                    : "Nueva Contraseña"
+                    ? t('auth.recoverPassword')
+                    : t('auth.newPassword')
               }
             </h2>
             <p className="text-slate-400 text-xs mt-1 leading-relaxed font-sans font-medium">
               {viewMode === 'login'
-                ? "Ingresá tus credenciales corporativas para continuar"
+                ? t('auth.subLogin')
                 : viewMode === 'signup'
-                  ? "Creá tu cuenta de supervisor y digitalizá tu stock"
+                  ? (isInvitedSignup ? t('auth.subSignup') : t('auth.restrictedDesc'))
                   : viewMode === 'forgot'
-                    ? "Te enviaremos un email con el enlace para restablecerla"
-                    : "Ingresá tu nueva clave de acceso"
+                    ? t('auth.subForgot')
+                    : t('auth.subReset')
               }
             </p>
           </div>
@@ -312,150 +323,174 @@ const Auth = () => {
             <div className="mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-300 text-xs space-y-2">
               <div className="flex items-center gap-2 font-bold text-amber-400">
                 <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span>Sesión activa iniciada ({user.email})</span>
+                <span>{t('auth.activeSession')} ({user.email})</span>
               </div>
               <p className="text-slate-300 text-[11px] leading-relaxed">
-                Estás intentando registrar la invitación para <strong>{email}</strong>. Para continuar con el nuevo registro, es necesario cerrar la sesión actual.
+                {t('auth.inviteNotice').replace('{email}', email)}
               </p>
               <Button
                 type="button"
                 size="sm"
                 onClick={async () => {
                   await signOut();
-                  toast.success("Sesión cerrada. Podés completar el registro del invitado.");
+                  toast.success(t('auth.toastLoggedOut'));
                 }}
                 className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold h-8 text-xs rounded-xl w-full"
               >
-                Cerrar Sesión Actual para Registrar
+                {t('auth.logoutToRegister')}
               </Button>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 font-sans">
-            {viewMode === 'signup' && (
-              <>
+          {/* Self-registration restriction banner */}
+          {viewMode === 'signup' && !isInvitedSignup ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-300 text-xs space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-400 text-sm">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span>{t('auth.restrictedTitle')}</span>
+                </div>
+                <p className="text-slate-300 text-xs leading-relaxed">
+                  {t('auth.restrictedDesc')}
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={() => {
+                  setViewMode('login');
+                  setIsLogin(true);
+                }}
+                className="w-full h-11 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl"
+              >
+                {t('auth.backToLogin')}
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 font-sans">
+              {viewMode === 'signup' && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="name" className="text-xs font-bold text-slate-400 uppercase">{t('auth.managerName')}</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder={t('auth.managerNamePlaceholder')}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {!isInvitedSignup && (
+                    <>
+                      <div className="space-y-1">
+                        <Label htmlFor="companyName" className="text-xs font-bold text-slate-400 uppercase">{t('auth.companyName')}</Label>
+                        <div className="relative">
+                          <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                          <Input
+                            id="companyName"
+                            type="text"
+                            placeholder={t('auth.companyNamePlaceholder')}
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="phone" className="text-xs font-bold text-slate-400 uppercase">{t('auth.phone')}</Label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder={t('auth.phonePlaceholder')}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {viewMode !== 'reset' && (
                 <div className="space-y-1">
-                  <Label htmlFor="name" className="text-xs font-bold text-slate-400 uppercase">Nombre del Responsable *</Label>
+                  <Label htmlFor="email" className="text-xs font-bold text-slate-400 uppercase">{t('auth.corporateEmail')}</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <Input
-                      id="name"
-                      type="text"
-                      placeholder="Ej: Ing. Juan Pérez"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      id="email"
+                      type="email"
+                      placeholder={t('auth.corporateEmailPlaceholder')}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                      readOnly={isInvitedSignup}
                     />
                   </div>
                 </div>
+              )}
 
-                {!isInvitedSignup && (
-                  <>
-                    <div className="space-y-1">
-                      <Label htmlFor="companyName" className="text-xs font-bold text-slate-400 uppercase">Nombre de la Empresa *</Label>
-                      <div className="relative">
-                        <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                        <Input
-                          id="companyName"
-                          type="text"
-                          placeholder="Ej: Empresa S.A."
-                          value={companyName}
-                          onChange={(e) => setCompanyName(e.target.value)}
-                          className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="phone" className="text-xs font-bold text-slate-400 uppercase">Celular / Teléfono</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="Ej: +54 9 387 123 4567"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            {viewMode !== 'reset' && (
-              <div className="space-y-1">
-                <Label htmlFor="email" className="text-xs font-bold text-slate-400 uppercase">Email Corporativo *</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="ejemplo@constructora.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 pl-9 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
-                    readOnly={isInvitedSignup}
-                  />
+              {viewMode !== 'forgot' && (
+                <div className="space-y-1">
+                  <Label htmlFor="password" className="text-xs font-bold text-slate-400 uppercase">
+                    {viewMode === 'reset' ? t('auth.passwordResetLabel') : t('auth.password')}
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder={t('auth.passwordPlaceholder')}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-11 pl-9 pr-10 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {viewMode !== 'forgot' && (
-              <div className="space-y-1">
-                <Label htmlFor="password" className="text-xs font-bold text-slate-400 uppercase">
-                  {viewMode === 'reset' ? "Nueva Contraseña *" : "Contraseña *"}
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Mínimo 6 caracteres"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 pl-9 pr-10 bg-slate-950/80 border-slate-900 text-white placeholder-slate-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full h-11 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-2 mt-6 rounded-xl border-0 shadow-lg shadow-emerald-500/15"
-              disabled={isLoading}
-            >
-              {isLoading 
-                ? "Procesando..." 
-                : viewMode === 'login' 
-                  ? "Acceder al Dashboard" 
-                  : viewMode === 'signup' 
-                    ? "Registrar Empresa" 
-                    : viewMode === 'forgot'
-                      ? "Enviar Enlace de Recuperación"
-                      : "Actualizar Contraseña"
-              }
-              {!isLoading && <ArrowRight className="w-4 h-4" />}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                className="w-full h-11 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-2 mt-6 rounded-xl border-0 shadow-lg shadow-emerald-500/15"
+                disabled={isLoading}
+              >
+                {isLoading 
+                  ? t('auth.btnProcessing') 
+                  : viewMode === 'login' 
+                    ? t('auth.btnDashboard') 
+                    : viewMode === 'signup' 
+                      ? t('auth.btnRegister') 
+                      : viewMode === 'forgot'
+                        ? t('auth.btnSendReset')
+                        : t('auth.btnUpdatePassword')
+                }
+                {!isLoading && <ArrowRight className="w-4 h-4" />}
+              </Button>
+            </form>
+          )}
 
           <div className="mt-5 text-center flex flex-col gap-2.5 font-sans">
-            {viewMode !== 'forgot' && viewMode !== 'reset' && (
+            {viewMode === 'signup' && isInvitedSignup && (
               <button
                 type="button"
                 onClick={() => {
-                  const targetMode = viewMode === 'login' ? 'signup' : 'login';
-                  setViewMode(targetMode);
-                  setIsLogin(targetMode === 'login');
+                  setViewMode('login');
+                  setIsLogin(true);
                   setName("");
                   setPhone("");
                   setCompanyName("");
@@ -463,10 +498,7 @@ const Auth = () => {
                 }}
                 className="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
               >
-                {viewMode === 'login'
-                  ? "¿No tenés una cuenta? Registrate gratis"
-                  : "¿Ya tenés una cuenta? Iniciar Sesión"
-                }
+                {t('auth.hasAccount')}
               </button>
             )}
 
@@ -479,7 +511,7 @@ const Auth = () => {
                 }}
                 className="text-xs text-slate-500 hover:text-slate-400 font-semibold transition-colors"
               >
-                ¿Olvidaste tu contraseña?
+                {t('auth.forgotPassword')}
               </button>
             )}
 
@@ -492,14 +524,14 @@ const Auth = () => {
                 }}
                 className="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors animate-fade-in"
               >
-                Volver al Inicio de Sesión
+                {t('auth.backToLogin')}
               </button>
             )}
           </div>
 
-          {!isLogin && !isInvitedSignup && (
+          {viewMode === 'signup' && isInvitedSignup && (
             <p className="mt-5 text-center text-[10px] text-slate-500 leading-relaxed">
-              Al registrarte, confirmás que aceptás nuestros términos de servicio y políticas de seguridad informática de obra.
+              {t('auth.terms')}
             </p>
           )}
         </div>
