@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User, LayoutDashboard, BarChart3, Users, Boxes, Shield, Sun, Moon, Menu, X, Snowflake, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 import { useEffect, useState } from "react";
 import { checkRolePermission } from "@/services/permissionService";
 
@@ -71,31 +73,33 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
     window.dispatchEvent(new CustomEvent("theme-changed", { detail: nextTheme }));
   };
 
+  const { t } = useLanguage();
+
   // If on SuperAdmin portal, hide normal user company navigation
   const navItems = isSuperAdminPage ? [] : [
     ...(checkRolePermission(effectiveRole, "view_dashboard", companyId) ? [{
       path: '/dashboard',
-      label: 'Dashboard',
+      label: t('nav.dashboard'),
       icon: LayoutDashboard,
     }] : []),
     ...(checkRolePermission(effectiveRole, "view_operarios", companyId) ? [{
       path: '/operarios',
-      label: 'Operarios',
+      label: t('nav.employees'),
       icon: Users,
     }] : []),
     ...(checkRolePermission(effectiveRole, "view_inventario", companyId) ? [{
       path: '/inventario',
-      label: 'Inventario EPP',
+      label: t('nav.inventory'),
       icon: Boxes,
     }] : []),
     ...(checkRolePermission(effectiveRole, "view_reportes", companyId) ? [{
       path: '/reportes',
-      label: 'Reportes',
+      label: t('nav.reports'),
       icon: BarChart3,
     }] : []),
     ...(isUserAdminOrOwner ? [{
       path: '/usuarios',
-      label: 'Usuarios',
+      label: t('nav.users'),
       icon: Shield,
     }] : []),
   ];
@@ -112,8 +116,8 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
               navigate(isSuperAdminPage ? '/superadmin' : '/dashboard');
             }}
           >
-            <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
+            <div className="h-9 w-9 rounded-xl overflow-hidden shadow-md border border-emerald-500/30 flex items-center justify-center bg-slate-950/80">
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-cover rounded-xl" />
             </div>
             <span className="text-xl font-bold text-foreground dark:text-white tracking-tight">
               ifsin<span className="text-emerald-500">rem</span>
@@ -154,6 +158,8 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
                 })}
               </nav>
             )}
+
+            <LanguageSelector />
 
             <Button
               variant="ghost"

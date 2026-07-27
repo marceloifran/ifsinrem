@@ -2,10 +2,12 @@ import { Linkedin, Mail, Calendar, Shield, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { openCalendly } from '@/utils/calendly';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Footer = () => {
   const year = new Date().getFullYear();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
   return (
     <footer className="bg-[#04060a] border-t border-slate-900 text-slate-400">
@@ -16,26 +18,26 @@ const Footer = () => {
           {/* brand */}
           <div>
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center overflow-hidden">
-                <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
+              <div className="h-9 w-9 rounded-xl overflow-hidden shadow-md border border-emerald-500/30 flex items-center justify-center bg-slate-950/80">
+                <img src="/logo.png" alt="Logo" className="h-full w-full object-cover rounded-xl" />
               </div>
               <span className="text-base font-bold text-white tracking-tight">ifsin<span className="text-emerald-400">rem</span></span>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed max-w-xs font-medium">
-              Gestión Inteligente de EPP y Documentación Laboral con Inteligencia Artificial. Blindá tu empresa ante reclamos e inspecciones.
+              {t('footer.description')}
             </p>
           </div>
 
           {/* links */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
-              Navegación
+              {language === 'en' ? 'Navigation' : 'Navegación'}
             </h3>
             <ul className="space-y-2.5">
               {[
-                { label: 'Inicio', href: '#' },
-                { label: 'Cómo funciona', href: '#como-funciona' },
-                { label: 'Agendar Demo (Calendly)', href: 'https://calendly.com/ifsinrem', external: true, onClick: openCalendly },
+                { label: t('footer.home'), href: '#' },
+                { label: language === 'en' ? 'How it works' : 'Cómo funciona', href: '#como-funciona' },
+                { label: t('header.scheduleDemo'), href: 'https://calendly.com/ifsinrem', external: true, onClick: openCalendly },
               ].map((l) => (
                 <li key={l.label}>
                   {l.external ? (
@@ -64,7 +66,7 @@ const Footer = () => {
           {/* contact */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
-              Contacto y Soporte
+              {t('footer.contact')}
             </h3>
             <div className="flex gap-3">
               {[
@@ -102,9 +104,9 @@ const Footer = () => {
             >
               ifsinrem
             </a>
-            . Todos los derechos reservados.
+            . {t('footer.copyright')}
           </p>
-          <p className="text-xs text-slate-600 font-medium">Hecho en Salta, Argentina 🇦🇷</p>
+          <p className="text-xs text-slate-600 font-medium">{language === 'en' ? 'Made in Salta, Argentina 🇦🇷' : 'Hecho en Salta, Argentina 🇦🇷'}</p>
         </div>
       </div>
     </footer>

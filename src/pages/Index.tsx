@@ -21,6 +21,8 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import Footer from "@/components/Footer";
 import { openCalendly } from "@/utils/calendly";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 // Amicro Micro-interaction Components
 import { TiltCard } from "@/components/ui/amicro/TiltCard";
@@ -186,6 +188,7 @@ function MockPanel() {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [activeStep, setActiveStep] = useState(0);
 
   // Automatic carousel timer: advances active step every 4 seconds
@@ -199,38 +202,38 @@ const Index = () => {
   const steps = [
     {
       id: 0,
-      title: "1. Carga Inteligente por Voz",
-      subtitle: "Dictado en campo sin tipear",
-      desc: "El supervisor presiona un botón y habla de forma natural. Nuestra IA interpreta nombres, talles y elementos de protección en tiempo real.",
+      title: t('workflow.step1Title'),
+      subtitle: t('workflow.step1Sub'),
+      desc: t('workflow.step1Desc'),
       icon: <Mic className="text-emerald-400" size={20} />,
-      bubbleText: "Casco de seguridad talle M para Carlos Gómez hoy",
+      bubbleText: language === 'en' ? "Yellow safety helmet size M for Carlos Gómez today" : "Casco de seguridad talle M para Carlos Gómez hoy",
       simulationType: "voice"
     },
     {
       id: 1,
-      title: "2. Firma Digital & Audit Trail",
-      subtitle: "IP, Geolocalización GPS y Registro Muestra",
-      desc: "El operario dibuja su firma táctil. El sistema registra la IP de la obra, ubicación GPS y sello de inalterabilidad.",
+      title: t('workflow.step2Title'),
+      subtitle: t('workflow.step2Sub'),
+      desc: t('workflow.step2Desc'),
       icon: <FileSignature className="text-teal-400" size={20} />,
-      bubbleText: "Operario Carlos Gómez firmando...",
+      bubbleText: language === 'en' ? "Worker Carlos Gómez signing..." : "Operario Carlos Gómez firmando...",
       simulationType: "signature"
     },
     {
       id: 2,
-      title: "3. Planilla 299/11 Oficial",
-      subtitle: "Cumplimiento legal automático",
-      desc: "El sistema genera al instante el PDF oficial con el formato exacto exigido por la Superintendencia de Riesgos del Trabajo (SRT).",
+      title: t('workflow.step3Title'),
+      subtitle: t('workflow.step3Sub'),
+      desc: t('workflow.step3Desc'),
       icon: <Boxes className="text-indigo-400" size={20} />,
-      bubbleText: "Descargar Formulario 299/11 SRT Oficial",
+      bubbleText: language === 'en' ? "Download Official SRT Form 299/11" : "Descargar Formulario 299/11 SRT Oficial",
       simulationType: "pdf"
     },
     {
       id: 3,
-      title: "4. Código QR & Verificación Pública",
-      subtitle: "Sello Criptográfico SHA-256 e Inspección ART",
-      desc: "Cada planilla incluye un código QR único. Al escanearlo desde cualquier teléfono, se valida la constancia inalterable en tiempo real ante la SRT/ART.",
+      title: t('workflow.step4Title'),
+      subtitle: t('workflow.step4Sub'),
+      desc: t('workflow.step4Desc'),
       icon: <QrCode className="text-emerald-400" size={20} />,
-      bubbleText: "Verificando Constancia Criptográfica...",
+      bubbleText: language === 'en' ? "Verifying Cryptographic Receipt..." : "Verificando Constancia Criptográfica...",
       simulationType: "qr"
     }
   ];
@@ -484,17 +487,18 @@ const Index = () => {
       >
         <div className="container mx-auto flex items-center justify-between px-4 py-4 sm:px-8">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
+            <div className="h-9 w-9 rounded-xl overflow-hidden shadow-md border border-emerald-500/30 flex items-center justify-center bg-slate-950/80">
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-cover rounded-xl" />
             </div>
             <span className="text-lg font-bold text-white tracking-tight">ifsin<span className="text-emerald-400">rem</span></span>
           </div>
-          <div className="flex items-center gap-4 font-sans font-semibold">
+          <div className="flex items-center gap-3 font-sans font-semibold">
+            <LanguageSelector />
             <button
               onClick={() => navigate("/auth")}
               className="text-sm text-slate-400 hover:text-white transition-colors"
             >
-              Iniciar sesión
+              {t('header.login')}
             </button>
           </div>
         </div>
@@ -511,13 +515,14 @@ const Index = () => {
         <div className="relative mx-auto max-w-4xl z-10">
           <div className="mb-6 inline-block">
             <ShimmerBadge icon={<Sparkles size={14} className="text-emerald-400" />}>
-              Res. SRT 299/11 · Firma Digital en Obra
+              {t('hero.badge')}
             </ShimmerBadge>
           </div>
 
           <div className="mb-5">
             <TextReveal
-              text="Entrega de EPP y"
+              key={`tr-h1-${language}`}
+              text={t('hero.title1')}
               as="h1"
               delay={0.1}
               className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-white justify-center"
@@ -538,10 +543,11 @@ const Index = () => {
               }}
               className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-transparent bg-clip-text inline-block"
             >
-              Planilla 299 SRT
+              {t('hero.titleGradient')}
             </motion.span>{" "}
             <TextReveal
-              text="en 1 Clic."
+              key={`tr-h2-${language}`}
+              text={t('hero.title2')}
               as="span"
               delay={0.3}
               className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-white"
@@ -554,7 +560,7 @@ const Index = () => {
             transition={{ duration: 0.5, delay: 0.35 }}
             className="text-base sm:text-lg text-slate-400 mb-8 max-w-xl mx-auto leading-relaxed font-sans font-medium"
           >
-            Registrá entregas por voz en obra, recolectá la firma táctil del trabajador en tu celular y generá la constancia legal inalterable con código QR.
+            {t('hero.subtitle')}
           </motion.p>
 
           <motion.div
@@ -566,7 +572,7 @@ const Index = () => {
             <MagneticButton onClick={() => navigate("/auth")}>
               <div className="group relative overflow-hidden rounded-2xl bg-emerald-600 px-8 h-14 flex items-center justify-center gap-2 text-base font-bold text-white shadow-xl shadow-emerald-950/30 transition-all hover:bg-emerald-500">
                 <BorderBeam size={100} duration={6} colorFrom="#34d399" colorTo="#10b981" />
-                <span>Comenzar ahora</span>
+                <span>{t('hero.btnStart')}</span>
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </div>
             </MagneticButton>
@@ -579,7 +585,7 @@ const Index = () => {
                 onClick={openCalendly}
                 className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-[#090d16]/80 px-8 h-14 text-base font-bold text-slate-300 hover:border-slate-700 hover:text-white transition-all cursor-pointer font-sans"
               >
-                Agendar Demo en Vivo
+                {t('hero.btnDemo')}
               </a>
             </MagneticButton>
           </motion.div>
@@ -590,7 +596,7 @@ const Index = () => {
             transition={{ delay: 0.6 }}
             className="inline-flex items-center gap-2 rounded-xl bg-[#090d16]/80 border border-slate-900 px-4 py-2.5 text-xs text-slate-300 font-semibold font-sans"
           >
-            <span className="text-emerald-400">⚖️ Validez Jurídica:</span> Conforme a Resolución SRT 299/11 y validez de firmas electrónicas/manuscritas según el Código Civil y Comercial.
+            <span className="text-emerald-400">{t('hero.legalVal')}</span> {t('hero.legalValDesc')}
           </motion.div>
         </div>
       </section>
@@ -600,9 +606,9 @@ const Index = () => {
         <div className="mx-auto max-w-5xl">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             {[
-              { num: "F. 299/11", text: "generación automática en PDF firmada al instante" },
-              { num: "3 clics", text: "desde cualquier celular para registrar una entrega" },
-              { num: "0 papeles", text: "trazabilidad legal completa y blindada ante auditorías" },
+              { num: t('stats.f299'), text: t('stats.f299Desc') },
+              { num: t('stats.clicks'), text: t('stats.clicksDesc') },
+              { num: t('stats.paperless'), text: t('stats.paperlessDesc') },
             ].map((s, idx) => (
               <FadeIn key={s.text} delay={idx * 0.12} y={15} className="py-2">
                 <p className="text-2xl sm:text-3xl font-black text-emerald-400 mb-1">{s.num}</p>
@@ -620,21 +626,21 @@ const Index = () => {
             <FadeIn delay={0}>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-semibold text-emerald-400">
                 <Zap size={12} className="text-emerald-400" />
-                Control Operativo de EPP
+                {t('control.tag')}
               </div>
               <h2 className="text-3xl sm:text-4xl font-black mb-6 leading-tight text-white">
-                Firma manuscrita digital.
+                {t('control.title1')}
                 <br />
-                <span className="text-slate-500">Trazabilidad inmediata.</span>
+                <span className="text-slate-500">{t('control.title2')}</span>
               </h2>
               <p className="text-slate-400 text-base sm:text-lg mb-8 leading-relaxed font-sans">
-                Olvidate de imprimir planillas, buscar al operario para que firme, y archivar biblioratos. El supervisor entrega la protección y el operario firma con el dedo en el celular del supervisor. Todo queda guardado.
+                {t('control.desc')}
               </p>
               <ul className="space-y-4 font-sans">
                 {[
-                  { title: "Alta Express", desc: "Cargá operarios por DNI o CUIL desde el campo en 10 segundos." },
-                  { title: "Historial por Trabajador", desc: "Sabé exactamente qué elementos se le entregaron a cada persona y cuándo vencen." },
-                  { title: "Búsqueda por Voz", desc: "Consultá entregas anteriores diciendo el nombre del trabajador." },
+                  { title: t('control.feat1Title'), desc: t('control.feat1Desc') },
+                  { title: t('control.feat2Title'), desc: t('control.feat2Desc') },
+                  { title: t('control.feat3Title'), desc: t('control.feat3Desc') },
                 ].map((item) => (
                   <li key={item.title} className="flex gap-3">
                     <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
@@ -659,13 +665,13 @@ const Index = () => {
         <div className="mx-auto max-w-5xl">
           <FadeIn className="text-center mb-16">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-bold text-emerald-400 uppercase tracking-widest">
-              Interactúa con el sistema
+              {t('workflow.tag')}
             </div>
             <h2 className="text-3xl sm:text-4xl font-black mb-4 text-white">
-              ¿Cómo funciona ifsinrem?
+              {t('workflow.title')}
             </h2>
             <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto font-sans">
-              Diseñado específicamente para el trabajo de campo. Mirá cómo reemplazamos las planillas de papel en 3 simples pasos interactivos.
+              {t('workflow.subtitle')}
             </p>
           </FadeIn>
 
@@ -749,29 +755,29 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center relative z-10">
                 <div>
                   <div className="mb-6 inline-block">
-                    <ShimmerBadge>RESOLUCIÓN SRT 299/11</ShimmerBadge>
+                    <ShimmerBadge>{t('legal.tag')}</ShimmerBadge>
                   </div>
                   <h2 className="text-3xl sm:text-4xl font-black mb-5 leading-tight text-white">
-                    ¿Es legal el registro<br />digital de EPP?
+                    {t('legal.title')}
                   </h2>
                   <p className="text-slate-400 text-sm sm:text-base mb-8 leading-relaxed font-sans font-medium">
-                    Sí, la Superintendencia de Riesgos del Trabajo (SRT) y el Código Civil y Comercial de la Nación habilitan y validan legalmente el formato digital y la firma electrónica para la entrega de elementos de protección. <strong className="text-emerald-400 font-semibold">ifsinrem</strong> genera la Planilla 299 oficial firmada digitalmente, lista ante inspecciones del Ministerio de Trabajo o demandas de ART.
+                    {t('legal.desc')}
                   </p>
                   <MagneticButton onClick={() => navigate("/auth")}>
                     <Button
                       className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-7 font-bold rounded-xl border-0 shadow-lg shadow-emerald-500/10 font-sans"
                     >
-                      Digitalizar mi gestión <ArrowRight size={16} />
+                      {t('legal.btn')} <ArrowRight size={16} />
                     </Button>
                   </MagneticButton>
                 </div>
 
                 <div className="space-y-3 font-sans">
                   {[
-                    { icon: <Smartphone size={16} className="text-emerald-400" />, text: "App móvil optimizada para zonas con poca señal" },
-                    { icon: <FileSpreadsheet size={16} className="text-teal-400" />, text: "Generación automática del PDF de Planilla 299" },
-                    { icon: <Users size={16} className="text-indigo-400" />, text: "Roles para Empresa, Supervisor y Operario" },
-                    { icon: <Boxes size={16} className="text-amber-400" />, text: "Catálogo de EPP organizado por categorías" },
+                    { icon: <Smartphone size={16} className="text-emerald-400" />, text: language === 'en' ? "Mobile app optimized for offline field use" : "App móvil optimizada para zonas con poca señal" },
+                    { icon: <FileSpreadsheet size={16} className="text-teal-400" />, text: language === 'en' ? "Automatic PDF Form 299 generation" : "Generación automática del PDF de Planilla 299" },
+                    { icon: <Users size={16} className="text-indigo-400" />, text: language === 'en' ? "Company, Supervisor & Worker roles" : "Roles para Empresa, Supervisor y Operario" },
+                    { icon: <Boxes size={16} className="text-amber-400" />, text: language === 'en' ? "Categorized PPE Inventory Catalog" : "Catálogo de EPP organizado por categorías" },
                   ].map((f) => (
                     <div key={f.text} className="flex items-center gap-3 rounded-xl border border-slate-900 bg-[#080b12] px-4 py-3 hover:border-emerald-500/30 transition-colors">
                       <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shadow-sm">
@@ -806,26 +812,26 @@ const Index = () => {
                   <div className="space-y-6">
                     <div>
                       <div className="mb-4 inline-block">
-                        <ShimmerBadge>Demo 1:1 · Sin cargo</ShimmerBadge>
+                        <ShimmerBadge>{t('demo.badge')}</ShimmerBadge>
                       </div>
                       <h2 className="text-3xl sm:text-4xl font-black leading-tight text-white mb-4">
-                        Hablemos de tu empresa.
+                        {t('demo.title1')}
                         <br />
-                        <span className="text-slate-500">Diseñemos tu plan.</span>
+                        <span className="text-slate-500">{t('demo.title2')}</span>
                       </h2>
                       <p className="text-slate-400 text-sm sm:text-base font-medium leading-relaxed font-sans">
-                        Coordinamos una llamada corta de 15 a 20 minutos para revisar tu operativa actual de entrega de EPP y configurar tu entorno de pruebas.
+                        {t('demo.desc')}
                       </p>
                     </div>
 
                     <div className="space-y-3 font-sans">
-                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">¿Qué resolvemos en la reunión?</h3>
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{language === 'en' ? "What do we cover in the meeting?" : "¿Qué resolvemos en la reunión?"}</h3>
                       <ul className="space-y-2.5">
                         {[
-                          "Demostración interactiva en vivo adaptada a tu sector.",
-                          "Consultoría exprés sobre el cumplimiento de la Resol. SRT 299/11.",
-                          "Análisis de viabilidad para integración con tu ERP actual.",
-                          "Habilitación de tu cuenta Sandbox para testeo."
+                          language === 'en' ? "Interactive live demo tailored to your industry." : "Demostración interactiva en vivo adaptada a tu sector.",
+                          language === 'en' ? "Express consulting on SRT Resolution 299/11 compliance." : "Consultoría exprés sobre el cumplimiento de la Resol. SRT 299/11.",
+                          language === 'en' ? "Feasibility analysis for integration with your current ERP." : "Análisis de viabilidad para integración con tu ERP actual.",
+                          language === 'en' ? "Setup of your Sandbox testing environment." : "Habilitación de tu cuenta Sandbox para testeo."
                         ].map((feat) => (
                           <li key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300 font-medium">
                             <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
@@ -838,9 +844,9 @@ const Index = () => {
 
                   <div className="flex flex-col gap-4 md:mt-12">
                     <div className="mb-2 bg-slate-950/80 border border-slate-900 rounded-2xl p-4 w-full text-center">
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Siguiente Paso</p>
-                      <p className="text-sm font-bold text-white mt-1">Calendly Reservado</p>
-                      <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">Disponibilidad esta semana</p>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{language === 'en' ? "Next Step" : "Siguiente Paso"}</p>
+                      <p className="text-sm font-bold text-white mt-1">Calendly</p>
+                      <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">{language === 'en' ? "Slots available this week" : "Disponibilidad esta semana"}</p>
                     </div>
 
                     <MagneticButton>
@@ -853,7 +859,7 @@ const Index = () => {
                       >
                         <span className="flex items-center gap-3">
                           <Calendar size={18} />
-                          Agendar demo en Calendly
+                          {t('demo.btnCalendly')}
                         </span>
                         <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                       </a>

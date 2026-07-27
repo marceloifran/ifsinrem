@@ -214,8 +214,8 @@ const Auth = () => {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="Logo" className="h-7 w-7 object-contain" />
+            <div className="h-10 w-10 rounded-xl overflow-hidden shadow-md border border-emerald-500/30 flex items-center justify-center bg-slate-950/80">
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-cover rounded-xl" />
             </div>
             <span className="text-xl font-bold text-white tracking-tight">ifsin<span className="text-emerald-400">rem</span></span>
           </div>
@@ -275,8 +275,8 @@ const Auth = () => {
           <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="Logo" className="h-5 w-5 object-contain" />
+            <div className="h-8 w-8 rounded-lg overflow-hidden shadow-md border border-emerald-500/30 flex items-center justify-center bg-slate-950/80">
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-cover rounded-lg" />
             </div>
             <span className="text-lg font-bold text-white tracking-tight">ifsin<span className="text-emerald-400">rem</span></span>
           </div>
