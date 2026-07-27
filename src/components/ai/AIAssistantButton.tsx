@@ -541,7 +541,7 @@ export function AIAssistantButton() {
 
     return {
       success: false,
-      response: `🎙️ **Asistente de EPP Activo**\n\nNo logré entender el comando. Podés dictar:\n- *"Entregar casco amarillo a Marcelo Ifran"* \n- *"Registrar operario Carlos Gómez DNI 20-30440550-9 puesto Soldador"* \n- *"Crear EPP Casco de seguridad marca 3M con stock de 50"*`
+      response: `🎙️ **Asistente de EPP Activo**\n\nNo logré entender el comando. Podés dictar:\n- *"Entregar casco amarillo a Martín Pérez"* \n- *"Registrar operario Carlos Gómez DNI 20-30440550-9 puesto Soldador"* \n- *"Crear EPP Casco de seguridad marca 3M con stock de 50"*`
     };
   };
 
@@ -871,7 +871,7 @@ export function AIAssistantButton() {
     setTimeout(() => {
       setIsRecording(false);
       const simulatedPhrases = [
-        "Entregar casco amarillo a Marcelo Ifran hoy",
+        "Entregar casco amarillo a Martín Pérez hoy",
         "Registrar botas de seguridad para Carlos Gómez por favor",
         "Dar de alta al operario Roberto Sánchez DNI 20-33445566-7 Oficial Soldador",
         "Asignar arnés de altura y cabo de vida a Sofía Rodríguez"
@@ -883,7 +883,7 @@ export function AIAssistantButton() {
   };
 
   const quickQuestions = [
-    { label: "🎙️ Dictar: Casco para Marcelo", message: "Registrar entrega de Casco Amarillo para Marcelo Ifran hoy" },
+    { label: "🎙️ Dictar: Casco para Martín", message: "Registrar entrega de Casco Amarillo para Martín Pérez hoy" },
     { label: "👥 Crear operario rápido", message: "Registrar operario Juan Pérez con DNI 20-87654321-9 y puesto Carpintero" },
     { label: "📋 Pendientes", message: "¿Qué operarios tienen firmas pendientes?" },
   ];

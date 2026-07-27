@@ -69,7 +69,7 @@ const Footer = () => {
             <div className="flex gap-3">
               {[
                 { icon: Linkedin, href: 'https://www.linkedin.com/company/ifsint/', label: 'LinkedIn' },
-                { icon: Mail, href: 'mailto:contacto@ifsinrem.com', label: 'Email' },
+                { icon: Mail, href: 'mailto:contacto@ifsinrem.site', label: 'Email' },
                 { icon: Calendar, href: 'https://calendly.com/ifsinrem', label: 'Demo', onClick: openCalendly },
               ].map((s) => (
                 <motion.a
@@ -86,7 +86,7 @@ const Footer = () => {
                 </motion.a>
               ))}
             </div>
-            <p className="mt-4 text-xs text-slate-500 font-medium">soporte@ifsinrem.com</p>
+            <p className="mt-4 text-xs text-slate-500 font-medium">soporte@ifsinrem.site</p>
           </div>
         </div>
 

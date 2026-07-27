@@ -22,6 +22,13 @@ import { useRef, useEffect, useState } from "react";
 import Footer from "@/components/Footer";
 import { openCalendly } from "@/utils/calendly";
 
+// Amicro Micro-interaction Components
+import { TiltCard } from "@/components/ui/amicro/TiltCard";
+import { MagneticButton } from "@/components/ui/amicro/MagneticButton";
+import { TextReveal } from "@/components/ui/amicro/TextReveal";
+import { BorderBeam } from "@/components/ui/amicro/BorderBeam";
+import { ShimmerBadge } from "@/components/ui/amicro/ShimmerBadge";
+
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function FadeIn({
@@ -95,7 +102,7 @@ function FloatingParticles() {
 // ─── mock panel preview ───────────────────────────────────────────────────────
 
 const mockEPPDeliveries = [
-  { worker: "Marcelo Ifran", item: "Casco de seguridad Amarillo + Guantes", status: "Firmado", date: "Hoy", type: "success" },
+  { worker: "Martín Pérez", item: "Casco de seguridad Amarillo + Guantes", status: "Firmado", date: "Hoy", type: "success" },
   { worker: "Carlos Gómez", item: "Calzado de seguridad Dieléctrico", status: "Pendiente Firma", date: "Hoy", type: "warning" },
   { worker: "Sofía Rodríguez", item: "Anteojos de seguridad + Protector Auditivo", status: "Firmado", date: "Ayer", type: "success" },
   { worker: "Néstor Juárez", item: "Arnés de seguridad de 3 puntos", status: "Vencido (Cambio)", date: "Hace 2d", type: "danger" },
@@ -109,68 +116,69 @@ function MockPanel() {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800/80 bg-[#070b14]/90 backdrop-blur-xl shadow-2xl shadow-emerald-500/5 overflow-hidden select-none relative group hover:border-emerald-500/20 transition-all duration-500">
-      {/* Neon glow effect on hover */}
-      <div className="absolute -inset-px bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-      
-      {/* browser chrome */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-[#05070d] border-b border-slate-900">
-        <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-        <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-        <span className="ml-3 text-[10px] text-slate-500 font-mono">app.ifsinrem.com/dashboard</span>
-      </div>
+    <TiltCard tiltMaxAngle={8} spotlightColor="rgba(16, 185, 129, 0.25)">
+      <div className="select-none relative overflow-hidden rounded-2xl">
+        <BorderBeam size={160} duration={9} colorFrom="#10b981" colorTo="#14b8a6" />
 
-      <div className="p-5 relative z-10">
-        {/* stats */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {[
-            { label: "Pendientes Firma", value: "3", cls: "bg-amber-500/10 border border-amber-500/10 text-amber-400" },
-            { label: "Cumplimiento", value: "96.4%", cls: "bg-emerald-500/10 border border-emerald-500/10 text-emerald-400" },
-            { label: "Operarios Activos", value: "48", cls: "bg-slate-900/60 border border-slate-800/40 text-white" },
-          ].map((s) => (
-            <div key={s.label} className={`rounded-xl p-3 text-center ${s.cls}`}>
-              <p className="text-xl sm:text-2xl font-black leading-none">{s.value}</p>
-              <p className="text-[8px] sm:text-[9px] mt-1 opacity-80 font-bold uppercase tracking-wider truncate">{s.label}</p>
-            </div>
-          ))}
+        {/* browser chrome */}
+        <div className="flex items-center gap-2 px-4 py-3 bg-[#05070d] border-b border-slate-900">
+          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+          <span className="ml-3 text-[10px] text-slate-500 font-mono">ifsinrem.site/dashboard</span>
         </div>
 
-        {/* voice trigger preview */}
-        <div className="flex items-center gap-3 bg-emerald-950/20 border border-emerald-500/10 rounded-xl px-3 py-2.5 mb-4">
-          <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
-            <Mic size={12} className="text-emerald-400" />
+        <div className="p-5 relative z-10">
+          {/* stats */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            {[
+              { label: "Pendientes Firma", value: "3", cls: "bg-amber-500/10 border border-amber-500/10 text-amber-400" },
+              { label: "Cumplimiento", value: "96.4%", cls: "bg-emerald-500/10 border border-emerald-500/10 text-emerald-400" },
+              { label: "Operarios Activos", value: "48", cls: "bg-slate-900/60 border border-slate-800/40 text-white" },
+            ].map((s) => (
+              <div key={s.label} className={`rounded-xl p-3 text-center ${s.cls}`}>
+                <p className="text-xl sm:text-2xl font-black leading-none">{s.value}</p>
+                <p className="text-[8px] sm:text-[9px] mt-1 opacity-80 font-bold uppercase tracking-wider truncate">{s.label}</p>
+              </div>
+            ))}
           </div>
-          <p className="text-[11px] text-emerald-300 font-medium">
-            <span className="text-slate-400 font-bold">Voz IA:</span> "Casco amarillo y guantes de vaqueta para Marcelo Ifran hoy."
-          </p>
-        </div>
 
-        {/* deliveries list */}
-        <div className="space-y-2">
-          {mockEPPDeliveries.map((c, i) => (
-            <motion.div
-              key={c.worker}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + i * 0.1 }}
-              className="flex items-center justify-between rounded-xl border border-slate-900 bg-[#0a0f1d]/50 px-3.5 py-2.5 shadow-sm"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-white truncate">{c.worker}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5 truncate">{c.item}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] text-slate-500">{c.date}</span>
-                <span className={`text-[9px] font-bold border rounded-full px-2 py-0.5 ${badgeCls[c.type as keyof typeof badgeCls]}`}>
-                  {c.status}
-                </span>
-              </div>
-            </motion.div>
-          ))}
+          {/* voice trigger preview */}
+          <div className="flex items-center gap-3 bg-emerald-950/20 border border-emerald-500/10 rounded-xl px-3 py-2.5 mb-4">
+            <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+              <Mic size={12} className="text-emerald-400" />
+            </div>
+            <p className="text-[11px] text-emerald-300 font-medium">
+              <span className="text-slate-400 font-bold">Voz IA:</span> "Casco amarillo y guantes de vaqueta para Martín Pérez hoy."
+            </p>
+          </div>
+
+          {/* deliveries list */}
+          <div className="space-y-2">
+            {mockEPPDeliveries.map((c, i) => (
+              <motion.div
+                key={c.worker}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 + i * 0.1 }}
+                className="flex items-center justify-between rounded-xl border border-slate-900 bg-[#0a0f1d]/50 px-3.5 py-2.5 shadow-sm hover:border-emerald-500/30 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-white truncate">{c.worker}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">{c.item}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[9px] text-slate-500">{c.date}</span>
+                  <span className={`text-[9px] font-bold border rounded-full px-2 py-0.5 ${badgeCls[c.type as keyof typeof badgeCls]}`}>
+                    {c.status}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </TiltCard>
   );
 }
 
@@ -501,23 +509,20 @@ const Index = () => {
         </div>
 
         <div className="relative mx-auto max-w-4xl z-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-400 mb-6 uppercase tracking-widest shadow-lg shadow-emerald-950/20"
-          >
-            <Sparkles size={14} className="text-emerald-400 animate-spin" style={{ animationDuration: '3s' }} />
-            Res. SRT 299/11 · Firma Digital en Obra
-          </motion.div>
+          <div className="mb-6 inline-block">
+            <ShimmerBadge icon={<Sparkles size={14} className="text-emerald-400" />}>
+              Res. SRT 299/11 · Firma Digital en Obra
+            </ShimmerBadge>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-5 text-white"
-          >
-            Entrega de EPP y{" "}
+          <div className="mb-5">
+            <TextReveal
+              text="Entrega de EPP y"
+              as="h1"
+              delay={0.1}
+              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-white justify-center"
+            />
+            {" "}
             <motion.span
               animate={{
                 backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
@@ -531,17 +536,22 @@ const Index = () => {
                 backgroundImage: "linear-gradient(90deg, #10b981, #34d399, #06b6d4, #10b981)",
                 backgroundSize: "200% auto",
               }}
-              className="text-transparent bg-clip-text"
+              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-transparent bg-clip-text inline-block"
             >
               Planilla 299 SRT
             </motion.span>{" "}
-            en 1 Clic.
-          </motion.h1>
+            <TextReveal
+              text="en 1 Clic."
+              as="span"
+              delay={0.3}
+              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-white"
+            />
+          </div>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
             className="text-base sm:text-lg text-slate-400 mb-8 max-w-xl mx-auto leading-relaxed font-sans font-medium"
           >
             Registrá entregas por voz en obra, recolectá la firma táctil del trabajador en tu celular y generá la constancia legal inalterable con código QR.
@@ -550,28 +560,28 @@ const Index = () => {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.45 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
           >
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/auth")}
-              className="group w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-8 h-14 text-base font-bold text-white hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-950/20"
-            >
-              Comenzar ahora
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-            <motion.a
-              href="https://calendly.com/ifsinrem"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={openCalendly}
-              whileHover={{ scale: 1.02 }}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-[#090d16]/80 px-8 h-14 text-base font-bold text-slate-300 hover:border-slate-700 hover:text-white transition-all cursor-pointer font-sans"
-            >
-              Agendar Demo en Vivo
-            </motion.a>
+            <MagneticButton onClick={() => navigate("/auth")}>
+              <div className="group relative overflow-hidden rounded-2xl bg-emerald-600 px-8 h-14 flex items-center justify-center gap-2 text-base font-bold text-white shadow-xl shadow-emerald-950/30 transition-all hover:bg-emerald-500">
+                <BorderBeam size={100} duration={6} colorFrom="#34d399" colorTo="#10b981" />
+                <span>Comenzar ahora</span>
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </MagneticButton>
+
+            <MagneticButton>
+              <a
+                href="https://calendly.com/ifsinrem"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={openCalendly}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-[#090d16]/80 px-8 h-14 text-base font-bold text-slate-300 hover:border-slate-700 hover:text-white transition-all cursor-pointer font-sans"
+              >
+                Agendar Demo en Vivo
+              </a>
+            </MagneticButton>
           </motion.div>
 
           <motion.div
@@ -733,47 +743,47 @@ const Index = () => {
       {/* ── LEGAL AUDIT FEATURE */}
       <section className="px-4 py-20 sm:py-28 sm:px-8 relative z-10">
         <div className="mx-auto max-w-5xl">
-          <div className="rounded-3xl border border-slate-900 bg-[#06080e] p-8 sm:p-12 shadow-2xl shadow-emerald-500/5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-3 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-widest mb-6 font-sans">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-                  </span>
-                  RESOLUCIÓN SRT 299/11
-                </div>
-                <h2 className="text-3xl sm:text-4xl font-black mb-5 leading-tight text-white">
-                  ¿Es legal el registro<br />digital de EPP?
-                </h2>
-                <p className="text-slate-400 text-sm sm:text-base mb-8 leading-relaxed font-sans font-medium">
-                  Sí, la Superintendencia de Riesgos del Trabajo (SRT) y el Código Civil y Comercial de la Nación habilitan y validan legalmente el formato digital y la firma electrónica para la entrega de elementos de protección. <strong className="text-emerald-400 font-semibold">ifsinrem</strong> genera la Planilla 299 oficial firmada digitalmente, lista ante inspecciones del Ministerio de Trabajo o demandas de ART.
-                </p>
-                <Button
-                  onClick={() => navigate("/auth")}
-                  className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-7 font-bold rounded-xl border-0 shadow-lg shadow-emerald-500/10 font-sans"
-                >
-                  Digitalizar mi gestión <ArrowRight size={16} />
-                </Button>
-              </div>
-
-              <div className="space-y-3 font-sans">
-                {[
-                  { icon: <Smartphone size={16} className="text-emerald-400" />, text: "App móvil optimizada para zonas con poca señal" },
-                  { icon: <FileSpreadsheet size={16} className="text-teal-400" />, text: "Generación automática del PDF de Planilla 299" },
-                  { icon: <Users size={16} className="text-indigo-400" />, text: "Roles para Empresa, Supervisor y Operario" },
-                  { icon: <Boxes size={16} className="text-amber-400" />, text: "Catálogo de EPP organizado por categorías" },
-                ].map((f) => (
-                  <div key={f.text} className="flex items-center gap-3 rounded-xl border border-slate-900 bg-[#080b12] px-4 py-3">
-                    <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shadow-sm">
-                      {f.icon}
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-300">{f.text}</p>
+          <TiltCard tiltMaxAngle={5} spotlightColor="rgba(16, 185, 129, 0.2)">
+            <div className="relative rounded-3xl border border-slate-900 bg-[#06080e] p-8 sm:p-12 shadow-2xl shadow-emerald-500/5 overflow-hidden">
+              <BorderBeam size={180} duration={10} colorFrom="#10b981" colorTo="#34d399" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center relative z-10">
+                <div>
+                  <div className="mb-6 inline-block">
+                    <ShimmerBadge>RESOLUCIÓN SRT 299/11</ShimmerBadge>
                   </div>
-                ))}
+                  <h2 className="text-3xl sm:text-4xl font-black mb-5 leading-tight text-white">
+                    ¿Es legal el registro<br />digital de EPP?
+                  </h2>
+                  <p className="text-slate-400 text-sm sm:text-base mb-8 leading-relaxed font-sans font-medium">
+                    Sí, la Superintendencia de Riesgos del Trabajo (SRT) y el Código Civil y Comercial de la Nación habilitan y validan legalmente el formato digital y la firma electrónica para la entrega de elementos de protección. <strong className="text-emerald-400 font-semibold">ifsinrem</strong> genera la Planilla 299 oficial firmada digitalmente, lista ante inspecciones del Ministerio de Trabajo o demandas de ART.
+                  </p>
+                  <MagneticButton onClick={() => navigate("/auth")}>
+                    <Button
+                      className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-7 font-bold rounded-xl border-0 shadow-lg shadow-emerald-500/10 font-sans"
+                    >
+                      Digitalizar mi gestión <ArrowRight size={16} />
+                    </Button>
+                  </MagneticButton>
+                </div>
+
+                <div className="space-y-3 font-sans">
+                  {[
+                    { icon: <Smartphone size={16} className="text-emerald-400" />, text: "App móvil optimizada para zonas con poca señal" },
+                    { icon: <FileSpreadsheet size={16} className="text-teal-400" />, text: "Generación automática del PDF de Planilla 299" },
+                    { icon: <Users size={16} className="text-indigo-400" />, text: "Roles para Empresa, Supervisor y Operario" },
+                    { icon: <Boxes size={16} className="text-amber-400" />, text: "Catálogo de EPP organizado por categorías" },
+                  ].map((f) => (
+                    <div key={f.text} className="flex items-center gap-3 rounded-xl border border-slate-900 bg-[#080b12] px-4 py-3 hover:border-emerald-500/30 transition-colors">
+                      <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shadow-sm">
+                        {f.icon}
+                      </div>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-300">{f.text}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </TiltCard>
         </div>
       </section>
 
@@ -785,86 +795,88 @@ const Index = () => {
 
         <div className="relative mx-auto max-w-5xl z-10">
           <FadeIn>
-            <div className="relative rounded-3xl border border-slate-800/80 bg-gradient-to-br from-[#0a0f1a] via-[#0c1220] to-[#080b14] p-8 sm:p-12 overflow-hidden">
-              {/* subtle grid */}
-              <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
-              <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl" />
+            <TiltCard tiltMaxAngle={6} spotlightColor="rgba(16, 185, 129, 0.25)">
+              <div className="relative rounded-3xl border border-slate-800/80 bg-gradient-to-br from-[#0a0f1a] via-[#0c1220] to-[#080b14] p-8 sm:p-12 overflow-hidden">
+                <BorderBeam size={220} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
+                {/* subtle grid */}
+                <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
+                <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl" />
 
-              <div className="relative grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-                <div className="space-y-6">
-                  <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 mb-4">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-300">Demo 1:1 · Sin cargo</span>
+                <div className="relative grid grid-cols-1 md:grid-cols-2 gap-10 items-start z-10">
+                  <div className="space-y-6">
+                    <div>
+                      <div className="mb-4 inline-block">
+                        <ShimmerBadge>Demo 1:1 · Sin cargo</ShimmerBadge>
+                      </div>
+                      <h2 className="text-3xl sm:text-4xl font-black leading-tight text-white mb-4">
+                        Hablemos de tu empresa.
+                        <br />
+                        <span className="text-slate-500">Diseñemos tu plan.</span>
+                      </h2>
+                      <p className="text-slate-400 text-sm sm:text-base font-medium leading-relaxed font-sans">
+                        Coordinamos una llamada corta de 15 a 20 minutos para revisar tu operativa actual de entrega de EPP y configurar tu entorno de pruebas.
+                      </p>
                     </div>
-                    <h2 className="text-3xl sm:text-4xl font-black leading-tight text-white mb-4">
-                      Hablemos de tu empresa.
-                      <br />
-                      <span className="text-slate-500">Diseñemos tu plan.</span>
-                    </h2>
-                    <p className="text-slate-400 text-sm sm:text-base font-medium leading-relaxed font-sans">
-                      Coordinamos una llamada corta de 15 a 20 minutos para revisar tu operativa actual de entrega de EPP y configurar tu entorno de pruebas.
+
+                    <div className="space-y-3 font-sans">
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">¿Qué resolvemos en la reunión?</h3>
+                      <ul className="space-y-2.5">
+                        {[
+                          "Demostración interactiva en vivo adaptada a tu sector.",
+                          "Consultoría exprés sobre el cumplimiento de la Resol. SRT 299/11.",
+                          "Análisis de viabilidad para integración con tu ERP actual.",
+                          "Habilitación de tu cuenta Sandbox para testeo."
+                        ].map((feat) => (
+                          <li key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300 font-medium">
+                            <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-4 md:mt-12">
+                    <div className="mb-2 bg-slate-950/80 border border-slate-900 rounded-2xl p-4 w-full text-center">
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Siguiente Paso</p>
+                      <p className="text-sm font-bold text-white mt-1">Calendly Reservado</p>
+                      <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">Disponibilidad esta semana</p>
+                    </div>
+
+                    <MagneticButton>
+                      <a
+                        href="https://calendly.com/ifsinrem"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={openCalendly}
+                        className="group w-full flex items-center justify-between gap-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-6 h-14 text-base font-bold text-white shadow-xl shadow-emerald-500/20 transition-colors cursor-pointer"
+                      >
+                        <span className="flex items-center gap-3">
+                          <Calendar size={18} />
+                          Agendar demo en Calendly
+                        </span>
+                        <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                      </a>
+                    </MagneticButton>
+
+                    <a
+                      href="mailto:contacto@ifsinrem.site"
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-[#090d16]/60 hover:border-slate-700 hover:text-white px-6 h-14 text-sm font-semibold text-slate-300 transition-all"
+                    >
+                      <span className="flex items-center gap-3">
+                        <Mail size={16} className="text-emerald-400" />
+                        contacto@ifsinrem.site
+                      </span>
+                      <ArrowRight size={16} className="opacity-50" />
+                    </a>
+
+                    <p className="text-[11px] text-slate-500 font-medium px-1 text-center md:text-left">
+                      Sin compromiso · Respuesta en menos de 24h hábiles
                     </p>
                   </div>
-
-                  <div className="space-y-3 font-sans">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">¿Qué resolvemos en la reunión?</h3>
-                    <ul className="space-y-2.5">
-                      {[
-                        "Demostración interactiva en vivo adaptada a tu sector.",
-                        "Consultoría exprés sobre el cumplimiento de la Resol. SRT 299/11.",
-                        "Análisis de viabilidad para integración con tu ERP actual.",
-                        "Habilitación de tu cuenta Sandbox para testeo."
-                      ].map((feat) => (
-                        <li key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300 font-medium">
-                          <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-                          <span>{feat}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-4 md:mt-12">
-                  <div className="mb-2 bg-slate-950/80 border border-slate-900 rounded-2xl p-4 w-full text-center">
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Siguiente Paso</p>
-                    <p className="text-sm font-bold text-white mt-1">Calendly Reservado</p>
-                    <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">Disponibilidad esta semana</p>
-                  </div>
-
-                  <motion.a
-                    href="https://calendly.com/ifsinrem"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={openCalendly}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="group flex items-center justify-between gap-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-6 h-14 text-base font-bold text-white shadow-xl shadow-emerald-500/20 transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-3">
-                      <Calendar size={18} />
-                      Agendar demo en Calendly
-                    </span>
-                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                  </motion.a>
-
-                  <a
-                    href="mailto:contacto@ifsinrem.com"
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-[#090d16]/60 hover:border-slate-700 hover:text-white px-6 h-14 text-sm font-semibold text-slate-300 transition-all"
-                  >
-                    <span className="flex items-center gap-3">
-                      <Mail size={16} className="text-emerald-400" />
-                      contacto@ifsinrem.com
-                    </span>
-                    <ArrowRight size={16} className="opacity-50" />
-                  </a>
-
-                  <p className="text-[11px] text-slate-500 font-medium px-1 text-center md:text-left">
-                    Sin compromiso · Respuesta en menos de 24h hábiles
-                  </p>
                 </div>
               </div>
-            </div>
+            </TiltCard>
           </FadeIn>
         </div>
       </section>
