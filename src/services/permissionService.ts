@@ -183,8 +183,19 @@ export function checkRolePermission(
   if (normalizedRole === "owner" || normalizedRole === "admin") return true; // Owner & Admin always have full access
 
   const matrix = getCompanyPermissions(companyId);
-  const roleConfig = matrix[normalizedRole] || DEFAULT_ROLE_PERMISSIONS[normalizedRole];
+  
+  let roleConfig = matrix[normalizedRole];
+  if (!roleConfig) {
+    if (normalizedRole === "operario" || normalizedRole === "operativo") {
+      roleConfig = matrix["operario"] || matrix["operativo"];
+    } else if (normalizedRole === "supervisor" || normalizedRole === "responsable") {
+      roleConfig = matrix["supervisor"] || matrix["responsable"];
+    }
+  }
+  if (!roleConfig) {
+    roleConfig = DEFAULT_ROLE_PERMISSIONS[normalizedRole];
+  }
 
-  if (!roleConfig) return true;
+  if (!roleConfig) return false;
   return Boolean(roleConfig[permission]);
 }

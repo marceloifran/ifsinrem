@@ -58,6 +58,26 @@ export default function EPPInventory() {
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const companyId = profile?.company_id;
 
+  const [permissionsVer, setPermissionsVer] = useState(0);
+
+  useEffect(() => {
+    const handlePermissionsUpdated = () => {
+      setPermissionsVer((v) => v + 1);
+    };
+    window.addEventListener("permissions-updated", handlePermissionsUpdated);
+    return () => {
+      window.removeEventListener("permissions-updated", handlePermissionsUpdated);
+    };
+  }, []);
+
+  const canManageInventario = useMemo(() => {
+    return checkRolePermission(
+      profile?.role || (isAdmin ? "admin" : "operativo"),
+      "manage_inventario",
+      profile?.company_id
+    );
+  }, [profile?.role, isAdmin, profile?.company_id, permissionsVer]);
+
   const [isOpenExcelModal, setIsOpenExcelModal] = useState(false);
   const { data: items = [], isLoading: loadingItems } = useEPPItems(companyId);
   const loading = authLoading || !companyId || loadingItems;
@@ -90,6 +110,10 @@ export default function EPPInventory() {
   };
 
   const handleOpenAdd = () => {
+    if (!canManageInventario) {
+      toast.error("No tenés permisos para catalogar EPP");
+      return;
+    }
     setName("");
     setDescription("");
     setCategory("cabeza");
@@ -104,6 +128,10 @@ export default function EPPInventory() {
 
   const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageInventario) {
+      toast.error("No tenés permisos para catalogar EPP");
+      return;
+    }
     if (!name) {
       toast.warning("El nombre del EPP es obligatorio");
       return;
@@ -129,6 +157,10 @@ export default function EPPInventory() {
   };
 
   const handleOpenEdit = (item: EPPItem) => {
+    if (!canManageInventario) {
+      toast.error("No tenés permisos para modificar EPP");
+      return;
+    }
     setActiveItem(item);
     setName(item.name);
     setDescription(item.description || "");
@@ -144,6 +176,10 @@ export default function EPPInventory() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageInventario) {
+      toast.error("No tenés permisos para modificar EPP");
+      return;
+    }
     if (!activeItem) return;
     if (!name) {
       toast.warning("El nombre del EPP es obligatorio");
@@ -170,6 +206,10 @@ export default function EPPInventory() {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    if (!canManageInventario) {
+      toast.error("No tenés permisos para eliminar EPP");
+      return;
+    }
     const confirm = window.confirm(`¿Está seguro que desea eliminar ${name} del catálogo?`);
     if (!confirm) return;
     try {
@@ -209,7 +249,7 @@ export default function EPPInventory() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Catálogo de EPP</h1>
             <p className="text-sm text-slate-400 dark:text-slate-550">Administrá el stock y tipos de Elementos de Protección Personal habilitados.</p>
           </div>
-          {checkRolePermission(profile?.role || (isAdmin ? "admin" : "operativo"), "manage_inventario", profile?.company_id) && (
+          {canManageInventario && (
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setIsOpenExcelModal(true)}
@@ -265,9 +305,11 @@ export default function EPPInventory() {
               <Boxes size={40} className="text-slate-300 dark:text-slate-800 mb-3" />
               <p className="font-semibold text-slate-650 dark:text-slate-400 text-base mb-1">No se encontraron elementos de protección</p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Cargá artículos a tu inventario para poder asignarlos.</p>
-              <Button onClick={handleOpenAdd} variant="outline" className="rounded-xl border-slate-250 dark:border-slate-800 dark:text-slate-300">
-                Catalogar primer EPP
-              </Button>
+              {canManageInventario && (
+                <Button onClick={handleOpenAdd} variant="outline" className="rounded-xl border-slate-250 dark:border-slate-800 dark:text-slate-300">
+                  Catalogar primer EPP
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -320,26 +362,30 @@ export default function EPPInventory() {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleOpenEdit(item)}
-                                title="Editar"
-                                className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-                              >
-                                <Edit2 size={13} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(item.id, item.name)}
-                                title="Eliminar"
-                                className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
-                              >
-                                <Trash2 size={13} />
-                              </Button>
-                            </div>
+                            {canManageInventario ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenEdit(item)}
+                                  title="Editar"
+                                  className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                                >
+                                  <Edit2 size={13} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(item.id, item.name)}
+                                  title="Eliminar"
+                                  className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
+                                >
+                                  <Trash2 size={13} />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 font-medium">Solo lectura</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -381,27 +427,29 @@ export default function EPPInventory() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-900/60">
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold">Acciones</span>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleOpenEdit(item)}
-                            className="h-8 text-xs gap-1 rounded-lg text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900"
-                          >
-                            <Edit2 size={12} /> Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(item.id, item.name)}
-                            className="h-8 text-xs gap-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                          >
-                            <Trash2 size={12} /> Eliminar
-                          </Button>
+                      {canManageInventario && (
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-900/60">
+                          <span className="text-[10px] text-slate-400 uppercase font-semibold">Acciones</span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenEdit(item)}
+                              className="h-8 text-xs gap-1 rounded-lg text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900"
+                            >
+                              <Edit2 size={12} /> Editar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(item.id, item.name)}
+                              className="h-8 text-xs gap-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            >
+                              <Trash2 size={12} /> Eliminar
+                            </Button>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}

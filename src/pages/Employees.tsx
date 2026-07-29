@@ -59,6 +59,26 @@ export default function Employees() {
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
   const companyId = profile?.company_id;
 
+  const [permissionsVer, setPermissionsVer] = useState(0);
+
+  useEffect(() => {
+    const handlePermissionsUpdated = () => {
+      setPermissionsVer((v) => v + 1);
+    };
+    window.addEventListener("permissions-updated", handlePermissionsUpdated);
+    return () => {
+      window.removeEventListener("permissions-updated", handlePermissionsUpdated);
+    };
+  }, []);
+
+  const canManageOperarios = useMemo(() => {
+    return checkRolePermission(
+      profile?.role || (isAdmin ? "admin" : "operativo"),
+      "manage_operarios",
+      profile?.company_id
+    );
+  }, [profile?.role, isAdmin, profile?.company_id, permissionsVer]);
+
   const [isOpenExcelModal, setIsOpenExcelModal] = useState(false);
 
   // React Query queries
@@ -172,6 +192,10 @@ export default function Employees() {
   };
 
   const handleOpenAdd = () => {
+    if (!canManageOperarios) {
+      toast.error("No tenés permisos para registrar trabajadores");
+      return;
+    }
     setName("");
     setDniCuil("");
     setFileNumber("");
@@ -184,6 +208,10 @@ export default function Employees() {
 
   const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageOperarios) {
+      toast.error("No tenés permisos para registrar trabajadores");
+      return;
+    }
     if (!name || !dniCuil) {
       toast.warning("Nombre y DNI/CUIL son obligatorios");
       return;
@@ -207,6 +235,10 @@ export default function Employees() {
   };
 
   const handleOpenEdit = (emp: Employee) => {
+    if (!canManageOperarios) {
+      toast.error("No tenés permisos para modificar trabajadores");
+      return;
+    }
     setActiveEmployee(emp);
     setName(emp.name);
     setDniCuil(emp.dni_cuil);
@@ -220,6 +252,10 @@ export default function Employees() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageOperarios) {
+      toast.error("No tenés permisos para modificar trabajadores");
+      return;
+    }
     if (!activeEmployee) return;
     if (!name || !dniCuil) {
       toast.warning("Nombre y DNI/CUIL son obligatorios");
@@ -252,6 +288,10 @@ export default function Employees() {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    if (!canManageOperarios) {
+      toast.error("No tenés permisos para dar de baja trabajadores");
+      return;
+    }
     const confirm = window.confirm(`¿Está seguro que desea dar de baja al operario ${name}?`);
     if (!confirm) return;
 
@@ -415,7 +455,7 @@ export default function Employees() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Operarios</h1>
             <p className="text-sm text-slate-400 dark:text-slate-500">Registrá y gestioná el personal para la entrega de EPP.</p>
           </div>
-          {checkRolePermission(profile?.role || (isAdmin ? "admin" : "operativo"), "manage_operarios", profile?.company_id) && (
+          {canManageOperarios && (
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setIsOpenExcelModal(true)}
@@ -455,9 +495,11 @@ export default function Employees() {
               <UserPlus size={40} className="text-slate-300 dark:text-slate-800 mb-3" />
               <p className="font-semibold text-slate-600 dark:text-slate-400 text-base mb-1">No se encontraron operarios</p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Cargá a los trabajadores para poder registrar sus entregas.</p>
-              <Button onClick={handleOpenAdd} variant="outline" className="rounded-xl border-slate-250 dark:border-slate-800 dark:text-slate-300">
-                Registrar primer operario
-              </Button>
+              {canManageOperarios && (
+                <Button onClick={handleOpenAdd} variant="outline" className="rounded-xl border-slate-250 dark:border-slate-800 dark:text-slate-300">
+                  Registrar primer operario
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -519,24 +561,28 @@ export default function Employees() {
                             >
                               <FileDown size={14} />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenEdit(emp)}
-                              title="Editar"
-                              className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-                            >
-                              <Edit2 size={13} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(emp.id, emp.name)}
-                              title="Dar de baja"
-                              className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
-                            >
-                              <Trash2 size={13} />
-                            </Button>
+                            {canManageOperarios && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenEdit(emp)}
+                                  title="Editar"
+                                  className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                                >
+                                  <Edit2 size={13} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(emp.id, emp.name)}
+                                  title="Dar de baja"
+                                  className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
+                                >
+                                  <Trash2 size={13} />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -591,22 +637,26 @@ export default function Employees() {
                         >
                           <FileDown size={12} /> F299
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenEdit(emp)}
-                          className="h-8 text-xs gap-1 rounded-lg text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900"
-                        >
-                          <Edit2 size={12} /> Editar
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(emp.id, emp.name)}
-                          className="h-8 text-xs gap-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                        >
-                          <Trash2 size={12} />
-                        </Button>
+                        {canManageOperarios && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenEdit(emp)}
+                              className="h-8 text-xs gap-1 rounded-lg text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900"
+                            >
+                              <Edit2 size={12} /> Editar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(emp.id, emp.name)}
+                              className="h-8 text-xs gap-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            >
+                              <Trash2 size={12} />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
