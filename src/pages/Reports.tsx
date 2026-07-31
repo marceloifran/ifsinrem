@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useEmployees, useEPPItems, useEPPDeliveries } from "@/hooks/useEPPData";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -119,6 +120,7 @@ const PIE_LABEL = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any)
 const Reports = () => {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const companyId = profile?.company_id;
 
   const { data: employees = [], isLoading: loadingEmp } = useEmployees(companyId);
@@ -168,16 +170,25 @@ const Reports = () => {
 
   // Status distribution (Pie chart data)
   const statusData = useMemo(() => [
-    { name: "Firmados", value: metrics.signed, color: CLR.success },
-    { name: "Pendientes Firma", value: metrics.pending, color: CLR.warning },
-  ].filter(d => d.value > 0), [metrics]);
+    { name: language === 'en' ? "Signed" : "Firmados", value: metrics.signed, color: CLR.success },
+    { name: language === 'en' ? "Pending Signature" : "Pendientes Firma", value: metrics.pending, color: CLR.warning },
+  ].filter(d => d.value > 0), [metrics, language]);
 
   // EPP Category distribution (Bar chart data)
   const categoryData = useMemo(() => {
     const cats: Record<string, number> = {};
     for (const d of filteredDeliveries) {
       const cat = d.epp_item?.category || "otros";
-      const label = {
+      const label = language === 'en' ? {
+        cabeza: "🪖 Head",
+        manos: "🧤 Hands",
+        pies: "🥾 Feet",
+        cuerpo: "🛡️ Body",
+        visual: "🥽 Eye",
+        auditiva: "🎧 Hearing",
+        respiratoria: "😷 Respiratory",
+        otros: "📦 Other"
+      }[cat] || cat : {
         cabeza: "🪖 Cabeza",
         manos: "🧤 Manos",
         pies: "🥾 Pies",
@@ -189,23 +200,27 @@ const Reports = () => {
       }[cat] || cat;
       cats[label] = (cats[label] || 0) + d.quantity;
     }
+    const qtyKey = language === 'en' ? "Quantity" : "Cantidad";
     return Object.entries(cats).map(([name, value]) => ({
       name,
+      [qtyKey]: value,
       Cantidad: value
     }));
-  }, [filteredDeliveries]);
+  }, [filteredDeliveries, language]);
 
   // Monthly trend (Line chart data)
   const trendData = useMemo(() => {
-    const monthlyCounts: Record<string, { month: string; Firmados: number; Pendientes: number }> = {};
+    const signedKey = language === 'en' ? "Signed" : "Firmados";
+    const pendingKey = language === 'en' ? "Pending" : "Pendientes";
+    const monthlyCounts: Record<string, { month: string; [key: string]: any }> = {};
     
     // Generate last 6 months keys
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = d.toLocaleDateString("es-AR", { month: "short" });
-      monthlyCounts[monthKey] = { month: label, Firmados: 0, Pendientes: 0 };
+      const label = d.toLocaleDateString(language === 'en' ? "en-US" : "es-AR", { month: "short" });
+      monthlyCounts[monthKey] = { month: label, [signedKey]: 0, [pendingKey]: 0 };
     }
 
     for (const d of filteredDeliveries) {
@@ -214,20 +229,21 @@ const Reports = () => {
       const key = dateStr.substring(0, 7); // YYYY-MM
       if (monthlyCounts[key]) {
         if (d.status === "firmado") {
-          monthlyCounts[key].Firmados += d.quantity;
+          monthlyCounts[key][signedKey] += d.quantity;
         } else {
-          monthlyCounts[key].Pendientes += d.quantity;
+          monthlyCounts[key][pendingKey] += d.quantity;
         }
       }
     }
 
     return Object.values(monthlyCounts);
-  }, [filteredDeliveries]);
+  }, [filteredDeliveries, language]);
 
   const handleExport = async () => {
     try {
       setIsExporting(true);
       const doc = new jsPDF();
+      const isEn = language === 'en';
       
       // Header Box
       doc.setDrawColor(0, 0, 0);
@@ -235,19 +251,19 @@ const Reports = () => {
       doc.rect(10, 15, 190, 30);
       
       doc.setFont("Helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text("AUDITORÍA DE CONTROL DE EPP Y SEGURIDAD LABORAL", 15, 25);
+      doc.setFontSize(11);
+      doc.text(isEn ? "PPE & WORK SAFETY CONTROL AUDIT REPORT" : "AUDITORÍA DE CONTROL DE EPP Y SEGURIDAD LABORAL", 15, 25);
       doc.setFontSize(9);
       doc.setFont("Helvetica", "normal");
-      doc.text(`Empresa: ${profile?.company_name || "Mi Empresa ifsinrem"}`, 15, 33);
-      doc.text(`Fecha de Generación: ${new Date().toLocaleDateString("es-AR")}`, 15, 38);
-      doc.text(`Tasa de Cumplimiento de Firmas: ${metrics.complianceRate}%`, 130, 33);
-      doc.text(`Total EPP Entregados: ${metrics.total} u.`, 130, 38);
+      doc.text(`${isEn ? "Company" : "Empresa"}: ${profile?.company_name || "Mi Empresa ifsinrem"}`, 15, 33);
+      doc.text(`${isEn ? "Generation Date" : "Fecha de Generación"}: ${new Date().toLocaleDateString(isEn ? "en-US" : "es-AR")}`, 15, 38);
+      doc.text(`${isEn ? "Signature Rate" : "Tasa de Cumplimiento"}: ${metrics.complianceRate}%`, 130, 33);
+      doc.text(`${isEn ? "Total PPE Delivered" : "Total EPP Entregados"}: ${metrics.total} u.`, 130, 38);
 
       // Employees Compliance Table
       doc.setFontSize(10);
       doc.setFont("Helvetica", "bold");
-      doc.text("Resumen de Firmas por Operario:", 10, 52);
+      doc.text(isEn ? "Worker Signature Summary:" : "Resumen de Firmas por Operario:", 10, 52);
 
       const tableRows = employees.map(emp => {
         const empDels = deliveries.filter(d => d.employee_id === emp.id);
@@ -255,12 +271,14 @@ const Reports = () => {
         const signedEmp = empDels.filter(d => d.status === "firmado").reduce((sum, d) => sum + d.quantity, 0);
         const pendingEmp = totalEmp - signedEmp;
         const rate = totalEmp > 0 ? `${Math.round((signedEmp / totalEmp) * 100)}%` : "N/A";
-        return [emp.name, emp.dni_cuil, emp.job_title || "General", totalEmp.toString(), signedEmp.toString(), pendingEmp.toString(), rate];
+        return [emp.name, emp.dni_cuil, emp.job_title || (isEn ? "General" : "General"), totalEmp.toString(), signedEmp.toString(), pendingEmp.toString(), rate];
       });
 
       autoTable(doc, {
         startY: 55,
-        head: [['Operario', 'DNI / CUIL', 'Puesto', 'Entregados', 'Firmados', 'Pendientes', 'Cumplimiento']],
+        head: isEn 
+          ? [['Worker', 'ID / CUIL', 'Job Title', 'Delivered', 'Signed', 'Pending', 'Compliance Rate']]
+          : [['Operario', 'DNI / CUIL', 'Puesto', 'Entregados', 'Firmados', 'Pendientes', 'Cumplimiento']],
         body: tableRows,
         theme: 'striped',
         styles: { fontSize: 8, cellPadding: 2.5 },
@@ -270,50 +288,49 @@ const Reports = () => {
       // Stock alerts table
       const finalY = (doc as any).lastAutoTable.finalY + 12;
       doc.setFont("Helvetica", "bold");
-      doc.text("Estado Crítico de Stock en Depósito:", 10, finalY);
+      doc.text(isEn ? "Warehouse Critical Stock Status:" : "Estado Crítico de Stock en Depósito:", 10, finalY);
 
       const stockRows = eppItems.map(item => {
-        const isCritical = item.stock <= 5 ? "SÍ (CRÍTICO)" : "NO (SUFICIENTE)";
-        return [item.name, item.brand || "-", item.type_model || "-", item.certified === "Si" ? "SÍ" : "NO", `${item.stock} u.`, isCritical];
+        const isCritical = item.stock <= 5 
+          ? (isEn ? "YES (CRITICAL)" : "SÍ (CRÍTICO)") 
+          : (isEn ? "NO (SUFFICIENT)" : "NO (SUFFICIENT)");
+        return [item.name, item.brand || "-", item.type_model || "-", item.certified === "Si" ? (isEn ? "YES" : "SÍ") : "NO", `${item.stock} u.`, isCritical];
       });
 
       autoTable(doc, {
         startY: finalY + 3,
-        head: [['Elemento', 'Marca', 'Modelo', 'Certificado', 'Stock Actual', 'Alerta']],
+        head: isEn
+          ? [['Item Name', 'Brand', 'Model', 'Certified', 'Current Stock', 'Stock Alert']]
+          : [['Elemento', 'Marca', 'Modelo', 'Certificado', 'Stock Actual', 'Alerta']],
         body: stockRows,
         theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2.5 },
-        headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] }
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255] }
       });
 
-      doc.save(`Reporte_Cumplimiento_EPP_${new Date().toISOString().split("T")[0]}.pdf`);
-      toast.success("Reporte consolidado descargado con éxito");
-    } catch (e: any) {
-      toast.error("Error al exportar reporte: " + e.message);
+      const reportFileName = isEn ? `ppe_audit_report_${new Date().toISOString().split("T")[0]}.pdf` : `auditoria_epp_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(reportFileName);
+      toast.success(isEn ? "Consolidated audit report downloaded successfully" : "Reporte consolidado descargado con éxito");
+    } catch (err: any) {
+      toast.error(language === 'en' ? "Error generating PDF report" : "Error al generar reporte PDF");
     } finally {
       setIsExporting(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
   };
 
   if (loading) return <DashboardSkeleton />;
   if (!user) { navigate("/auth"); return null; }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#04060a] text-slate-800 dark:text-slate-200 transition-colors duration-250">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-[#070b14] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <Header
-        userName={profile?.name || user.email || "Usuario"}
-        onLogout={handleLogout}
+        userName={profile?.name || user?.email || "Usuario"}
+        onLogout={signOut}
         isAdmin={isAdmin}
         userPlan={profile?.plan}
       />
 
-      <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 md:px-8 space-y-6">
-
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -321,24 +338,24 @@ const Reports = () => {
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 dark:border-slate-900 pb-5"
         >
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Reportes y Auditoría EPP</h1>
-            <p className="text-xs text-slate-450 dark:text-slate-500 mt-0.5">Visión consolidada del cumplimiento de firmas y stock de seguridad.</p>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("reports.title")}</h1>
+            <p className="text-xs text-slate-455 dark:text-slate-500 mt-0.5">{t("reports.subtitle")}</p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="h-9 w-auto min-w-[180px] text-xs">
                 <Filter size={12} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                <SelectValue placeholder="Categoría" />
+                <SelectValue placeholder={language === 'en' ? "Category" : "Categoría"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las EPP</SelectItem>
-                <SelectItem value="cabeza">🪖 Cabeza</SelectItem>
-                <SelectItem value="manos">🧤 Manos</SelectItem>
-                <SelectItem value="pies">🥾 Pies</SelectItem>
-                <SelectItem value="cuerpo">🛡️ Cuerpo</SelectItem>
-                <SelectItem value="visual">🥽 Visual</SelectItem>
-                <SelectItem value="auditiva">🎧 Auditiva</SelectItem>
-                <SelectItem value="respiratoria">😷 Respiratoria</SelectItem>
+                <SelectItem value="all">{language === 'en' ? "All Categories" : "Todas las EPP"}</SelectItem>
+                <SelectItem value="cabeza">🪖 {language === 'en' ? "Head" : "Cabeza"}</SelectItem>
+                <SelectItem value="manos">🧤 {language === 'en' ? "Hands" : "Manos"}</SelectItem>
+                <SelectItem value="pies">🥾 {language === 'en' ? "Feet" : "Pies"}</SelectItem>
+                <SelectItem value="cuerpo">🛡️ {language === 'en' ? "Body" : "Cuerpo"}</SelectItem>
+                <SelectItem value="visual">🥽 {language === 'en' ? "Eye" : "Visual"}</SelectItem>
+                <SelectItem value="auditiva">🎧 {language === 'en' ? "Hearing" : "Auditiva"}</SelectItem>
+                <SelectItem value="respiratoria">😷 {language === 'en' ? "Respiratory" : "Respiratoria"}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -347,7 +364,7 @@ const Reports = () => {
               className="h-9 gap-1.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-500/10"
             >
               {isExporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-              {isExporting ? "Generando..." : "Exportar Auditoría"}
+              {isExporting ? (language === 'en' ? "Generating..." : "Generando...") : (language === 'en' ? "Export Audit" : "Exportar Auditoría")}
             </Button>
           </div>
         </motion.div>
@@ -359,10 +376,10 @@ const Reports = () => {
           transition={{ delay: 0.05 }}
           className="grid grid-cols-2 gap-4 lg:grid-cols-4"
         >
-          <StatCard icon={<Shield size={15} />} label="Cumplimiento" value={`${metrics.complianceRate}%`} sub="Tasa de entregas firmadas" color="emerald" />
-          <StatCard icon={<Boxes size={15} />} label="Total Entregado" value={`${metrics.total} u.`} sub="Elementos provistos" color="cyan" />
-          <StatCard icon={<AlertTriangle size={15} />} label="Pendiente Firma" value={`${metrics.pending} u.`} sub="Falta firma del operario" color="amber" />
-          <StatCard icon={<Users size={15} />} label="Stock Crítico" value={`${metrics.lowStockCount} items`} sub="EPP con stock <= 5" color="red" />
+          <StatCard icon={<Shield size={15} />} label={language === 'en' ? "Compliance" : "Cumplimiento"} value={`${metrics.complianceRate}%`} sub={language === 'en' ? "Signed delivery rate" : "Tasa de entregas firmadas"} color="emerald" />
+          <StatCard icon={<Boxes size={15} />} label={language === 'en' ? "Total Delivered" : "Total Entregado"} value={`${metrics.total} u.`} sub={language === 'en' ? "Provided items" : "Elementos provistos"} color="cyan" />
+          <StatCard icon={<AlertTriangle size={15} />} label={language === 'en' ? "Pending Signature" : "Pendiente Firma"} value={`${metrics.pending} u.`} sub={language === 'en' ? "Missing worker signature" : "Falta firma del operario"} color="amber" />
+          <StatCard icon={<Users size={15} />} label={language === 'en' ? "Critical Stock" : "Stock Crítico"} value={`${metrics.lowStockCount} items`} sub={language === 'en' ? "PPE items with stock <= 5" : "EPP con stock <= 5"} color="red" />
         </motion.div>
 
         {/* ROW 1: status pie + category bar */}
@@ -372,9 +389,9 @@ const Reports = () => {
           transition={{ delay: 0.1 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          <ChartCard title="Distribución de Firmas" sub="Porcentaje de elementos firmados digitalmente vs pendientes">
+          <ChartCard title={language === 'en' ? "Signature Distribution" : "Distribución de Firmas"} sub={language === 'en' ? "Percentage of digitally signed vs pending items" : "Porcentaje de elementos firmados digitalmente vs pendientes"}>
             {statusData.length === 0 ? (
-              <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">Sin datos registrados</div>
+              <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">{language === 'en' ? "No data recorded" : "Sin datos registrados"}</div>
             ) : (
               <div className="flex items-center justify-around gap-4 h-48">
                 <ResponsiveContainer width={150} height={150}>
@@ -409,9 +426,9 @@ const Reports = () => {
             )}
           </ChartCard>
 
-          <ChartCard title="Entregas por Categoría EPP" sub="Cantidad de unidades provistas por tipo de protección">
+          <ChartCard title={language === 'en' ? "Deliveries by PPE Category" : "Entregas por Categoría EPP"} sub={language === 'en' ? "Quantity of units provided by protection type" : "Cantidad de unidades provistas por tipo de protección"}>
             {categoryData.length === 0 ? (
-              <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">Sin entregas registradas</div>
+              <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">{language === 'en' ? "No deliveries recorded" : "Sin entregas registradas"}</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={categoryData} barSize={16}>
@@ -419,7 +436,7 @@ const Reports = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} width={20} />
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(128,128,128,0.03)" }} />
-                  <Bar dataKey="Cantidad" fill={CLR.primary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={language === 'en' ? "Quantity" : "Cantidad"} fill={CLR.primary} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -432,7 +449,7 @@ const Reports = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <ChartCard title="Evolución Mensual de Entregas" sub="Historial de cantidades distribuidas por firma en el tiempo">
+          <ChartCard title={language === 'en' ? "Monthly Delivery Trend" : "Evolución Mensual de Entregas"} sub={language === 'en' ? "History of quantities distributed over time" : "Historial de cantidades distribuidas por firma en el tiempo"}>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={trendData} margin={{ left: -10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} />
@@ -440,8 +457,8 @@ const Reports = () => {
                 <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} width={20} />
                 <Tooltip content={<ChartTooltip />} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 10, color: '#94a3b8' }} />
-                <Line type="monotone" dataKey="Firmados" stroke={CLR.success} strokeWidth={2} dot={{ r: 3, fill: CLR.success }} />
-                <Line type="monotone" dataKey="Pendientes" stroke={CLR.warning} strokeWidth={2} dot={{ r: 3, fill: CLR.warning }} />
+                <Line type="monotone" dataKey={language === 'en' ? "Signed" : "Firmados"} stroke={CLR.success} strokeWidth={2} dot={{ r: 3, fill: CLR.success }} />
+                <Line type="monotone" dataKey={language === 'en' ? "Pending" : "Pendientes"} stroke={CLR.warning} strokeWidth={2} dot={{ r: 3, fill: CLR.warning }} />
               </LineChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -454,7 +471,7 @@ const Reports = () => {
           transition={{ delay: 0.2 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          <ChartCard title="Score de Cumplimiento Legal" sub="Indice de resguardo frente a reclamos de ART">
+          <ChartCard title={language === 'en' ? "Legal Compliance Score" : "Score de Cumplimiento Legal"} sub={language === 'en' ? "Protection index against insurance & labor claims" : "Indice de resguardo frente a reclamos de ART"}>
             <div className="flex flex-col items-center gap-4 py-3">
               <div className="relative">
                 <svg width={130} height={130} className="-rotate-90">
@@ -476,18 +493,18 @@ const Reports = () => {
                   )}>
                     {metrics.complianceRate}%
                   </span>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider -mt-1">Firmado</span>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider -mt-1">{language === 'en' ? "Signed" : "Firmado"}</span>
                 </div>
               </div>
               <div className="w-full text-center">
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed px-4">
                   {metrics.complianceRate >= 90
-                    ? "✅ Empresa blindada — Cumplimiento legal excelente. Excelente resguardo legal ante siniestros."
+                    ? (language === 'en' ? "✅ Shielded Company — Excellent legal compliance. Superior protection against workplace incidents." : "✅ Empresa blindada — Cumplimiento legal excelente. Excelente resguardo legal ante siniestros.")
                     : metrics.complianceRate >= 70
-                    ? "🟡 Nivel Aceptable — Algunas firmas táctiles están pendientes. Completar firmas pendientes."
+                    ? (language === 'en' ? "🟡 Acceptable Level — Some touch signatures are pending. Complete pending signatures." : "🟡 Nivel Aceptable — Algunas firmas táctiles están pendientes. Completar firmas pendientes.")
                     : metrics.complianceRate >= 50
-                    ? "⚠️ Alerta — Más del 30% de tus entregas no tienen firma táctil de operario. Riesgo de multa."
-                    : "🚨 Nivel Crítico — Riesgo inminente de sanción e inaplicabilidad del Formulario 299 SRT."}
+                    ? (language === 'en' ? "⚠️ Warning — Over 30% of your deliveries lack worker touch signatures. Fine risk." : "⚠️ Alerta — Más del 30% de tus entregas no tienen firma táctil de operario. Riesgo de multa.")
+                    : (language === 'en' ? "🚨 Critical Level — Imminent risk of sanctions and SRT Form 299 invalidity." : "🚨 Nivel Crítico — Riesgo inminente de sanción e inaplicabilidad del Formulario 299 SRT.")}
                 </p>
                 <button
                   type="button"
@@ -496,16 +513,16 @@ const Reports = () => {
                   className="mt-3 flex items-center gap-1.5 mx-auto text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-350 hover:underline"
                 >
                   <FileText size={12} />
-                  Descargar Reporte de Auditoría EPP (PDF)
+                  {language === 'en' ? "Download PPE Audit Report (PDF)" : "Descargar Reporte de Auditoría EPP (PDF)"}
                 </button>
               </div>
             </div>
           </ChartCard>
 
-          <ChartCard title="Estado del Inventario" sub="Relación de elementos en stock frente al stock crítico">
+          <ChartCard title={language === 'en' ? "Inventory Status" : "Estado del Inventario"} sub={language === 'en' ? "Ratio of stock items vs critical stock thresholds" : "Relación de elementos en stock frente al stock crítico"}>
             <div className="space-y-3.5 h-48 overflow-y-auto pr-1">
               {eppItems.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-xs text-slate-400 dark:text-slate-550">Sin stock registrado</div>
+                <div className="flex h-full items-center justify-center text-xs text-slate-400 dark:text-slate-550">{language === 'en' ? "No stock recorded" : "Sin stock registrado"}</div>
               ) : (
                 eppItems.map(item => {
                   const isLow = item.stock <= 5;
@@ -513,7 +530,7 @@ const Reports = () => {
                     <div key={item.id} className="flex items-center justify-between border-b border-slate-100 dark:border-slate-900 pb-2 last:border-0 last:pb-0">
                       <div>
                         <p className="text-xs font-bold text-slate-800 dark:text-white">{item.name}</p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">{item.category ? `Categoría: ${item.category}` : 'Sin categoría'}</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">{item.category ? `${language === 'en' ? 'Category' : 'Categoría'}: ${item.category}` : (language === 'en' ? 'Uncategorized' : 'Sin categoría')}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold text-slate-650 dark:text-slate-300">{item.stock} u.</span>
@@ -523,7 +540,7 @@ const Reports = () => {
                             ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-200 dark:border-red-500/25" 
                             : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400"
                         )}>
-                          {isLow ? "CRÍTICO" : "Suficiente"}
+                          {isLow ? (language === 'en' ? "CRITICAL" : "CRÍTICO") : (language === 'en' ? "Sufficient" : "Suficiente")}
                         </span>
                       </div>
                     </div>

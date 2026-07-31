@@ -20,12 +20,14 @@ import {
 import { AppRole, roleLabels, inviteUser } from "@/services/userService";
 import { toast } from "sonner";
 import { Loader2, MailPlus, Send } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface InviteUserDialogProps {
     onUserInvited: () => void;
 }
 
 const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
+    const { language } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
@@ -77,7 +79,7 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
         <>
             <Button onClick={() => setIsOpen(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full sm:w-auto shrink-0">
                 <MailPlus className="w-4 h-4 shrink-0" />
-                <span className="whitespace-nowrap">Invitar Usuario</span>
+                <span className="whitespace-nowrap">{language === 'en' ? "Invite User" : "Invitar Usuario"}</span>
             </Button>
 
             <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
@@ -85,17 +87,17 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <MailPlus className="w-5 h-5 text-emerald-600" />
-                            Invitar Usuario al Equipo
+                            {language === 'en' ? "Invite User to Team" : "Invitar Usuario al Equipo"}
                         </DialogTitle>
                         <DialogDescription>
-                            Enviá una invitación por correo. El usuario podrá ingresar mediante el enlace y definir su propia clave.
+                            {language === 'en' ? "Send an email invitation. The user can log in via the link and set their password." : "Enviá una invitación por correo. El usuario podrá ingresar mediante el enlace y definir su propia clave."}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleInvite}>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="invite-email">Correo Electrónico (Obligatorio)</Label>
+                                <Label htmlFor="invite-email">{language === 'en' ? "Email Address (Required)" : "Correo Electrónico (Obligatorio)"}</Label>
                                 <Input
                                     id="invite-email"
                                     type="email"
@@ -108,7 +110,7 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="invite-role">Rol asignado</Label>
+                                <Label htmlFor="invite-role">{language === 'en' ? "Assigned Role" : "Rol asignado"}</Label>
                                 <Select
                                     value={role}
                                     onValueChange={(value: string) => setRole(value as AppRole)}
@@ -118,29 +120,29 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="admin">
-                                            🛡️ {roleLabels.admin} (Control de la empresa y miembros)
+                                            🛡️ {language === 'en' ? "Administrator (Company control and members)" : `${roleLabels.admin} (Control de la empresa y miembros)`}
                                         </SelectItem>
                                         <SelectItem value="responsable">
-                                            📋 {roleLabels.responsable} (Gestión operativa de personal e inventario)
+                                            📋 {language === 'en' ? "Supervisor (Operational management of personnel & inventory)" : `${roleLabels.responsable} (Gestión operativa de personal e inventario)`}
                                         </SelectItem>
                                         <SelectItem value="operativo">
-                                            👤 {roleLabels.operativo} (Consulta y firmas operativas)
+                                            👤 {language === 'en' ? "Operator (Queries and operational signatures)" : `${roleLabels.operativo} (Consulta y firmas operativas)`}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="invite-name">Nombre o Referencia (Opcional)</Label>
+                                <Label htmlFor="invite-name">{language === 'en' ? "Name or Reference (Optional)" : "Nombre o Referencia (Opcional)"}</Label>
                                 <Input
                                     id="invite-name"
                                     type="text"
-                                    placeholder="Ej. Juan Pérez"
+                                    placeholder={language === 'en' ? "e.g. John Doe" : "Ej. Juan Pérez"}
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                 />
                                 <p className="text-[11px] text-muted-foreground">
-                                    El invitado completará su nombre y contraseña al ingresar al enlace enviado por email.
+                                    {language === 'en' ? "The guest will complete their name and password upon opening the email link." : "El invitado completará su nombre y contraseña al ingresar al enlace enviado por email."}
                                 </p>
                             </div>
                         </div>
@@ -152,18 +154,18 @@ const InviteUserDialog = ({ onUserInvited }: InviteUserDialogProps) => {
                                 onClick={() => { setIsOpen(false); resetForm(); }}
                                 disabled={isSending}
                             >
-                                Cancelar
+                                {language === 'en' ? "Cancel" : "Cancelar"}
                             </Button>
                             <Button type="submit" disabled={isSending} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
                                 {isSending ? (
                                     <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Enviando invitación...
+                                        {language === 'en' ? "Sending invitation..." : "Enviando invitación..."}
                                     </>
                                 ) : (
                                     <>
                                         <Send className="w-4 h-4" />
-                                        Enviar Invitación
+                                        {language === 'en' ? "Send Invitation" : "Enviar Invitación"}
                                     </>
                                 )}
                             </Button>

@@ -22,22 +22,26 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEmployees, useEPPItems, useEPPDeliveries, eppKeys } from "@/hooks/useEPPData";
 import {
   addEPPDelivery,
   signEPPDelivery,
   getSignatureUrl,
+  checkWorkerHasSignedBefore,
   type Employee,
   type EPPItem,
   type EPPDelivery,
 } from "@/services/eppService";
 import { SignaturePad } from "@/components/SignaturePad";
+import { AffidavitModal } from "@/components/AffidavitModal";
 import { AIAssistantButton } from "@/components/ai/AIAssistantButton";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const companyId = profile?.company_id;
 
   // React Query queries
@@ -57,6 +61,10 @@ export default function Dashboard() {
   // Signature states
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [deliveryToSign, setDeliveryToSign] = useState<EPPDelivery | null>(null);
+
+  // Affidavit modal states for first-time signers
+  const [showAffidavitDialog, setShowAffidavitDialog] = useState(false);
+  const [pendingDeliveryToSign, setPendingDeliveryToSign] = useState<EPPDelivery | null>(null);
 
   // Loading state for saving
   const [savingDelivery, setSavingDelivery] = useState(false);
@@ -152,6 +160,18 @@ export default function Dashboard() {
     return eppItems.filter((item) => item.stock <= 5);
   }, [eppItems]);
 
+  // Top 5 recent deliveries
+  const recentDeliveries = useMemo(() => {
+    return deliveries.slice(0, 5);
+  }, [deliveries]);
+
+  // Quick Catalog: Top 5 items sorted by lowest stock first
+  const quickCatalogItems = useMemo(() => {
+    return [...eppItems]
+      .sort((a, b) => a.stock - b.stock)
+      .slice(0, 5);
+  }, [eppItems]);
+
   const handleOpenDelivery = () => {
     setSelectedEmployeeId(employees[0]?.id || "");
     setSelectedEppId(eppItems[0]?.id || "");
@@ -182,9 +202,15 @@ export default function Dashboard() {
       toast.success("Entrega registrada con éxito. Lista para firmar.");
       setShowDeliveryDialog(false);
       
-      // Open signature dialog immediately for this delivery!
-      setDeliveryToSign(newDel);
-      setShowSignatureDialog(true);
+      // Check if this worker has signed any delivery in the past
+      const hasSigned = await checkWorkerHasSignedBefore(newDel.employee_id);
+      if (!hasSigned) {
+        setPendingDeliveryToSign(newDel);
+        setShowAffidavitDialog(true);
+      } else {
+        setDeliveryToSign(newDel);
+        setShowSignatureDialog(true);
+      }
 
       // Reload
       loadAllData();
@@ -195,8 +221,28 @@ export default function Dashboard() {
     }
   };
 
-  const handleOpenSignature = (del: EPPDelivery) => {
-    setDeliveryToSign(del);
+  const handleOpenSignature = async (del: EPPDelivery) => {
+    try {
+      const hasSigned = await checkWorkerHasSignedBefore(del.employee_id);
+      if (!hasSigned) {
+        setPendingDeliveryToSign(del);
+        setShowAffidavitDialog(true);
+      } else {
+        setDeliveryToSign(del);
+        setShowSignatureDialog(true);
+      }
+    } catch (err) {
+      setDeliveryToSign(del);
+      setShowSignatureDialog(true);
+    }
+  };
+
+  const handleAcceptAffidavit = () => {
+    if (pendingDeliveryToSign) {
+      setDeliveryToSign(pendingDeliveryToSign);
+      setPendingDeliveryToSign(null);
+    }
+    setShowAffidavitDialog(false);
     setShowSignatureDialog(true);
   };
 
@@ -296,10 +342,10 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
-              {profile?.company_name || "Mi Empresa"}
+              {profile?.company_name || (language === 'en' ? "My Company" : "Mi Empresa")}
             </h1>
             <p className="text-base text-slate-500 dark:text-slate-400 mt-1">
-              Panel de control de elementos de protección personal y firmas.
+              {t("dashboard.subtitle")}
             </p>
           </div>
           <div className="flex gap-2">
@@ -308,13 +354,13 @@ export default function Dashboard() {
               variant="outline"
               className="border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl bg-white dark:bg-[#080b11] text-base h-11 px-5"
             >
-              Ver Personal
+              {t("dashboard.viewPersonnel")}
             </Button>
             <Button
               onClick={handleOpenDelivery}
               className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl shadow-sm border-0 font-semibold text-base h-11 px-5"
             >
-              <Plus size={18} /> Entregar EPP
+              <Plus size={18} /> {t("dashboard.deliverEPP")}
             </Button>
           </div>
         </div>
@@ -323,30 +369,30 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             {
-              title: "Tasa de Cumplimiento",
+              title: t("dashboard.complianceRate"),
               val: `${stats.complianceRate}%`,
-              desc: "EPP entregados con firma",
+              desc: t("dashboard.complianceDesc"),
               icon: <TrendingUp className="text-emerald-500" />,
               bg: "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/10",
             },
             {
-              title: "Firmas Pendientes",
+              title: t("dashboard.pendingSigs"),
               val: stats.pendingSigs.toString(),
-              desc: "Requieren firma manuscrita",
+              desc: t("dashboard.pendingSigsDesc"),
               icon: <FileSignature className="text-amber-500" />,
               bg: stats.pendingSigs > 0 ? "bg-amber-50/50 dark:bg-amber-500/5 border-amber-100 dark:border-amber-500/10 animate-pulse" : "bg-slate-50 dark:bg-slate-900/10 border-slate-100 dark:border-slate-850",
             },
             {
-              title: "Operarios Activos",
+              title: t("dashboard.activeWorkers"),
               val: stats.activeWorkers.toString(),
-              desc: "Personal registrado",
+              desc: t("dashboard.activeWorkersDesc"),
               icon: <Users className="text-indigo-500" />,
               bg: "bg-indigo-50/50 dark:bg-indigo-500/5 border-indigo-100 dark:border-indigo-500/10",
             },
             {
-              title: "EPP Entregados",
+              title: t("dashboard.totalDelivered"),
               val: stats.totalDelivered.toString(),
-              desc: "Total histórico de entregas",
+              desc: t("dashboard.totalDeliveredDesc"),
               icon: <ClipboardCheck className="text-teal-500" />,
               bg: "bg-teal-50/50 dark:bg-teal-500/5 border-teal-100 dark:border-teal-500/10",
             },
@@ -369,9 +415,9 @@ export default function Dashboard() {
           <div className="rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-500/5 p-5 flex gap-3 items-start">
             <AlertTriangle className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={22} />
             <div>
-              <p className="text-sm font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">Alerta de Stock Crítico</p>
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">{t("dashboard.criticalStockAlert")}</p>
               <p className="text-sm text-amber-700 dark:text-slate-400 mt-1">
-                Los siguientes elementos del catálogo tienen poco stock disponible. Reponer a la brevedad:
+                {t("dashboard.criticalStockDesc")}
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
                 {stockAlerts.map((item) => (
@@ -380,7 +426,7 @@ export default function Dashboard() {
                     onClick={() => navigate("/inventario")}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-white dark:bg-slate-950 border border-amber-200 dark:border-amber-900/30 text-amber-700 dark:text-amber-400 cursor-pointer hover:bg-amber-50 dark:hover:bg-slate-900"
                   >
-                    {item.name}: {item.stock} unidades
+                    {item.name}: {item.stock} {t("dashboard.units")}
                   </span>
                 ))}
               </div>
@@ -393,39 +439,39 @@ export default function Dashboard() {
           {/* Main Feed of Deliveries */}
           <div className="lg:col-span-2 bg-white dark:bg-[#080b11] border border-slate-200 dark:border-slate-900 rounded-2xl shadow-sm overflow-hidden flex flex-col">
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/40 flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Planilla de Entregas Recientes</h2>
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase">Empresa</span>
+              <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">{t("dashboard.recentDeliveriesTitle")}</h2>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase">{t("dashboard.company")}</span>
             </div>
 
             <div className="flex-1">
               {loading ? (
-                <div className="p-8 text-center text-base text-slate-500 dark:text-slate-400">Cargando entregas...</div>
-              ) : deliveries.length === 0 ? (
+                <div className="p-8 text-center text-base text-slate-500 dark:text-slate-400">{t("dashboard.loadingDeliveries")}</div>
+              ) : recentDeliveries.length === 0 ? (
                 <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
                   <ClipboardCheck size={48} className="text-slate-300 dark:text-slate-800 mb-3" />
-                  <p className="font-semibold text-slate-600 dark:text-slate-400 text-base">No hay entregas registradas</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-500 mt-1 mb-4">Hacé clic en "Entregar EPP" para iniciar.</p>
+                  <p className="font-semibold text-slate-600 dark:text-slate-400 text-base">{t("dashboard.noDeliveries")}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-500 mt-1 mb-4">{t("dashboard.clickDeliverEPP")}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-900 max-h-[450px] overflow-y-auto">
-                  {deliveries.map((del) => (
+                  {recentDeliveries.map((del) => (
                     <div key={del.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-colors">
                       <div className="min-w-0 flex-1 pr-4">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-base font-bold text-slate-900 dark:text-white truncate">
-                            {del.employee?.name || "Operario"}
+                            {del.employee?.name || t("dashboard.worker")}
                           </p>
                           <span className="text-xs text-slate-500 dark:text-slate-500 font-mono">
                             DNI: {del.employee?.dni_cuil}
                           </span>
                         </div>
                         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mt-1 truncate">
-                          {del.quantity} u. de {del.epp_item?.name || "EPP"}
+                          {del.quantity} {t("dashboard.units")} {language === 'en' ? 'of' : 'de'} {del.epp_item?.name || "EPP"}
                         </p>
                         {del.notes && <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 italic">"{del.notes}"</p>}
                         {del.status === "firmado" && sigUrls[del.id] && (
                           <div className="mt-2 flex items-center gap-1.5">
-                            <span className="text-[9px] text-slate-400 dark:text-slate-550">Firma:</span>
+                            <span className="text-[9px] text-slate-400 dark:text-slate-550">{t("dashboard.signature")}</span>
                             <img
                               src={sigUrls[del.id]}
                               className="h-7 object-contain bg-white dark:bg-slate-100 border border-slate-250 dark:border-slate-800 rounded px-1"
@@ -439,7 +485,7 @@ export default function Dashboard() {
                         <span className="text-xs text-slate-500 dark:text-slate-500 font-medium shrink-0">{del.delivery_date}</span>
                         {del.status === "firmado" ? (
                           <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30 px-3 py-1 rounded-full">
-                            <CheckCircle2 size={12} /> Firmado
+                            <CheckCircle2 size={12} /> {t("dashboard.signed")}
                           </span>
                         ) : (
                           <Button
@@ -447,7 +493,7 @@ export default function Dashboard() {
                             onClick={() => handleOpenSignature(del)}
                             className="bg-amber-600 hover:bg-amber-500 text-white text-sm h-9 px-4 rounded-xl border-0 gap-1 font-bold"
                           >
-                            <FileSignature size={13} /> Firmar
+                            <FileSignature size={13} /> {t("dashboard.sign")}
                           </Button>
                         )}
                       </div>
@@ -463,25 +509,25 @@ export default function Dashboard() {
             {/* Quick Catalog list */}
             <div className="bg-white dark:bg-[#080b11] border border-slate-200 dark:border-slate-900 rounded-2xl shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/40 flex items-center justify-between">
-                <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Catálogo Rápido</h2>
+                <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">{t("dashboard.quickCatalog")}</h2>
                 <Button
                   variant="link"
                   size="sm"
                   onClick={() => navigate("/inventario")}
                   className="text-sm font-bold text-emerald-600 hover:text-emerald-500 px-0 h-auto"
                 >
-                  Gestionar
+                  {t("dashboard.manage")}
                 </Button>
               </div>
               <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
-                {eppItems.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-500 text-center py-4">Catálogo vacío</p>
+                {quickCatalogItems.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-500 text-center py-4">{t("dashboard.emptyCatalog")}</p>
                 ) : (
-                  eppItems.map((item) => (
+                  quickCatalogItems.map((item) => (
                     <div key={item.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-900 rounded-xl p-3">
                       <span className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate max-w-[160px]">{item.name}</span>
                       <span className={`text-sm font-mono font-bold ${item.stock <= 5 ? "text-amber-600 dark:text-amber-400" : "text-slate-500"}`}>
-                        {item.stock} u.
+                        {item.stock} {t("dashboard.units")}
                       </span>
                     </div>
                   ))
@@ -492,12 +538,12 @@ export default function Dashboard() {
             {/* Quick Helper card */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-900 bg-white dark:bg-[#080b11] p-5 text-slate-800 dark:text-white shadow-sm relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">Dictá por voz</h3>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">{t("dashboard.voiceTitle")}</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed font-sans font-medium">
-                ¿Estás ocupado o con las manos llenas? Tocá el micrófono abajo a la derecha y decile al asistente qué estás entregando y a quién. Se cargará solo.
+                {t("dashboard.voiceDesc")}
               </p>
               <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase mt-4">
-                <CheckCircle2 size={14} /> Manos Libres · Optimizado
+                <CheckCircle2 size={14} /> {t("dashboard.handsFree")}
               </div>
             </div>
           </div>
@@ -513,26 +559,26 @@ export default function Dashboard() {
       <Dialog open={showDeliveryDialog} onOpenChange={setShowDeliveryDialog}>
         <DialogContent className="sm:max-w-md rounded-2xl bg-white dark:bg-[#0c101d] border-slate-250 dark:border-slate-800 text-slate-900 dark:text-white">
           <DialogHeader>
-            <DialogTitle className="text-slate-900 dark:text-white">Registrar Entrega de EPP</DialogTitle>
+            <DialogTitle className="text-slate-900 dark:text-white">{t("dashboard.registerDeliveryModal")}</DialogTitle>
           </DialogHeader>
           {employees.length === 0 ? (
             <div className="py-6 text-center text-slate-400 text-sm">
-              Primero tenés que registrar operarios en la sección{" "}
+              {language === 'en' ? "First you need to register workers in the " : "Primero tenés que registrar operarios en la sección "}
               <button onClick={() => navigate("/operarios")} className="text-emerald-600 font-bold underline">
-                Operarios
+                {t("nav.employees")}
               </button>
             </div>
           ) : eppItems.length === 0 ? (
             <div className="py-6 text-center text-slate-400 text-sm">
-              Primero tenés que catalogar artículos en la sección{" "}
+              {language === 'en' ? "First you need to catalog items in the " : "Primero tenés que catalogar artículos en la sección "}
               <button onClick={() => navigate("/inventario")} className="text-emerald-600 font-bold underline">
-                Catálogo EPP
+                {t("nav.inventory")}
               </button>
             </div>
           ) : (
             <form onSubmit={handleCreateDelivery} className="space-y-4 py-2">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Seleccionar Trabajador</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{t("dashboard.selectWorker")}</label>
                 <select
                   value={selectedEmployeeId}
                   onChange={(e) => setSelectedEmployeeId(e.target.value)}
@@ -547,7 +593,7 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Seleccionar EPP</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{t("dashboard.selectPPE")}</label>
                 <select
                   value={selectedEppId}
                   onChange={(e) => setSelectedEppId(e.target.value)}
@@ -562,7 +608,7 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Cantidad</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{t("dashboard.quantity")}</label>
                 <Input
                   type="number"
                   min="1"
@@ -573,9 +619,9 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Notas / Observaciones (Opcional)</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{t("dashboard.notes")}</label>
                 <Input
-                  placeholder="Ej. Reemplazo por desgaste"
+                  placeholder={language === 'en' ? "e.g. Replacement due to wear" : "Ej. Reemplazo por desgaste"}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
@@ -584,10 +630,10 @@ export default function Dashboard() {
 
               <DialogFooter className="pt-4 gap-2">
                 <Button type="button" variant="outline" onClick={() => setShowDeliveryDialog(false)} className="rounded-xl border-slate-200 dark:border-slate-800 dark:text-slate-300">
-                  Cancelar
+                  {t("dashboard.cancel")}
                 </Button>
                 <Button type="submit" disabled={savingDelivery} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl border-0 font-bold">
-                  {savingDelivery ? "Registrando..." : "Registrar y Firmar"}
+                  {savingDelivery ? t("dashboard.registering") : t("dashboard.registerAndSign")}
                 </Button>
               </DialogFooter>
             </form>
@@ -605,6 +651,14 @@ export default function Dashboard() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Affidavit / Sworn Statement Modal for first-time signers */}
+      <AffidavitModal
+        open={showAffidavitDialog}
+        employeeName={pendingDeliveryToSign?.employee?.name || "Operario"}
+        onAccept={handleAcceptAffidavit}
+        onCancel={() => setShowAffidavitDialog(false)}
+      />
     </div>
   );
 }

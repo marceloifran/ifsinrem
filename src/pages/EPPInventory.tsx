@@ -26,6 +26,7 @@ import {
   type EPPItem,
 } from "@/services/eppService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useEPPItems, eppKeys } from "@/hooks/useEPPData";
 import { useQueryClient } from "@tanstack/react-query";
 import { ExcelImportModal } from "@/components/ExcelImportModal";
@@ -40,7 +41,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const CATEGORIES = [
+const CATEGORIES_ES = [
   { value: "cabeza", label: "Protección Craneana (Cascos)" },
   { value: "manos", label: "Protección de Manos (Guantes)" },
   { value: "pies", label: "Protección de Pies (Calzado)" },
@@ -52,11 +53,25 @@ const CATEGORIES = [
   { value: "otro", label: "Otros Elementos / Herramientas" },
 ];
 
+const CATEGORIES_EN = [
+  { value: "cabeza", label: "Head Protection (Helmets)" },
+  { value: "manos", label: "Hand Protection (Gloves)" },
+  { value: "pies", label: "Foot Protection (Footwear)" },
+  { value: "ocular", label: "Eye Protection (Glasses)" },
+  { value: "auditivo", label: "Hearing Protection (Earplugs/Muffs)" },
+  { value: "respiratorio", label: "Respiratory Protection (Masks)" },
+  { value: "altura", label: "Height Work (Harnesses)" },
+  { value: "cuerpo", label: "Workwear / Body Protection" },
+  { value: "otro", label: "Other Items / Tools" },
+];
+
 export default function EPPInventory() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const companyId = profile?.company_id;
+  const CATEGORIES = language === 'en' ? CATEGORIES_EN : CATEGORIES_ES;
 
   const [permissionsVer, setPermissionsVer] = useState(0);
 
@@ -246,8 +261,8 @@ export default function EPPInventory() {
       <main className="mx-auto max-w-5xl px-4 py-8 md:px-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Catálogo de EPP</h1>
-            <p className="text-sm text-slate-400 dark:text-slate-550">Administrá el stock y tipos de Elementos de Protección Personal habilitados.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("inventory.title")}</h1>
+            <p className="text-sm text-slate-400 dark:text-slate-550">{t("inventory.subtitle")}</p>
           </div>
           {canManageInventario && (
             <div className="flex items-center gap-2">
@@ -257,13 +272,13 @@ export default function EPPInventory() {
                 className="gap-2 rounded-xl h-11 px-4 border-slate-250 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-900"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                Importar Excel
+                {t("employees.importExcel")}
               </Button>
               <Button
                 onClick={handleOpenAdd}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 px-5 font-semibold text-sm shadow-sm border-0"
               >
-                <Plus size={16} /> Catalogar EPP
+                <Plus size={16} /> {t("inventory.catalogItem")}
               </Button>
             </div>
           )}
@@ -274,7 +289,7 @@ export default function EPPInventory() {
           <div className="relative sm:col-span-2">
             <Search className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-450 dark:text-slate-500" />
             <Input
-              placeholder="Buscar EPP por nombre, modelo, marca..."
+              placeholder={language === 'en' ? "Search PPE by name, model, brand..." : "Buscar EPP por nombre, modelo, marca..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-12 bg-white dark:bg-[#080b11] border-slate-250 dark:border-slate-900 rounded-xl text-slate-900 dark:text-white text-sm shadow-sm focus-visible:ring-emerald-500/20"
@@ -286,7 +301,7 @@ export default function EPPInventory() {
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="select-field select-field-lg"
             >
-              <option value="all" className="dark:bg-[#0c101d]">Todas las categorías</option>
+              <option value="all" className="dark:bg-[#0c101d]">{language === 'en' ? "All categories" : "Todas las categorías"}</option>
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value} className="dark:bg-[#0c101d]">
                   {cat.label}
@@ -299,15 +314,15 @@ export default function EPPInventory() {
         {/* Inventory Table */}
         <div className="bg-white dark:bg-[#080b11] rounded-2xl border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-slate-400">Cargando catálogo...</div>
+            <div className="p-8 text-center text-slate-400">{language === 'en' ? "Loading catalog..." : "Cargando catálogo..."}</div>
           ) : filteredItems.length === 0 ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
               <Boxes size={40} className="text-slate-300 dark:text-slate-800 mb-3" />
-              <p className="font-semibold text-slate-650 dark:text-slate-400 text-base mb-1">No se encontraron elementos de protección</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Cargá artículos a tu inventario para poder asignarlos.</p>
+              <p className="font-semibold text-slate-650 dark:text-slate-400 text-base mb-1">{language === 'en' ? "No protective equipment found" : "No se encontraron elementos de protección"}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">{language === 'en' ? "Add items to your inventory to assign them." : "Cargá artículos a tu inventario para poder asignarlos."}</p>
               {canManageInventario && (
                 <Button onClick={handleOpenAdd} variant="outline" className="rounded-xl border-slate-250 dark:border-slate-800 dark:text-slate-300">
-                  Catalogar primer EPP
+                  {t("inventory.catalogItem")}
                 </Button>
               )}
             </div>
@@ -318,16 +333,16 @@ export default function EPPInventory() {
                 <Table>
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-900">
                     <TableRow>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Elemento</TableHead>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Marca / Modelo</TableHead>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Certificación</TableHead>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Stock</TableHead>
-                      <TableHead className="text-right font-bold text-slate-700 dark:text-slate-350">Acciones</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("inventory.colItem")}</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("inventory.colTypeModel")}</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("inventory.colCert")}</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("inventory.colStock")}</TableHead>
+                      <TableHead className="text-right font-bold text-slate-700 dark:text-slate-350">{t("inventory.colActions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredItems.map((item) => {
-                      const catLabel = CATEGORIES.find((c) => c.value === item.category)?.label || "Otro";
+                      const catLabel = CATEGORIES.find((c) => c.value === item.category)?.label || (language === 'en' ? "Other" : "Otro");
                       return (
                         <TableRow key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 border-b border-slate-100 dark:border-slate-900/80">
                           <TableCell>
@@ -349,7 +364,7 @@ export default function EPPInventory() {
                                 ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30" 
                                 : "bg-slate-105 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800"
                             }`}>
-                              {item.certified === "Si" ? "Homologado (Sí)" : "No"}
+                              {item.certified === "Si" ? (language === 'en' ? "Certified (Yes)" : "Homologado (Sí)") : (language === 'en' ? "No" : "No")}
                             </span>
                           </TableCell>
                           <TableCell>
@@ -358,7 +373,7 @@ export default function EPPInventory() {
                                 item.stock <= 5 ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-slate-700 dark:text-slate-300"
                               }`}
                             >
-                              {item.stock} u.
+                              {item.stock} {t("dashboard.units")}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">

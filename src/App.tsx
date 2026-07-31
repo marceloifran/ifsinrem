@@ -20,7 +20,16 @@ import NotFound from "./pages/NotFound";
 
 import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes cache - avoid unnecessary repeated API requests
+      gcTime: 1000 * 60 * 30,    // 30 minutes memory persistence
+      refetchOnWindowFocus: false, // Do not refetch when switching tabs/windows
+      refetchOnReconnect: false,
+    },
+  },
+});
 
 const App = () => {
   useEffect(() => {

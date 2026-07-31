@@ -216,6 +216,24 @@ export async function addEPPDelivery(
   return data as any;
 }
 
+// Check if a worker has signed any EPP delivery in the past
+export async function checkWorkerHasSignedBefore(employeeId: string): Promise<boolean> {
+  if (!employeeId) return false;
+  try {
+    const { count, error } = await supabase
+      .from('epp_deliveries' as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('employee_id', employeeId)
+      .eq('status', 'firmado');
+
+    if (error || !count) return false;
+    return count > 0;
+  } catch (err) {
+    console.error("Error checking worker signature history:", err);
+    return false;
+  }
+}
+
 // Helper to compute SHA-256 cryptographic hash for non-repudiation
 export async function generateSHA256Hash(text: string): Promise<string> {
   const msgUint8 = new TextEncoder().encode(text);

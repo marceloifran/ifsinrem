@@ -1,4 +1,4 @@
-import { Linkedin, Mail, Calendar, Shield, ArrowRight } from 'lucide-react';
+import { Linkedin, Mail, Calendar, Shield, ArrowRight, Instagram } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { openCalendly } from '@/utils/calendly';
@@ -70,6 +70,7 @@ const Footer = () => {
             </h3>
             <div className="flex gap-3">
               {[
+                { icon: Instagram, href: 'https://www.instagram.com/ifsinrem/', label: 'Instagram' },
                 { icon: Linkedin, href: 'https://www.linkedin.com/company/ifsint/', label: 'LinkedIn' },
                 { icon: Mail, href: 'mailto:contacto@ifsinrem.site', label: 'Email' },
                 { icon: Calendar, href: 'https://calendly.com/ifsinrem', label: 'Demo', onClick: openCalendly },
