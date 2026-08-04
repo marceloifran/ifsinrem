@@ -14,23 +14,38 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllUsers, getPendingInvitations, deleteInvitation, UserWithRole, AppRole } from "@/services/userService";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useUsers, usePendingInvitations, useInvalidateUserCache } from "@/hooks/useUsersData";
+import { deleteInvitation, UserWithRole, AppRole } from "@/services/userService";
 import { Search, ArrowLeft, Loader2, Users, Shield, Eye, Clock, Mail, X, Crown, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
-
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RolePermissionsManager } from "@/components/RolePermissionsManager";
 import { checkRolePermission } from "@/services/permissionService";
 
 const UserManagement = () => {
     const navigate = useNavigate();
     const { user, profile, isAdmin, isLoading: authLoading, signOut } = useAuth();
-    const [users, setUsers] = useState<UserWithRole[]>([]);
-    const [pendingInvitations, setPendingInvitations] = useState<{ email: string; created_at: string }[]>([]);
+    const { t, language } = useLanguage();
+    
+    // React Query cached hooks
+    const { data: users = [], isLoading: loadingUsers, refetch: loadUsers } = useUsers();
+    const { data: pendingInvitations = [], isLoading: loadingInvs } = usePendingInvitations();
+    const invalidateUserCache = useInvalidateUserCache();
+
     const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState<string>("all");
 
+    const isLoading = loadingUsers || loadingInvs;
     const userRole = profile?.role || (isAdmin ? "admin" : "operativo");
     const canAccessUsers = isAdmin || checkRolePermission(userRole, "manage_users_roles", profile?.company_id);
 
@@ -44,29 +59,6 @@ const UserManagement = () => {
             navigate('/dashboard');
         }
     }, [user, authLoading, isAdmin, canAccessUsers, profile, navigate]);
-
-    useEffect(() => {
-        if (user && canAccessUsers) {
-            loadUsers();
-        }
-    }, [user, canAccessUsers]);
-
-    const loadUsers = async () => {
-        try {
-            setIsLoading(true);
-            const [usersData, invitationsData] = await Promise.all([
-                getAllUsers(),
-                getPendingInvitations()
-            ]);
-            setUsers(usersData);
-            setPendingInvitations(invitationsData);
-        } catch (error) {
-            console.error('Error loading users:', error);
-            toast.error("Error al cargar los usuarios");
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const filteredUsers = useMemo(() => {
         return users.filter(u => {
@@ -83,14 +75,19 @@ const UserManagement = () => {
         navigate('/');
     };
 
-    const handleCancelInvitation = async (email: string) => {
+    const [invToCancel, setInvToCancel] = useState<string | null>(null);
+
+    const handleConfirmCancelInv = async () => {
+        if (!invToCancel) return;
         try {
-            await deleteInvitation(email);
-            toast.success("Invitación cancelada");
+            await deleteInvitation(invToCancel);
+            toast.success("Invitación cancelada con éxito");
             loadUsers();
         } catch (error) {
             console.error('Error canceling invitation:', error);
             toast.error("Error al cancelar la invitación");
+        } finally {
+            setInvToCancel(null);
         }
     };
 
@@ -119,7 +116,7 @@ const UserManagement = () => {
                     className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    Volver al dashboard
+                    {language === 'en' ? "Back to Dashboard" : "Volver al dashboard"}
                 </button>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -127,10 +124,10 @@ const UserManagement = () => {
                         <Users className="w-8 h-8 text-primary" />
                         <div>
                             <h1 className="text-2xl font-bold text-foreground">
-                                Gestión de Usuarios
+                                {t("users.title")}
                             </h1>
                             <p className="text-sm text-muted-foreground">
-                                {filteredUsers.length} {filteredUsers.length === 1 ? 'usuario' : 'usuarios'}
+                                {filteredUsers.length} {filteredUsers.length === 1 ? (language === 'en' ? 'user' : 'usuario') : (language === 'en' ? 'users' : 'usuarios')}
                             </p>
                         </div>
                     </div>
@@ -142,7 +139,7 @@ const UserManagement = () => {
                             className="gap-2 border-purple-500/30 text-purple-600 hover:bg-purple-500/10 font-bold w-full sm:w-auto shrink-0"
                         >
                             <ShieldCheck className="w-4 h-4 text-purple-500 shrink-0" />
-                            <span className="whitespace-nowrap">Matriz de Permisos por Rol</span>
+                            <span className="whitespace-nowrap">{language === 'en' ? "Role Permissions Matrix" : "Matriz de Permisos por Rol"}</span>
                         </Button>
                         <InviteUserDialog onUserInvited={loadUsers} />
                     </div>
@@ -160,7 +157,7 @@ const UserManagement = () => {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
-                                placeholder="Buscar por nombre o email..."
+                                placeholder={language === 'en' ? "Search by name or email..." : "Buscar por nombre o email..."}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-10"
@@ -169,32 +166,32 @@ const UserManagement = () => {
 
                         <Select value={roleFilter} onValueChange={setRoleFilter}>
                             <SelectTrigger className="w-full sm:w-[200px]">
-                                <SelectValue placeholder="Filtrar por rol" />
+                                <SelectValue placeholder={language === 'en' ? "Filter by role" : "Filtrar por rol"} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Todos los roles</SelectItem>
+                                <SelectItem value="all">{language === 'en' ? "All roles" : "Todos los roles"}</SelectItem>
                                 <SelectItem value="owner">
                                     <div className="flex items-center gap-2">
                                         <Crown className="w-4 h-4 text-amber-500" />
-                                        Dueño (Owner)
+                                        {language === 'en' ? "Owner" : "Dueño (Owner)"}
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="admin">
                                     <div className="flex items-center gap-2">
                                         <Shield className="w-4 h-4 text-blue-600" />
-                                        Administradores
+                                        {language === 'en' ? "Administrators" : "Administradores"}
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="responsable">
                                     <div className="flex items-center gap-2">
                                         <ShieldCheck className="w-4 h-4 text-purple-600" />
-                                        Supervisores
+                                        {language === 'en' ? "Supervisors" : "Supervisores"}
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="operativo">
                                     <div className="flex items-center gap-2">
                                         <Eye className="w-4 h-4 text-emerald-600" />
-                                        Operarios
+                                        {language === 'en' ? "Operators" : "Operarios"}
                                     </div>
                                 </SelectItem>
                             </SelectContent>
@@ -207,7 +204,7 @@ const UserManagement = () => {
                     <div className="card-elevated p-4 mb-6 animate-fade-in">
                         <div className="flex items-center gap-2 mb-3">
                             <Clock className="w-4 h-4 text-muted-foreground" />
-                            <h3 className="text-sm font-medium text-foreground">Invitaciones pendientes</h3>
+                            <h3 className="text-sm font-medium text-foreground">{language === 'en' ? "Pending Invitations" : "Invitaciones pendientes"}</h3>
                             <Badge variant="secondary">{pendingInvitations.length}</Badge>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -216,7 +213,7 @@ const UserManagement = () => {
                                     <Mail className="w-3 h-3 text-muted-foreground" />
                                     <span className="text-muted-foreground">{inv.email}</span>
                                     <button
-                                        onClick={() => handleCancelInvitation(inv.email)}
+                                        onClick={() => setInvToCancel(inv.email)}
                                         className="hover:text-destructive text-muted-foreground transition-colors p-0.5"
                                         title="Cancelar invitación"
                                     >
@@ -245,6 +242,31 @@ const UserManagement = () => {
                     <UserTable users={filteredUsers} onRoleChanged={loadUsers} />
                 )}
             </main>
+
+            {/* Invitation Cancellation Alert Dialog */}
+            <AlertDialog open={!!invToCancel} onOpenChange={(open) => !open && setInvToCancel(null)}>
+                <AlertDialogContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-slate-900 dark:text-white">
+                            ¿Cancelar invitación de usuario?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+                            ¿Está seguro que desea cancelar la invitación para <strong className="text-slate-900 dark:text-white">{invToCancel}</strong>?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl font-bold">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmCancelInv}
+                            className="bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl border-0"
+                        >
+                            Confirmar Cancelación
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

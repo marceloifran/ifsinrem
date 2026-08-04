@@ -20,6 +20,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEmployees, useEPPItems, useEPPDeliveries, eppKeys } from "@/hooks/useEPPData";
 import {
@@ -30,12 +40,15 @@ import {
   signEPPDelivery,
   getSignatureUrl,
   generateForm299PDF,
+  checkWorkerHasSignedBefore,
   type Employee,
   type EPPDelivery,
   type EPPItem,
 } from "@/services/eppService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { SignaturePad } from "@/components/SignaturePad";
+import { AffidavitModal } from "@/components/AffidavitModal";
 import { ExcelImportModal } from "@/components/ExcelImportModal";
 import {
   Search,
@@ -57,6 +70,7 @@ import { toast } from "sonner";
 export default function Employees() {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const companyId = profile?.company_id;
 
   const [permissionsVer, setPermissionsVer] = useState(0);
@@ -116,6 +130,10 @@ export default function Employees() {
   // In-situ signature inside details
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [deliveryToSign, setDeliveryToSign] = useState<EPPDelivery | null>(null);
+
+  // Affidavit modal states for first-time signers
+  const [showAffidavitDialog, setShowAffidavitDialog] = useState(false);
+  const [pendingDeliveryToSign, setPendingDeliveryToSign] = useState<EPPDelivery | null>(null);
 
   // General Form states
   const [name, setName] = useState("");
@@ -287,20 +305,26 @@ export default function Employees() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const [empToDelete, setEmpToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDelete = (id: string, name: string) => {
     if (!canManageOperarios) {
       toast.error("No tenés permisos para dar de baja trabajadores");
       return;
     }
-    const confirm = window.confirm(`¿Está seguro que desea dar de baja al operario ${name}?`);
-    if (!confirm) return;
+    setEmpToDelete({ id, name });
+  };
 
+  const confirmDeleteEmp = async () => {
+    if (!empToDelete) return;
     try {
-      await deleteEmployee(id);
-      toast.success("Operario de baja");
+      await deleteEmployee(empToDelete.id);
+      toast.success("Operario dado de baja correctamente");
       loadData();
     } catch (err: any) {
       toast.error("Error al eliminar: " + err.message);
+    } finally {
+      setEmpToDelete(null);
     }
   };
 
@@ -339,9 +363,15 @@ export default function Employees() {
       // Reload lists
       await loadData();
 
-      // Trigger signature dialog immediately for this delivery!
-      setDeliveryToSign(newDel);
-      setShowSignatureDialog(true);
+      // Check if employee has signed before
+      const hasSigned = await checkWorkerHasSignedBefore(newDel.employee_id);
+      if (!hasSigned) {
+        setPendingDeliveryToSign(newDel);
+        setShowAffidavitDialog(true);
+      } else {
+        setDeliveryToSign(newDel);
+        setShowSignatureDialog(true);
+      }
     } catch (err: any) {
       toast.error("Error al registrar entrega: " + err.message);
     } finally {
@@ -349,8 +379,28 @@ export default function Employees() {
     }
   };
 
-  const handleOpenSignature = (del: EPPDelivery) => {
-    setDeliveryToSign(del);
+  const handleOpenSignature = async (del: EPPDelivery) => {
+    try {
+      const hasSigned = await checkWorkerHasSignedBefore(del.employee_id);
+      if (!hasSigned) {
+        setPendingDeliveryToSign(del);
+        setShowAffidavitDialog(true);
+      } else {
+        setDeliveryToSign(del);
+        setShowSignatureDialog(true);
+      }
+    } catch (err) {
+      setDeliveryToSign(del);
+      setShowSignatureDialog(true);
+    }
+  };
+
+  const handleAcceptAffidavit = () => {
+    if (pendingDeliveryToSign) {
+      setDeliveryToSign(pendingDeliveryToSign);
+      setPendingDeliveryToSign(null);
+    }
+    setShowAffidavitDialog(false);
     setShowSignatureDialog(true);
   };
 
@@ -452,8 +502,8 @@ export default function Employees() {
       <main className="mx-auto max-w-5xl px-4 py-8 md:px-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Operarios</h1>
-            <p className="text-sm text-slate-400 dark:text-slate-500">Registrá y gestioná el personal para la entrega de EPP.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("employees.title")}</h1>
+            <p className="text-sm text-slate-400 dark:text-slate-500">{t("employees.subtitle")}</p>
           </div>
           {canManageOperarios && (
             <div className="flex items-center gap-2">
@@ -463,13 +513,13 @@ export default function Employees() {
                 className="gap-2 rounded-xl h-11 px-4 border-slate-250 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-900"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                Importar Excel
+                {t("employees.importExcel")}
               </Button>
               <Button
                 onClick={handleOpenAdd}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-11 px-5 font-semibold text-sm shadow-sm border-0"
               >
-                <Plus size={16} /> Registrar Operario
+                <Plus size={16} /> {t("employees.newWorker")}
               </Button>
             </div>
           )}
@@ -479,7 +529,7 @@ export default function Employees() {
         <div className="relative mb-6">
           <Search className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-450 dark:text-slate-500" />
           <Input
-            placeholder="Buscar por nombre, DNI o cargo..."
+            placeholder={t("employees.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-12 bg-white dark:bg-[#080b11] border-slate-250 dark:border-slate-900 rounded-xl text-slate-900 dark:text-white text-sm shadow-sm focus-visible:ring-emerald-500/20"
@@ -489,15 +539,15 @@ export default function Employees() {
         {/* Workers Table */}
         <div className="bg-white dark:bg-[#080b11] rounded-2xl border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-slate-400">Cargando operarios...</div>
+            <div className="p-8 text-center text-slate-400">{language === 'en' ? "Loading workers..." : "Cargando operarios..."}</div>
           ) : filteredEmployees.length === 0 ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
               <UserPlus size={40} className="text-slate-300 dark:text-slate-800 mb-3" />
-              <p className="font-semibold text-slate-600 dark:text-slate-400 text-base mb-1">No se encontraron operarios</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Cargá a los trabajadores para poder registrar sus entregas.</p>
+              <p className="font-semibold text-slate-600 dark:text-slate-400 text-base mb-1">{language === 'en' ? "No workers found" : "No se encontraron operarios"}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">{language === 'en' ? "Register workers to assign their deliveries." : "Cargá a los trabajadores para poder registrar sus entregas."}</p>
               {canManageOperarios && (
                 <Button onClick={handleOpenAdd} variant="outline" className="rounded-xl border-slate-250 dark:border-slate-800 dark:text-slate-300">
-                  Registrar primer operario
+                  {t("employees.newWorker")}
                 </Button>
               )}
             </div>
@@ -508,12 +558,12 @@ export default function Employees() {
                 <Table>
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-900">
                     <TableRow>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Nombre</TableHead>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">DNI / CUIL</TableHead>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Puesto</TableHead>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Legajo</TableHead>
-                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">Estado</TableHead>
-                      <TableHead className="text-right font-bold text-slate-700 dark:text-slate-350">Acciones</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("employees.colWorker")}</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("employees.colDni")}</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("employees.colTitle")}</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("employees.colFile")}</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-350">{t("employees.colStatus")}</TableHead>
+                      <TableHead className="text-right font-bold text-slate-700 dark:text-slate-350">{t("employees.colActions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -528,7 +578,7 @@ export default function Employees() {
                           </button>
                         </TableCell>
                         <TableCell className="text-slate-500 dark:text-slate-400 font-mono text-xs">{emp.dni_cuil}</TableCell>
-                        <TableCell className="text-slate-600 dark:text-slate-300">{emp.job_title || "General"}</TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-300">{emp.job_title || (language === 'en' ? "General" : "General")}</TableCell>
                         <TableCell className="text-slate-455 dark:text-slate-500 text-xs font-semibold">{emp.file_number || "-"}</TableCell>
                         <TableCell>
                           <span
@@ -538,7 +588,7 @@ export default function Employees() {
                                 : "bg-slate-105 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800"
                             }`}
                           >
-                            {emp.status}
+                            {emp.status === "activo" ? t("employees.active") : t("employees.inactive")}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -1183,6 +1233,39 @@ export default function Employees() {
         companyId={companyId || ""}
         onSuccess={loadData}
       />
+
+      {/* Affidavit / Sworn Statement Modal for first-time signers */}
+      <AffidavitModal
+        open={showAffidavitDialog}
+        employeeName={pendingDeliveryToSign?.employee?.name || selectedEmployeeForDetail?.name || "Operario"}
+        onAccept={handleAcceptAffidavit}
+        onCancel={() => setShowAffidavitDialog(false)}
+      />
+
+      {/* Employee Deletion Alert Dialog */}
+      <AlertDialog open={!!empToDelete} onOpenChange={(open) => !open && setEmpToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-slate-900 dark:text-white">
+              ¿Dar de baja al operario?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+              ¿Está seguro que desea dar de baja al operario <strong className="text-slate-900 dark:text-white">{empToDelete?.name}</strong>? Sus registros de entrega anteriores permanecerán archivados para resguardo legal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl font-bold">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteEmp}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl border-0"
+            >
+              Dar de Baja
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -13,7 +13,7 @@ const LanguageSelector = () => {
     const { language, setLanguage } = useLanguage();
 
     return (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                     <Globe className="w-4 h-4" />

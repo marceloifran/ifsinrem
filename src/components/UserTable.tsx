@@ -1,8 +1,9 @@
 import { UserWithRole, roleLabels, roleIcons } from "@/services/userService";
 import RoleSelector from "./RoleSelector";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import { Mail, Calendar, User, ShieldCheck } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface UserTableProps {
     users: UserWithRole[];
@@ -10,12 +11,23 @@ interface UserTableProps {
 }
 
 const UserTable = ({ users, onRoleChanged }: UserTableProps) => {
+    const { t, language } = useLanguage();
+
+    const getRoleLabel = (role: string) => {
+      if (language === 'en') {
+        if (role === 'owner') return 'Owner';
+        if (role === 'admin') return 'Administrator';
+        if (role === 'operativo') return 'Operator';
+      }
+      return roleLabels[role as keyof typeof roleLabels] || role;
+    };
+
     if (users.length === 0) {
         return (
             <div className="card-elevated p-8 text-center animate-fade-in">
                 <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No hay usuarios registrados</h3>
-                <p className="text-muted-foreground">No se encontraron usuarios que coincidan con los filtros.</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{language === 'en' ? "No registered users" : "No hay usuarios registrados"}</h3>
+                <p className="text-muted-foreground">{language === 'en' ? "No users matching the filters were found." : "No se encontraron usuarios que coincidan con los filtros."}</p>
             </div>
         );
     }
@@ -45,7 +57,7 @@ const UserTable = ({ users, onRoleChanged }: UserTableProps) => {
                                             const Icon = roleIcons[user.role] || User;
                                             return <Icon className="w-3 h-3 shrink-0" />;
                                         })()}
-                                        <span>{roleLabels[user.role]}</span>
+                                        <span>{getRoleLabel(user.role)}</span>
                                     </span>
                                 </div>
                             </div>
@@ -64,7 +76,7 @@ const UserTable = ({ users, onRoleChanged }: UserTableProps) => {
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Calendar className="w-4 h-4 shrink-0 text-primary/60" />
-                                <span>Desde: {format(new Date(user.created_at), "d 'de' MMMM, yyyy", { locale: es })}</span>
+                                <span>{language === 'en' ? 'Since: ' : 'Desde: '}{format(new Date(user.created_at), language === 'en' ? "MMMM d, yyyy" : "d 'de' MMMM, yyyy", { locale: language === 'en' ? enUS : es })}</span>
                             </div>
                         </div>
                     </div>
@@ -77,11 +89,11 @@ const UserTable = ({ users, onRoleChanged }: UserTableProps) => {
                     <table className="w-full">
                         <thead className="bg-muted/30 border-b border-border/50">
                             <tr>
-                                <th className="text-left p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">Usuario</th>
+                                <th className="text-left p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">{t("users.colUser")}</th>
                                 <th className="text-left p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">Email</th>
-                                <th className="text-left p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">Rol</th>
-                                <th className="text-left p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">Registro</th>
-                                <th className="text-right p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">Acciones</th>
+                                <th className="text-left p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">{t("users.colRole")}</th>
+                                <th className="text-left p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">{t("users.colCreated")}</th>
+                                <th className="text-right p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">{t("users.colActions")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/40">
@@ -114,7 +126,7 @@ const UserTable = ({ users, onRoleChanged }: UserTableProps) => {
                                                 const Icon = roleIcons[user.role] || User;
                                                 return <Icon className="w-3.5 h-3.5" />;
                                             })()}
-                                            <span>{roleLabels[user.role]}</span>
+                                            <span>{getRoleLabel(user.role)}</span>
                                         </span>
                                     </td>
                                     <td className="p-4">

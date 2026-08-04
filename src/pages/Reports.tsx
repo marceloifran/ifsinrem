@@ -2,13 +2,31 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useEmployees, useEPPItems, useEPPDeliveries } from "@/hooks/useEPPData";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid,
+  AreaChart, Area
 } from "recharts";
 import {
-  Download, Filter, Loader2, FileText, Shield, Boxes, Users, AlertTriangle
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Download, Filter, Loader2, FileText, Shield, Boxes, Users, AlertTriangle, TrendingUp, ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +57,43 @@ const CLR = {
   purple: "#8b5cf6",
   muted: "#64748b",
 };
+
+/* ── shadcn chart config ──────────────────────────────────────── */
+
+const chartConfig = {
+  Signed: {
+    label: "Firmados",
+    color: "var(--chart-1)",
+  },
+  Firmados: {
+    label: "Firmados",
+    color: "var(--chart-1)",
+  },
+  Pending: {
+    label: "Pendientes",
+    color: "var(--chart-2)",
+  },
+  Pendientes: {
+    label: "Pendientes",
+    color: "var(--chart-2)",
+  },
+  "Pending Signature": {
+    label: "Pendientes Firma",
+    color: "var(--chart-2)",
+  },
+  "Pendientes Firma": {
+    label: "Pendientes Firma",
+    color: "var(--chart-2)",
+  },
+  Quantity: {
+    label: "Cantidad",
+    color: "var(--chart-3)",
+  },
+  Cantidad: {
+    label: "Cantidad",
+    color: "var(--chart-3)",
+  },
+} satisfies ChartConfig;
 
 /* ── recharts custom tooltip ──────────────────────────────────── */
 
@@ -119,6 +174,7 @@ const PIE_LABEL = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any)
 const Reports = () => {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const companyId = profile?.company_id;
 
   const { data: employees = [], isLoading: loadingEmp } = useEmployees(companyId);
@@ -168,44 +224,56 @@ const Reports = () => {
 
   // Status distribution (Pie chart data)
   const statusData = useMemo(() => [
-    { name: "Firmados", value: metrics.signed, color: CLR.success },
-    { name: "Pendientes Firma", value: metrics.pending, color: CLR.warning },
-  ].filter(d => d.value > 0), [metrics]);
+    { name: language === 'en' ? "Signed" : "Firmados", value: metrics.signed, color: CLR.success },
+    { name: language === 'en' ? "Pending Signature" : "Pendientes Firma", value: metrics.pending, color: CLR.warning },
+  ].filter(d => d.value > 0), [metrics, language]);
 
   // EPP Category distribution (Bar chart data)
   const categoryData = useMemo(() => {
     const cats: Record<string, number> = {};
     for (const d of filteredDeliveries) {
-      const cat = d.epp_item?.category || "otros";
-      const label = {
-        cabeza: "🪖 Cabeza",
-        manos: "🧤 Manos",
-        pies: "🥾 Pies",
-        cuerpo: "🛡️ Cuerpo",
-        visual: "🥽 Visual",
-        auditiva: "🎧 Auditiva",
-        respiratoria: "😷 Respiratoria",
-        otros: "📦 Otros"
-      }[cat] || cat;
+      const rawCat = (d.epp_item?.category || "otros").toLowerCase();
+      let label = rawCat;
+      if (rawCat.includes("cabeza") || rawCat.includes("crane")) {
+        label = language === 'en' ? "Head Protection" : "Protección Craneana";
+      } else if (rawCat.includes("mano")) {
+        label = language === 'en' ? "Hand Protection" : "Protección de Manos";
+      } else if (rawCat.includes("pie") || rawCat.includes("calza")) {
+        label = language === 'en' ? "Foot Protection" : "Protección de Calzado";
+      } else if (rawCat.includes("cuerp") || rawCat.includes("corpora")) {
+        label = language === 'en' ? "Body Protection" : "Protección Corporal";
+      } else if (rawCat.includes("visu") || rawCat.includes("ocula") || rawCat.includes("ojo")) {
+        label = language === 'en' ? "Eye Protection" : "Protección Ocular";
+      } else if (rawCat.includes("audi")) {
+        label = language === 'en' ? "Hearing Protection" : "Protección Auditiva";
+      } else if (rawCat.includes("respi")) {
+        label = language === 'en' ? "Respiratory Protection" : "Protección Respiratoria";
+      } else {
+        label = language === 'en' ? "Other Equipment" : "Otros Equipos";
+      }
       cats[label] = (cats[label] || 0) + d.quantity;
     }
+    const qtyKey = language === 'en' ? "Quantity" : "Cantidad";
     return Object.entries(cats).map(([name, value]) => ({
       name,
+      [qtyKey]: value,
       Cantidad: value
     }));
-  }, [filteredDeliveries]);
+  }, [filteredDeliveries, language]);
 
   // Monthly trend (Line chart data)
   const trendData = useMemo(() => {
-    const monthlyCounts: Record<string, { month: string; Firmados: number; Pendientes: number }> = {};
+    const signedKey = language === 'en' ? "Signed" : "Firmados";
+    const pendingKey = language === 'en' ? "Pending" : "Pendientes";
+    const monthlyCounts: Record<string, { month: string; [key: string]: any }> = {};
     
     // Generate last 6 months keys
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = d.toLocaleDateString("es-AR", { month: "short" });
-      monthlyCounts[monthKey] = { month: label, Firmados: 0, Pendientes: 0 };
+      const label = d.toLocaleDateString(language === 'en' ? "en-US" : "es-AR", { month: "short" });
+      monthlyCounts[monthKey] = { month: label, [signedKey]: 0, [pendingKey]: 0 };
     }
 
     for (const d of filteredDeliveries) {
@@ -214,20 +282,21 @@ const Reports = () => {
       const key = dateStr.substring(0, 7); // YYYY-MM
       if (monthlyCounts[key]) {
         if (d.status === "firmado") {
-          monthlyCounts[key].Firmados += d.quantity;
+          monthlyCounts[key][signedKey] += d.quantity;
         } else {
-          monthlyCounts[key].Pendientes += d.quantity;
+          monthlyCounts[key][pendingKey] += d.quantity;
         }
       }
     }
 
     return Object.values(monthlyCounts);
-  }, [filteredDeliveries]);
+  }, [filteredDeliveries, language]);
 
   const handleExport = async () => {
     try {
       setIsExporting(true);
       const doc = new jsPDF();
+      const isEn = language === 'en';
       
       // Header Box
       doc.setDrawColor(0, 0, 0);
@@ -235,19 +304,19 @@ const Reports = () => {
       doc.rect(10, 15, 190, 30);
       
       doc.setFont("Helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text("AUDITORÍA DE CONTROL DE EPP Y SEGURIDAD LABORAL", 15, 25);
+      doc.setFontSize(11);
+      doc.text(isEn ? "PPE & WORK SAFETY CONTROL AUDIT REPORT" : "AUDITORÍA DE CONTROL DE EPP Y SEGURIDAD LABORAL", 15, 25);
       doc.setFontSize(9);
       doc.setFont("Helvetica", "normal");
-      doc.text(`Empresa: ${profile?.company_name || "Mi Empresa ifsinrem"}`, 15, 33);
-      doc.text(`Fecha de Generación: ${new Date().toLocaleDateString("es-AR")}`, 15, 38);
-      doc.text(`Tasa de Cumplimiento de Firmas: ${metrics.complianceRate}%`, 130, 33);
-      doc.text(`Total EPP Entregados: ${metrics.total} u.`, 130, 38);
+      doc.text(`${isEn ? "Company" : "Empresa"}: ${profile?.company_name || "Mi Empresa ifsinrem"}`, 15, 33);
+      doc.text(`${isEn ? "Generation Date" : "Fecha de Generación"}: ${new Date().toLocaleDateString(isEn ? "en-US" : "es-AR")}`, 15, 38);
+      doc.text(`${isEn ? "Signature Rate" : "Tasa de Cumplimiento"}: ${metrics.complianceRate}%`, 130, 33);
+      doc.text(`${isEn ? "Total PPE Delivered" : "Total EPP Entregados"}: ${metrics.total} u.`, 130, 38);
 
       // Employees Compliance Table
       doc.setFontSize(10);
       doc.setFont("Helvetica", "bold");
-      doc.text("Resumen de Firmas por Operario:", 10, 52);
+      doc.text(isEn ? "Worker Signature Summary:" : "Resumen de Firmas por Operario:", 10, 52);
 
       const tableRows = employees.map(emp => {
         const empDels = deliveries.filter(d => d.employee_id === emp.id);
@@ -255,12 +324,14 @@ const Reports = () => {
         const signedEmp = empDels.filter(d => d.status === "firmado").reduce((sum, d) => sum + d.quantity, 0);
         const pendingEmp = totalEmp - signedEmp;
         const rate = totalEmp > 0 ? `${Math.round((signedEmp / totalEmp) * 100)}%` : "N/A";
-        return [emp.name, emp.dni_cuil, emp.job_title || "General", totalEmp.toString(), signedEmp.toString(), pendingEmp.toString(), rate];
+        return [emp.name, emp.dni_cuil, emp.job_title || (isEn ? "General" : "General"), totalEmp.toString(), signedEmp.toString(), pendingEmp.toString(), rate];
       });
 
       autoTable(doc, {
         startY: 55,
-        head: [['Operario', 'DNI / CUIL', 'Puesto', 'Entregados', 'Firmados', 'Pendientes', 'Cumplimiento']],
+        head: isEn 
+          ? [['Worker', 'ID / CUIL', 'Job Title', 'Delivered', 'Signed', 'Pending', 'Compliance Rate']]
+          : [['Operario', 'DNI / CUIL', 'Puesto', 'Entregados', 'Firmados', 'Pendientes', 'Cumplimiento']],
         body: tableRows,
         theme: 'striped',
         styles: { fontSize: 8, cellPadding: 2.5 },
@@ -270,50 +341,49 @@ const Reports = () => {
       // Stock alerts table
       const finalY = (doc as any).lastAutoTable.finalY + 12;
       doc.setFont("Helvetica", "bold");
-      doc.text("Estado Crítico de Stock en Depósito:", 10, finalY);
+      doc.text(isEn ? "Warehouse Critical Stock Status:" : "Estado Crítico de Stock en Depósito:", 10, finalY);
 
       const stockRows = eppItems.map(item => {
-        const isCritical = item.stock <= 5 ? "SÍ (CRÍTICO)" : "NO (SUFICIENTE)";
-        return [item.name, item.brand || "-", item.type_model || "-", item.certified === "Si" ? "SÍ" : "NO", `${item.stock} u.`, isCritical];
+        const isCritical = item.stock <= 5 
+          ? (isEn ? "YES (CRITICAL)" : "SÍ (CRÍTICO)") 
+          : (isEn ? "NO (SUFFICIENT)" : "NO (SUFFICIENT)");
+        return [item.name, item.brand || "-", item.type_model || "-", item.certified === "Si" ? (isEn ? "YES" : "SÍ") : "NO", `${item.stock} u.`, isCritical];
       });
 
       autoTable(doc, {
         startY: finalY + 3,
-        head: [['Elemento', 'Marca', 'Modelo', 'Certificado', 'Stock Actual', 'Alerta']],
+        head: isEn
+          ? [['Item Name', 'Brand', 'Model', 'Certified', 'Current Stock', 'Stock Alert']]
+          : [['Elemento', 'Marca', 'Modelo', 'Certificado', 'Stock Actual', 'Alerta']],
         body: stockRows,
         theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2.5 },
-        headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] }
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255] }
       });
 
-      doc.save(`Reporte_Cumplimiento_EPP_${new Date().toISOString().split("T")[0]}.pdf`);
-      toast.success("Reporte consolidado descargado con éxito");
-    } catch (e: any) {
-      toast.error("Error al exportar reporte: " + e.message);
+      const reportFileName = isEn ? `ppe_audit_report_${new Date().toISOString().split("T")[0]}.pdf` : `auditoria_epp_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(reportFileName);
+      toast.success(isEn ? "Consolidated audit report downloaded successfully" : "Reporte consolidado descargado con éxito");
+    } catch (err: any) {
+      toast.error(language === 'en' ? "Error generating PDF report" : "Error al generar reporte PDF");
     } finally {
       setIsExporting(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
   };
 
   if (loading) return <DashboardSkeleton />;
   if (!user) { navigate("/auth"); return null; }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#04060a] text-slate-800 dark:text-slate-200 transition-colors duration-250">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-[#070b14] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <Header
-        userName={profile?.name || user.email || "Usuario"}
-        onLogout={handleLogout}
+        userName={profile?.name || user?.email || "Usuario"}
+        onLogout={signOut}
         isAdmin={isAdmin}
         userPlan={profile?.plan}
       />
 
-      <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 md:px-8 space-y-6">
-
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -321,24 +391,24 @@ const Reports = () => {
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 dark:border-slate-900 pb-5"
         >
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Reportes y Auditoría EPP</h1>
-            <p className="text-xs text-slate-450 dark:text-slate-500 mt-0.5">Visión consolidada del cumplimiento de firmas y stock de seguridad.</p>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("reports.title")}</h1>
+            <p className="text-xs text-slate-455 dark:text-slate-500 mt-0.5">{t("reports.subtitle")}</p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="h-9 w-auto min-w-[180px] text-xs">
                 <Filter size={12} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                <SelectValue placeholder="Categoría" />
+                <SelectValue placeholder={language === 'en' ? "Category" : "Categoría"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las EPP</SelectItem>
-                <SelectItem value="cabeza">🪖 Cabeza</SelectItem>
-                <SelectItem value="manos">🧤 Manos</SelectItem>
-                <SelectItem value="pies">🥾 Pies</SelectItem>
-                <SelectItem value="cuerpo">🛡️ Cuerpo</SelectItem>
-                <SelectItem value="visual">🥽 Visual</SelectItem>
-                <SelectItem value="auditiva">🎧 Auditiva</SelectItem>
-                <SelectItem value="respiratoria">😷 Respiratoria</SelectItem>
+                <SelectItem value="all">{language === 'en' ? "All Categories" : "Todas las Categorías"}</SelectItem>
+                <SelectItem value="cabeza">{language === 'en' ? "Head Protection" : "Protección Craneana"}</SelectItem>
+                <SelectItem value="manos">{language === 'en' ? "Hand Protection" : "Protección de Manos"}</SelectItem>
+                <SelectItem value="pies">{language === 'en' ? "Foot Protection" : "Protección de Calzado"}</SelectItem>
+                <SelectItem value="cuerpo">{language === 'en' ? "Body Protection" : "Protección Corporal"}</SelectItem>
+                <SelectItem value="visual">{language === 'en' ? "Eye Protection" : "Protección Ocular"}</SelectItem>
+                <SelectItem value="auditiva">{language === 'en' ? "Hearing Protection" : "Protección Auditiva"}</SelectItem>
+                <SelectItem value="respiratoria">{language === 'en' ? "Respiratory Protection" : "Protección Respiratoria"}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -347,7 +417,7 @@ const Reports = () => {
               className="h-9 gap-1.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-500/10"
             >
               {isExporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-              {isExporting ? "Generando..." : "Exportar Auditoría"}
+              {isExporting ? (language === 'en' ? "Generating..." : "Generando...") : (language === 'en' ? "Export Audit" : "Exportar Auditoría")}
             </Button>
           </div>
         </motion.div>
@@ -359,92 +429,211 @@ const Reports = () => {
           transition={{ delay: 0.05 }}
           className="grid grid-cols-2 gap-4 lg:grid-cols-4"
         >
-          <StatCard icon={<Shield size={15} />} label="Cumplimiento" value={`${metrics.complianceRate}%`} sub="Tasa de entregas firmadas" color="emerald" />
-          <StatCard icon={<Boxes size={15} />} label="Total Entregado" value={`${metrics.total} u.`} sub="Elementos provistos" color="cyan" />
-          <StatCard icon={<AlertTriangle size={15} />} label="Pendiente Firma" value={`${metrics.pending} u.`} sub="Falta firma del operario" color="amber" />
-          <StatCard icon={<Users size={15} />} label="Stock Crítico" value={`${metrics.lowStockCount} items`} sub="EPP con stock <= 5" color="red" />
+          <StatCard icon={<Shield size={15} />} label={language === 'en' ? "Compliance" : "Cumplimiento"} value={`${metrics.complianceRate}%`} sub={language === 'en' ? "Signed delivery rate" : "Tasa de entregas firmadas"} color="emerald" />
+          <StatCard icon={<Boxes size={15} />} label={language === 'en' ? "Total Delivered" : "Total Entregado"} value={`${metrics.total} u.`} sub={language === 'en' ? "Provided items" : "Elementos provistos"} color="cyan" />
+          <StatCard icon={<AlertTriangle size={15} />} label={language === 'en' ? "Pending Signature" : "Pendiente Firma"} value={`${metrics.pending} u.`} sub={language === 'en' ? "Missing worker signature" : "Falta firma del operario"} color="amber" />
+          <StatCard icon={<Users size={15} />} label={language === 'en' ? "Critical Stock" : "Stock Crítico"} value={`${metrics.lowStockCount} items`} sub={language === 'en' ? "PPE items with stock <= 5" : "EPP con stock <= 5"} color="red" />
         </motion.div>
 
-        {/* ROW 1: status pie + category bar */}
+        {/* ROW 1: status distribution + category bar */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          <ChartCard title="Distribución de Firmas" sub="Porcentaje de elementos firmados digitalmente vs pendientes">
-            {statusData.length === 0 ? (
-              <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">Sin datos registrados</div>
-            ) : (
-              <div className="flex items-center justify-around gap-4 h-48">
-                <ResponsiveContainer width={150} height={150}>
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={70}
-                      dataKey="value"
-                      labelLine={false}
-                      label={PIE_LABEL}
-                    >
-                      {statusData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<ChartTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2">
-                  {statusData.map((d) => (
-                    <div key={d.name} className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: d.color }} />
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{d.name}</span>
-                      <span className="ml-auto text-xs font-bold text-slate-800 dark:text-white">{d.value} u.</span>
+          {/* Signature Distribution Card */}
+          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <CardHeader className="p-0 pb-4">
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                  {language === 'en' ? "Signature Distribution" : "Distribución de Firmas"}
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                  {language === 'en' ? "Percentage of digitally signed vs pending items" : "Porcentaje de elementos firmados digitalmente vs pendientes"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 space-y-4">
+                {/* Overall Compliance Badge */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-emerald-500/20">
+                      {metrics.complianceRate}%
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {language === 'en' ? "Digital Signature Rate" : "Tasa de Firmas Digitales"}
+                      </p>
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        {metrics.signed} {language === 'en' ? "of" : "de"} {metrics.total} {language === 'en' ? "items signed" : "elementos firmados"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    {metrics.complianceRate >= 80 ? (language === 'en' ? "Optimal" : "Óptimo") : (language === 'en' ? "Pending" : "Pendiente")}
+                  </span>
                 </div>
-              </div>
-            )}
-          </ChartCard>
 
-          <ChartCard title="Entregas por Categoría EPP" sub="Cantidad de unidades provistas por tipo de protección">
-            {categoryData.length === 0 ? (
-              <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">Sin entregas registradas</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={categoryData} barSize={16}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} width={20} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(128,128,128,0.03)" }} />
-                  <Bar dataKey="Cantidad" fill={CLR.primary} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </ChartCard>
+                {/* Firmados Progress Item */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-900 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      {language === 'en' ? "Digitally Signed Items" : "Elementos Firmados Digitalmente"}
+                    </span>
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{metrics.signed} u. ({metrics.complianceRate}%)</span>
+                  </div>
+                  <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${metrics.complianceRate}%` }} />
+                  </div>
+                </div>
+
+                {/* Pendientes Progress Item */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-900 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                      {language === 'en' ? "Pending Signature Items" : "Elementos Pendientes de Firma"}
+                    </span>
+                    <span className="font-extrabold text-amber-500">{metrics.pending} u. ({100 - metrics.complianceRate}%)</span>
+                  </div>
+                  <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${100 - metrics.complianceRate}%` }} />
+                  </div>
+                </div>
+              </CardContent>
+            </div>
+            <CardFooter className="p-0 pt-4 text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-900 mt-4">
+              <span>{language === 'en' ? "Audited under SRT Res. 299/11" : "Auditado bajo Res. SRT 299/11"}</span>
+            </CardFooter>
+          </Card>
+
+          {/* Horizontal Bar Chart for Categories */}
+          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                {language === 'en' ? "Deliveries by PPE Category" : "Entregas por Categoría EPP"}
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                {language === 'en' ? "Quantity of units provided by protection type" : "Cantidad de unidades provistas por tipo de protección"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {categoryData.length === 0 ? (
+                <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">
+                  {language === 'en' ? "No deliveries recorded" : "Sin entregas registradas"}
+                </div>
+              ) : (
+                <ChartContainer config={chartConfig} className="h-56 w-full">
+                  <BarChart
+                    accessibilityLayer
+                    data={categoryData}
+                    layout="vertical"
+                    margin={{ left: 5, right: 25, top: 5, bottom: 5 }}
+                  >
+                    <XAxis type="number" hide />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tickLine={false}
+                      tickMargin={8}
+                      axisLine={false}
+                      tick={{ fontSize: 11, fill: isDark ? "#cbd5e1" : "#334155" }}
+                      width={140}
+                    />
+                    <ChartTooltip cursor={{ fill: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }} content={<ChartTooltipContent hideLabel />} />
+                    <Bar
+                      dataKey={language === 'en' ? "Quantity" : "Cantidad"}
+                      fill="#10b981"
+                      radius={6}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+            <CardFooter className="pt-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 font-medium leading-none text-slate-500 dark:text-slate-400">
+                {language === 'en' ? "Sorted by distribution volume" : "Ordenado por volumen distribuido"}
+              </div>
+            </CardFooter>
+          </Card>
         </motion.div>
 
-        {/* ROW 2: monthly trend line */}
+        {/* ROW 2: Gradient Area Chart for Monthly Trend */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <ChartCard title="Evolución Mensual de Entregas" sub="Historial de cantidades distribuidas por firma en el tiempo">
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={trendData} margin={{ left: -10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} width={20} />
-                <Tooltip content={<ChartTooltip />} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 10, color: '#94a3b8' }} />
-                <Line type="monotone" dataKey="Firmados" stroke={CLR.success} strokeWidth={2} dot={{ r: 3, fill: CLR.success }} />
-                <Line type="monotone" dataKey="Pendientes" stroke={CLR.warning} strokeWidth={2} dot={{ r: 3, fill: CLR.warning }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
+          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                {language === 'en' ? "Monthly Delivery Trend" : "Evolución Mensual de Entregas"}
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                {language === 'en' ? "History of quantities distributed over time with gradient fill" : "Historial de cantidades distribuidas por firma en el tiempo con relleno degradado"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-64 w-full">
+                <AreaChart
+                  accessibilityLayer
+                  data={trendData}
+                  margin={{ left: 0, right: 15, top: 10, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#1e293b" : "#e2e8f0"} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fontSize: 11, fill: isDark ? "#94a3b8" : "#475569" }}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fontSize: 11, fill: isDark ? "#94a3b8" : "#475569" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={30}
+                  />
+                  <ChartTooltip cursor={{ stroke: isDark ? "#334155" : "#cbd5e1" }} content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <defs>
+                    <linearGradient id="fillSigned" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="fillPending" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    dataKey={language === 'en' ? "Signed" : "Firmados"}
+                    type="monotone"
+                    fill="url(#fillSigned)"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                  />
+                  <Area
+                    dataKey={language === 'en' ? "Pending" : "Pendientes"}
+                    type="monotone"
+                    fill="url(#fillPending)"
+                    stroke="#f59e0b"
+                    strokeWidth={2.5}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </CardContent>
+            <CardFooter className="pt-2">
+              <div className="flex w-full items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>{language === 'en' ? `Compliance rate: ${metrics.complianceRate}%` : `Tasa de cumplimiento: ${metrics.complianceRate}%`}</span>
+                </div>
+              </div>
+            </CardFooter>
+          </Card>
         </motion.div>
 
         {/* ROW 3: compliance audit score details */}
@@ -454,84 +643,135 @@ const Reports = () => {
           transition={{ delay: 0.2 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          <ChartCard title="Score de Cumplimiento Legal" sub="Indice de resguardo frente a reclamos de ART">
-            <div className="flex flex-col items-center gap-4 py-3">
-              <div className="relative">
-                <svg width={130} height={130} className="-rotate-90">
-                  <circle cx={65} cy={65} r={52} fill="none" stroke={isDark ? "#0f172a" : "#f1f5f9"} strokeWidth={10} />
-                  <circle
-                    cx={65} cy={65} r={52} fill="none"
-                    stroke={metrics.complianceRate >= 80 ? CLR.success : metrics.complianceRate >= 50 ? CLR.warning : CLR.danger}
-                    strokeWidth={10}
-                    strokeDasharray={`${2 * Math.PI * 52}`}
-                    strokeDashoffset={`${2 * Math.PI * 52 * (1 - metrics.complianceRate / 100)}`}
-                    strokeLinecap="round"
-                    style={{ transition: "stroke-dashoffset 1s ease" }}
+          {/* Legal Compliance Score Card */}
+          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                  {language === 'en' ? "Legal Compliance Score" : "Score de Cumplimiento Legal"}
+                </span>
+                <span className={cn(
+                  "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border tracking-wide",
+                  metrics.complianceRate >= 80 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : metrics.complianceRate >= 50 ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+                )}>
+                  {metrics.complianceRate >= 80 ? (language === 'en' ? "OPTIMAL" : "ÓPTIMO") : (language === 'en' ? "REQUIRES ATTENTION" : "REQUIERE ATENCIÓN")}
+                </span>
+              </div>
+
+              <div className="my-4">
+                <div className="flex items-baseline justify-between mb-2">
+                  <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">{metrics.complianceRate}%</h2>
+                  <span className="text-xs text-slate-400 font-semibold">{metrics.signed} / {metrics.total} {language === 'en' ? "units signed" : "unidades firmadas"}</span>
+                </div>
+                {/* Sleek Progress Bar */}
+                <div className="h-3 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-slate-800">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-700",
+                      metrics.complianceRate >= 80 ? "bg-emerald-500" : metrics.complianceRate >= 50 ? "bg-amber-500" : "bg-red-500"
+                    )}
+                    style={{ width: `${metrics.complianceRate}%` }}
                   />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center flex-col">
-                  <span className={cn(
-                    "text-3xl font-black",
-                    metrics.complianceRate >= 80 ? "text-emerald-500 dark:text-emerald-400" : metrics.complianceRate >= 50 ? "text-amber-500 dark:text-amber-400" : "text-red-500 dark:text-red-400"
-                  )}>
-                    {metrics.complianceRate}%
-                  </span>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider -mt-1">Firmado</span>
                 </div>
               </div>
-              <div className="w-full text-center">
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed px-4">
-                  {metrics.complianceRate >= 90
-                    ? "✅ Empresa blindada — Cumplimiento legal excelente. Excelente resguardo legal ante siniestros."
-                    : metrics.complianceRate >= 70
-                    ? "🟡 Nivel Aceptable — Algunas firmas táctiles están pendientes. Completar firmas pendientes."
-                    : metrics.complianceRate >= 50
-                    ? "⚠️ Alerta — Más del 30% de tus entregas no tienen firma táctil de operario. Riesgo de multa."
-                    : "🚨 Nivel Crítico — Riesgo inminente de sanción e inaplicabilidad del Formulario 299 SRT."}
-                </p>
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  disabled={isExporting}
-                  className="mt-3 flex items-center gap-1.5 mx-auto text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-350 hover:underline"
-                >
-                  <FileText size={12} />
-                  Descargar Reporte de Auditoría EPP (PDF)
-                </button>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                {metrics.complianceRate >= 90
+                  ? (language === 'en' ? "Shielded Company — Full legal protection under SRT Res 299/11." : "Empresa Blindada — Cumplimiento total de resguardo bajo la Res. SRT 299/11.")
+                  : metrics.complianceRate >= 70
+                  ? (language === 'en' ? "Acceptable Level — Pending tactile signatures need completion." : "Nivel Aceptable — Se requiere completar las firmas táctiles pendientes.")
+                  : (language === 'en' ? "Critical Risk — Missing worker signatures trigger fine risks." : "Riesgo Crítico — La falta de firmas genera riesgo directo de sanción.")}
+              </p>
+
+              {/* Sub-cards like Screenshot 2 */}
+              <div className="grid grid-cols-2 gap-3 mt-5">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-900">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    {language === 'en' ? "SIGNED DELIVERIES" : "ENTREGAS FIRMADAS"}
+                  </span>
+                  <span className="text-sm font-extrabold text-slate-900 dark:text-white block">
+                    {metrics.signed} {language === 'en' ? "Units" : "Unidades"}
+                  </span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5">
+                    {language === 'en' ? "Verified SRT" : "Verificado SRT"}
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-900">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    {language === 'en' ? "PENDING SIGNATURES" : "PENDIENTES DE FIRMA"}
+                  </span>
+                  <span className="text-sm font-extrabold text-slate-900 dark:text-white block">
+                    {metrics.pending} {language === 'en' ? "Units" : "Unidades"}
+                  </span>
+                  <span className="text-[10px] text-amber-500 font-semibold block mt-0.5">
+                    {metrics.pending > 0 ? (language === 'en' ? "Requires Tactile Sign" : "Requiere Firma Táctil") : (language === 'en' ? "All Complete" : "Al Día")}
+                  </span>
+                </div>
               </div>
             </div>
-          </ChartCard>
 
-          <ChartCard title="Estado del Inventario" sub="Relación de elementos en stock frente al stock crítico">
-            <div className="space-y-3.5 h-48 overflow-y-auto pr-1">
-              {eppItems.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-xs text-slate-400 dark:text-slate-550">Sin stock registrado</div>
-              ) : (
-                eppItems.map(item => {
-                  const isLow = item.stock <= 5;
-                  return (
-                    <div key={item.id} className="flex items-center justify-between border-b border-slate-100 dark:border-slate-900 pb-2 last:border-0 last:pb-0">
-                      <div>
-                        <p className="text-xs font-bold text-slate-800 dark:text-white">{item.name}</p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">{item.category ? `Categoría: ${item.category}` : 'Sin categoría'}</p>
+            <Button
+              type="button"
+              onClick={handleExport}
+              disabled={isExporting}
+              className="mt-6 w-full rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-bold py-3 text-xs border-0 shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+              {isExporting ? (language === 'en' ? "Generating PDF..." : "Generando PDF...") : (language === 'en' ? "Download Full Audit Report (PDF)" : "Descargar Reporte Completo de Auditoría (PDF)")}
+            </Button>
+          </Card>
+
+          {/* Inventory Status Card */}
+          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <CardHeader className="p-0 pb-4">
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                  {language === 'en' ? "Inventory Status" : "Estado del Inventario"}
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                  {language === 'en' ? "Ratio of stock items vs critical stock thresholds" : "Relación de elementos en stock frente al stock crítico"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 space-y-3 max-h-[260px] overflow-y-auto pr-1">
+                {eppItems.length === 0 ? (
+                  <div className="flex h-40 items-center justify-center text-xs text-slate-400 dark:text-slate-550">
+                    {language === 'en' ? "No stock recorded" : "Sin stock registrado"}
+                  </div>
+                ) : (
+                  eppItems.map(item => {
+                    const isLow = item.stock <= 5;
+                    return (
+                      <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/50 dark:border-slate-900">
+                        <div>
+                          <p className="text-xs font-bold text-slate-800 dark:text-white">{item.name}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                            {item.category ? `${language === 'en' ? 'Category' : 'Categoría'}: ${item.category}` : (language === 'en' ? 'Uncategorized' : 'Sin categoría')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{item.stock} u.</span>
+                          <span className={cn(
+                            "text-[9px] font-bold px-2 py-0.5 rounded-full border",
+                            isLow 
+                              ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-200 dark:border-red-500/25" 
+                              : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400"
+                          )}>
+                            {isLow ? (language === 'en' ? "CRITICAL" : "CRÍTICO") : (language === 'en' ? "Sufficient" : "Suficiente")}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-slate-650 dark:text-slate-300">{item.stock} u.</span>
-                        <span className={cn(
-                          "text-[9px] font-bold px-2 py-0.5 rounded-full border",
-                          isLow 
-                            ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-200 dark:border-red-500/25" 
-                            : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400"
-                        )}>
-                          {isLow ? "CRÍTICO" : "Suficiente"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })
+                )}
+              </CardContent>
             </div>
-          </ChartCard>
+            <CardFooter className="p-0 pt-4 text-xs text-muted-foreground border-t border-slate-100 dark:border-slate-900 mt-4">
+              <span className="text-[11px] text-slate-400 font-medium">
+                {language === 'en' ? "Threshold alert triggers at 5 units" : "Alerta de umbral activada a las 5 unidades"}
+              </span>
+            </CardFooter>
+          </Card>
         </motion.div>
       </main>
     </div>
