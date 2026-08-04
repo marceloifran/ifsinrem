@@ -19,6 +19,8 @@ import {
   FileSignature,
   CheckCircle2,
   TrendingUp,
+  Eye,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -69,49 +71,22 @@ export default function Dashboard() {
   // Loading state for saving
   const [savingDelivery, setSavingDelivery] = useState(false);
 
-  // Load signature URLs whenever deliveries change
-  const [sigUrls, setSigUrls] = useState<Record<string, string>>({});
-  const sigUrlsRef = useRef(sigUrls);
+  // On-demand signature preview state (Fast & Light-weight)
+  const [viewSignatureUrl, setViewSignatureUrl] = useState<string | null>(null);
+  const [loadingSigId, setLoadingSigId] = useState<string | null>(null);
 
-  // Keep ref updated
-  useEffect(() => {
-    sigUrlsRef.current = sigUrls;
-  }, [sigUrls]);
-
-  // Load signature URLs whenever deliveries change concurrently
-  useEffect(() => {
-    const loadUrls = async () => {
-      const signedDels = deliveries.filter((d) => d.status === "firmado" && d.signature_path);
-      const toFetch = signedDels.filter((del) => del.signature_path && !sigUrlsRef.current[del.id]);
-
-      if (toFetch.length === 0) return;
-
-      const results = await Promise.all(
-        toFetch.map(async (del) => {
-          try {
-            const url = await getSignatureUrl(del.signature_path!);
-            return { id: del.id, url };
-          } catch (err) {
-            console.error("Error fetching signature URL:", err);
-            return null;
-          }
-        })
-      );
-
-      const newUrls: Record<string, string> = {};
-      for (const res of results) {
-        if (res) {
-          newUrls[res.id] = res.url;
-        }
-      }
-
-      if (Object.keys(newUrls).length > 0) {
-        setSigUrls((prev) => ({ ...prev, ...newUrls }));
-      }
-    };
-
-    loadUrls();
-  }, [deliveries]);
+  const handleViewSignature = async (del: EPPDelivery) => {
+    if (!del.signature_path) return;
+    try {
+      setLoadingSigId(del.id);
+      const url = await getSignatureUrl(del.signature_path);
+      setViewSignatureUrl(url);
+    } catch (err) {
+      toast.error(language === 'en' ? "Error loading signature" : "Error al cargar la firma");
+    } finally {
+      setLoadingSigId(null);
+    }
+  };
 
   useEffect(() => {
     if (!companyId) return;
@@ -469,24 +444,28 @@ export default function Dashboard() {
                           {del.quantity} {t("dashboard.units")} {language === 'en' ? 'of' : 'de'} {del.epp_item?.name || "EPP"}
                         </p>
                         {del.notes && <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 italic">"{del.notes}"</p>}
-                        {del.status === "firmado" && sigUrls[del.id] && (
-                          <div className="mt-2 flex items-center gap-1.5">
-                            <span className="text-[9px] text-slate-400 dark:text-slate-550">{t("dashboard.signature")}</span>
-                            <img
-                              src={sigUrls[del.id]}
-                              className="h-7 object-contain bg-white dark:bg-slate-100 border border-slate-250 dark:border-slate-800 rounded px-1"
-                              alt="Firma"
-                            />
-                          </div>
-                        )}
                       </div>
 
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-slate-500 dark:text-slate-500 font-medium shrink-0">{del.delivery_date}</span>
                         {del.status === "firmado" ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30 px-3 py-1 rounded-full">
-                            <CheckCircle2 size={12} /> {t("dashboard.signed")}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30 px-3 py-1 rounded-full">
+                              <CheckCircle2 size={12} /> {t("dashboard.signed")}
+                            </span>
+                            {del.signature_path && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewSignature(del)}
+                                disabled={loadingSigId === del.id}
+                                className="h-8 px-2.5 text-xs rounded-xl gap-1 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold"
+                              >
+                                {loadingSigId === del.id ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} className="text-emerald-600 dark:text-emerald-400" />}
+                                {language === 'en' ? "View Signature" : "Ver Firma"}
+                              </Button>
+                            )}
+                          </div>
                         ) : (
                           <Button
                             size="sm"
@@ -659,6 +638,34 @@ export default function Dashboard() {
         onAccept={handleAcceptAffidavit}
         onCancel={() => setShowAffidavitDialog(false)}
       />
+
+      {/* Signature Preview Dialog (On Demand) */}
+      <Dialog open={!!viewSignatureUrl} onOpenChange={(open) => !open && setViewSignatureUrl(null)}>
+        <DialogContent className="sm:max-w-md rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white">
+          <DialogHeader>
+            <DialogTitle className="text-slate-900 dark:text-white">
+              {language === 'en' ? "Digitally Signed Form" : "Firma Digital Registrada"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 flex flex-col items-center justify-center">
+            {viewSignatureUrl && (
+              <img
+                src={viewSignatureUrl}
+                alt="Firma"
+                className="max-h-48 object-contain bg-white dark:bg-slate-100 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-inner"
+              />
+            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-medium">
+              {language === 'en' ? "Verified under SRT Resolution 299/11" : "Firma válida auditada bajo Res. SRT 299/11"}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewSignatureUrl(null)} className="rounded-xl font-bold">
+              {language === 'en' ? "Close" : "Cerrar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

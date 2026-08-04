@@ -18,8 +18,16 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useUsers, usePendingInvitations, useInvalidateUserCache } from "@/hooks/useUsersData";
 import { deleteInvitation, UserWithRole, AppRole } from "@/services/userService";
 import { Search, ArrowLeft, Loader2, Users, Shield, Eye, Clock, Mail, X, Crown, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
-
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RolePermissionsManager } from "@/components/RolePermissionsManager";
 import { checkRolePermission } from "@/services/permissionService";
 
@@ -67,14 +75,19 @@ const UserManagement = () => {
         navigate('/');
     };
 
-    const handleCancelInvitation = async (email: string) => {
+    const [invToCancel, setInvToCancel] = useState<string | null>(null);
+
+    const handleConfirmCancelInv = async () => {
+        if (!invToCancel) return;
         try {
-            await deleteInvitation(email);
-            toast.success("Invitación cancelada");
+            await deleteInvitation(invToCancel);
+            toast.success("Invitación cancelada con éxito");
             loadUsers();
         } catch (error) {
             console.error('Error canceling invitation:', error);
             toast.error("Error al cancelar la invitación");
+        } finally {
+            setInvToCancel(null);
         }
     };
 
@@ -200,7 +213,7 @@ const UserManagement = () => {
                                     <Mail className="w-3 h-3 text-muted-foreground" />
                                     <span className="text-muted-foreground">{inv.email}</span>
                                     <button
-                                        onClick={() => handleCancelInvitation(inv.email)}
+                                        onClick={() => setInvToCancel(inv.email)}
                                         className="hover:text-destructive text-muted-foreground transition-colors p-0.5"
                                         title="Cancelar invitación"
                                     >
@@ -229,6 +242,31 @@ const UserManagement = () => {
                     <UserTable users={filteredUsers} onRoleChanged={loadUsers} />
                 )}
             </main>
+
+            {/* Invitation Cancellation Alert Dialog */}
+            <AlertDialog open={!!invToCancel} onOpenChange={(open) => !open && setInvToCancel(null)}>
+                <AlertDialogContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-slate-900 dark:text-white">
+                            ¿Cancelar invitación de usuario?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+                            ¿Está seguro que desea cancelar la invitación para <strong className="text-slate-900 dark:text-white">{invToCancel}</strong>?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl font-bold">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmCancelInv}
+                            className="bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl border-0"
+                        >
+                            Confirmar Cancelación
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

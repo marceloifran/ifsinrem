@@ -20,6 +20,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEmployees, useEPPItems, useEPPDeliveries, eppKeys } from "@/hooks/useEPPData";
 import {
@@ -295,20 +305,26 @@ export default function Employees() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const [empToDelete, setEmpToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDelete = (id: string, name: string) => {
     if (!canManageOperarios) {
       toast.error("No tenés permisos para dar de baja trabajadores");
       return;
     }
-    const confirm = window.confirm(`¿Está seguro que desea dar de baja al operario ${name}?`);
-    if (!confirm) return;
+    setEmpToDelete({ id, name });
+  };
 
+  const confirmDeleteEmp = async () => {
+    if (!empToDelete) return;
     try {
-      await deleteEmployee(id);
-      toast.success("Operario de baja");
+      await deleteEmployee(empToDelete.id);
+      toast.success("Operario dado de baja correctamente");
       loadData();
     } catch (err: any) {
       toast.error("Error al eliminar: " + err.message);
+    } finally {
+      setEmpToDelete(null);
     }
   };
 
@@ -1225,6 +1241,31 @@ export default function Employees() {
         onAccept={handleAcceptAffidavit}
         onCancel={() => setShowAffidavitDialog(false)}
       />
+
+      {/* Employee Deletion Alert Dialog */}
+      <AlertDialog open={!!empToDelete} onOpenChange={(open) => !open && setEmpToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-slate-900 dark:text-white">
+              ¿Dar de baja al operario?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+              ¿Está seguro que desea dar de baja al operario <strong className="text-slate-900 dark:text-white">{empToDelete?.name}</strong>? Sus registros de entrega anteriores permanecerán archivados para resguardo legal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl font-bold">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteEmp}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl border-0"
+            >
+              Dar de Baja
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

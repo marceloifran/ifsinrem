@@ -20,6 +20,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   addEPPItem,
   updateEPPItem,
   deleteEPPItem,
@@ -220,19 +230,26 @@ export default function EPPInventory() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDelete = (id: string, name: string) => {
     if (!canManageInventario) {
       toast.error("No tenés permisos para eliminar EPP");
       return;
     }
-    const confirm = window.confirm(`¿Está seguro que desea eliminar ${name} del catálogo?`);
-    if (!confirm) return;
+    setItemToDelete({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
     try {
-      await deleteEPPItem(id);
-      toast.success("Elemento eliminado");
+      await deleteEPPItem(itemToDelete.id);
+      toast.success("Elemento eliminado con éxito");
       loadItems();
     } catch (err: any) {
       toast.error("Error al eliminar: " + err.message);
+    } finally {
+      setItemToDelete(null);
     }
   };
 
@@ -677,6 +694,31 @@ export default function EPPInventory() {
         companyId={companyId || ""}
         onSuccess={loadItems}
       />
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-slate-900 dark:text-white">
+              ¿Confirmar eliminación de elemento?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 dark:text-slate-400">
+              ¿Está seguro que desea eliminar <strong className="text-slate-900 dark:text-white">{itemToDelete?.name}</strong> del catálogo de inventario? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl font-bold">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl border-0"
+            >
+              Eliminar Elemento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
