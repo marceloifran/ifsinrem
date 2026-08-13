@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -6,37 +6,49 @@ import {
   CheckCircle2,
   Zap,
   Calendar,
-  Mic,
   FileSignature,
   Users,
   Boxes,
-  FileSpreadsheet,
-  Smartphone,
   Sparkles,
-  Mail,
   QrCode,
+  FileText,
+  Clock,
+  AlertTriangle,
+  Building2,
+  TrendingUp,
+  Lock,
+  ChevronRight,
+  Mic,
+  FileCheck,
+  Check,
+  Globe,
+  Smartphone,
   ShieldCheck,
+  Award,
+  HardHat,
+  Factory,
+  Cpu,
+  Layers,
+  CheckSquare,
+  Activity,
+  FileSpreadsheet
 } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Footer from "@/components/Footer";
-import { openCalendly } from "@/utils/calendly";
-import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Amicro Micro-interaction Components
 import { TiltCard } from "@/components/ui/amicro/TiltCard";
-import { MagneticButton } from "@/components/ui/amicro/MagneticButton";
-import { TextReveal } from "@/components/ui/amicro/TextReveal";
 import { BorderBeam } from "@/components/ui/amicro/BorderBeam";
 import { ShimmerBadge } from "@/components/ui/amicro/ShimmerBadge";
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
+// Smooth FadeIn with customizable spring motion
 function FadeIn({
   children,
   delay = 0,
-  y = 20,
+  y = 24,
   className = "",
 }: {
   children: React.ReactNode;
@@ -45,13 +57,13 @@ function FadeIn({
   className?: string;
 }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const inView = useInView(ref, { once: true, margin: "-40px" });
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, y, scale: 0.98 }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
       {children}
@@ -59,837 +71,879 @@ function FadeIn({
   );
 }
 
-// Floating particles for futuristic theme
-function FloatingParticles() {
-  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; duration: number }[]>([]);
-  
-  useEffect(() => {
-    const generated = Array.from({ length: 25 }).map((_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      duration: Math.random() * 10 + 10,
-    }));
-    setParticles(generated);
-  }, []);
+// ─── INFINITE MARQUEE TICKER ──────────────────────────────────────────────────
+function MarqueeTicker() {
+  const { language } = useLanguage();
+  const items = [
+    language === 'en' ? "RESOLUTION SRT N° 299/11 COMPLIANT" : "RESOLUCIÓN SRT N° 299/11 OFICIAL",
+    language === 'en' ? "IN-SITU TABLET DIGITAL SIGNATURE" : "FIRMA DIGITAL EN PANTALLA TÁCTIL",
+    language === 'en' ? "SHA-256 CRYPTOGRAPHIC SEAL" : "SELLO CRIPTOGRÁFICO SHA-256 INMUTABLE",
+    language === 'en' ? "PROVEN IN +400 WORKER WORKSITES" : "PROBADO EN OBRAS DE +400 OPERARIOS",
+    language === 'en' ? "PUBLIC QR AUDIT INSPECTION" : "CÓDIGO QR PÚBLICO DE VERIFICACIÓN",
+    language === 'en' ? "INSTANT FIELD MOBILE SYNC" : "SINCRONIZACIÓN INSTANTÁNEA EN CAMPO",
+  ];
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-emerald-500/20"
-          style={{
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: `${p.size}px`,
-            height: `${p.size}px`,
-          }}
-          animate={{
-            y: ["0px", "-150px", "0px"],
-            opacity: [0.1, 0.6, 0.1],
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
+    <div className="py-3.5 bg-emerald-950/40 border-y border-emerald-500/20 overflow-hidden relative backdrop-blur-md">
+      <div className="flex whitespace-nowrap animate-marquee">
+        {[...items, ...items, ...items].map((item, index) => (
+          <div key={index} className="flex items-center gap-3 mx-6 text-xs font-mono font-bold tracking-widest text-emerald-400 uppercase">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-// ─── mock panel preview ───────────────────────────────────────────────────────
+// ─── 4-STEP INTERACTIVE SIMULATOR WITH TALENTUM-INSPIRED FLOATING PIPELINE ──────
+function FourStepInteractiveSimulator() {
+  const { language } = useLanguage();
+  const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
+  const [scanned, setScanned] = useState(false);
 
-const mockEPPDeliveries = [
-  { worker: "Martín Pérez", item: "Casco de seguridad Amarillo + Guantes", status: "Firmado", date: "Hoy", type: "success" },
-  { worker: "Carlos Gómez", item: "Calzado de seguridad Dieléctrico", status: "Pendiente Firma", date: "Hoy", type: "warning" },
-  { worker: "Sofía Rodríguez", item: "Anteojos de seguridad + Protector Auditivo", status: "Firmado", date: "Ayer", type: "success" },
-  { worker: "Néstor Juárez", item: "Arnés de seguridad de 3 puntos", status: "Vencido (Cambio)", date: "Hace 2d", type: "danger" },
-];
-
-function MockPanel() {
-  const badgeCls = {
-    success: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
-    warning: "bg-amber-500/10 text-amber-400 border-amber-500/25 animate-pulse",
-    danger: "bg-rose-500/10 text-rose-400 border-rose-500/25",
-  };
-
-  return (
-    <TiltCard tiltMaxAngle={8} spotlightColor="rgba(16, 185, 129, 0.25)">
-      <div className="select-none relative overflow-hidden rounded-2xl">
-        <BorderBeam size={160} duration={9} colorFrom="#10b981" colorTo="#14b8a6" />
-
-        {/* browser chrome */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-[#05070d] border-b border-slate-900">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-          <span className="ml-3 text-[10px] text-slate-500 font-mono">ifsinrem.site/dashboard</span>
-        </div>
-
-        <div className="p-5 relative z-10">
-          {/* stats */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            {[
-              { label: "Pendientes Firma", value: "3", cls: "bg-amber-500/10 border border-amber-500/10 text-amber-400" },
-              { label: "Cumplimiento", value: "96.4%", cls: "bg-emerald-500/10 border border-emerald-500/10 text-emerald-400" },
-              { label: "Operarios Activos", value: "48", cls: "bg-slate-900/60 border border-slate-800/40 text-white" },
-            ].map((s) => (
-              <div key={s.label} className={`rounded-xl p-3 text-center ${s.cls}`}>
-                <p className="text-xl sm:text-2xl font-black leading-none">{s.value}</p>
-                <p className="text-[8px] sm:text-[9px] mt-1 opacity-80 font-bold uppercase tracking-wider truncate">{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* voice trigger preview */}
-          <div className="flex items-center gap-3 bg-emerald-950/20 border border-emerald-500/10 rounded-xl px-3 py-2.5 mb-4">
-            <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
-              <Mic size={12} className="text-emerald-400" />
-            </div>
-            <p className="text-[11px] text-emerald-300 font-medium">
-              <span className="text-slate-400 font-bold">Voz IA:</span> "Casco amarillo y guantes de vaqueta para Martín Pérez hoy."
-            </p>
-          </div>
-
-          {/* deliveries list */}
-          <div className="space-y-2">
-            {mockEPPDeliveries.map((c, i) => (
-              <motion.div
-                key={c.worker}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.1 }}
-                className="flex items-center justify-between rounded-xl border border-slate-900 bg-[#0a0f1d]/50 px-3.5 py-2.5 shadow-sm hover:border-emerald-500/30 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-white truncate">{c.worker}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">{c.item}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[9px] text-slate-500">{c.date}</span>
-                  <span className={`text-[9px] font-bold border rounded-full px-2 py-0.5 ${badgeCls[c.type as keyof typeof badgeCls]}`}>
-                    {c.status}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </TiltCard>
-  );
-}
-
-// ─── page ────────────────────────────────────────────────────────────────────
-
-const Index = () => {
-  const navigate = useNavigate();
-  const { t, language } = useLanguage();
-  const [activeStep, setActiveStep] = useState(0);
-
-  // Automatic carousel timer: advances active step every 4 seconds
+  // Auto cycle simulator steps every 7 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % 4);
-    }, 4000);
+      setActiveStep((prev) => ((prev + 1) % 4) as any);
+    }, 7000);
     return () => clearInterval(timer);
   }, []);
 
   const steps = [
     {
       id: 0,
-      title: t('workflow.step1Title'),
-      subtitle: t('workflow.step1Sub'),
-      desc: t('workflow.step1Desc'),
-      icon: <Mic className="text-emerald-400" size={20} />,
-      bubbleText: language === 'en' ? "Yellow safety helmet size M for Carlos Gómez today" : "Casco de seguridad talle M para Carlos Gómez hoy",
-      simulationType: "voice"
+      sub: language === 'en' ? "HANDS-FREE FIELD LOGGING" : "CARGA RÁPIDA EN CAMPO",
+      title: language === 'en' ? "1. Voice & Equipment Selection" : "1. Selección de EPP o Dictado",
+      desc: language === 'en'
+        ? "Supervisors pick items from inventory or speak naturally. System fills sizes, brand, and certificate numbers instantly."
+        : "El supervisor selecciona calzado, cascos o dicta por voz. El sistema autocompleta marcas y certificados IRAM.",
+      icon: Mic,
     },
     {
       id: 1,
-      title: t('workflow.step2Title'),
-      subtitle: t('workflow.step2Sub'),
-      desc: t('workflow.step2Desc'),
-      icon: <FileSignature className="text-teal-400" size={20} />,
-      bubbleText: language === 'en' ? "Worker Carlos Gómez signing..." : "Operario Carlos Gómez firmando...",
-      simulationType: "signature"
+      sub: language === 'en' ? "TOUCH SIGNATED AUDIT TRAIL" : "FIRMA TÁCTIL E IP GEOLOCALIZADA",
+      title: language === 'en' ? "2. E-Signature & Audit Trail" : "2. Firma en Pantalla & Audit Trail",
+      desc: language === 'en'
+        ? "The worker signs directly on screen. GPS coordinates, site IP address, device specs, and timestamp are captured."
+        : "El operario dibuja su firma táctil. Se capturan coordenadas GPS de la obra, IP del dispositivo y fecha/hora inalterable.",
+      icon: FileSignature,
     },
     {
       id: 2,
-      title: t('workflow.step3Title'),
-      subtitle: t('workflow.step3Sub'),
-      desc: t('workflow.step3Desc'),
-      icon: <Boxes className="text-indigo-400" size={20} />,
-      bubbleText: language === 'en' ? "Download Official SRT Form 299/11" : "Descargar Formulario 299/11 SRT Oficial",
-      simulationType: "pdf"
+      sub: language === 'en' ? "OFFICIAL PDF GENERATION" : "EMISIÓN AUTOMÁTICA DE CONSTANCIA",
+      title: language === 'en' ? "3. Form 299/11 SRT Official" : "3. Formulario 299/11 Oficial SRT",
+      desc: language === 'en'
+        ? "Generates official PDF format compliant with Superintendencia de Riesgos del Trabajo (SRT) and ART requirements."
+        : "Genera el PDF oficial homologado con la cuadrícula reglamentaria de la SRT para indumentaria y protección laboral.",
+      icon: FileCheck,
     },
     {
       id: 3,
-      title: t('workflow.step4Title'),
-      subtitle: t('workflow.step4Sub'),
-      desc: t('workflow.step4Desc'),
-      icon: <QrCode className="text-emerald-400" size={20} />,
-      bubbleText: language === 'en' ? "Verifying Cryptographic Receipt..." : "Verificando Constancia Criptográfica...",
-      simulationType: "qr"
-    }
+      sub: language === 'en' ? "SHA-256 CRYPTOGRAPHIC QR" : "INMUNIDAD DIGITAL Y VERIFICACIÓN QR",
+      title: language === 'en' ? "4. Public QR Code Audit" : "4. Código QR & Validación Pública",
+      desc: language === 'en'
+        ? "Printed receipts contain a unique QR. Labor inspectors scan it to verify authenticity live without password."
+        : "Cada planilla incluye un código QR único. Inspectores de la SRT o ART escanean el comprobante e inspeccionan la validez en tiempo real.",
+      icon: QrCode,
+    },
   ];
 
-  const renderSimulator = () => {
-    switch (activeStep) {
-      case 0:
-        return (
-          <motion.div
-            key="step-0"
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.25 }}
-            className="h-full flex flex-col justify-between p-6"
-          >
-            <div className="flex items-center justify-between border-b border-slate-900/60 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-widest uppercase">IA Activa — Dictando</span>
-              </div>
-              <span className="text-[10px] text-slate-500 font-mono">PLANTA SUR</span>
-            </div>
-            
-            <div className="flex-1 flex flex-col justify-center items-center gap-6 my-4">
-              {/* sound wave bars */}
-              <div className="flex items-center justify-center gap-1.5 h-16">
-                {[8, 12, 4, 14, 16, 10, 6, 12].map((height, idx) => (
-                  <motion.div
-                    key={idx}
-                    className="w-1.5 bg-emerald-500 rounded-full"
-                    initial={{ height: height * 4 }}
-                    animate={{
-                      height: [height * 2, height * 4.5, height * 1.5, height * 4],
-                    }}
-                    transition={{
-                      duration: 0.8 + idx * 0.15,
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      ease: "easeInOut",
-                    }}
-                  />
-                ))}
-              </div>
-              
-              <motion.div 
-                initial={{ y: 5, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
-                className="bg-[#05070c] border border-slate-900 rounded-2xl p-4 w-full text-center relative overflow-hidden"
-              >
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1 font-mono">Texto Procesado</p>
-                <p className="text-sm font-semibold text-emerald-300">
-                  "Entrega de casco amarillo y protector auditivo para el operario Carlos Gómez"
-                </p>
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
-              </motion.div>
-            </div>
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-6xl mx-auto">
+      
+      {/* Left Column: Interactive Step Selector Buttons */}
+      <div className="lg:col-span-6 space-y-4">
+        {steps.map((step) => {
+          const Icon = step.icon;
+          const isActive = activeStep === step.id;
 
-            <div className="rounded-xl bg-[#090d16]/50 border border-slate-900/60 p-3 text-center font-sans">
-              <p className="text-[11px] text-slate-400 font-medium">
-                👉 <span className="font-bold text-slate-300">Autocompletado:</span> El sistema detecta el operario Carlos Gómez y asocia los elementos Casco y Auditivos de forma automática.
-              </p>
-            </div>
-          </motion.div>
-        );
-      case 1:
-        return (
-          <motion.div
-            key="step-1"
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.25 }}
-            className="h-full flex flex-col justify-between p-6"
-          >
-            <div className="flex items-center justify-between border-b border-slate-900/60 pb-3 mb-4">
-              <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-widest uppercase">Panel de Firma</span>
-              <span className="text-[10px] text-slate-500 font-mono font-bold uppercase">Firma Táctil</span>
-            </div>
+          return (
+            <motion.div
+              key={step.id}
+              onClick={() => setActiveStep(step.id as any)}
+              whileHover={{ scale: 1.02, x: 6 }}
+              whileTap={{ scale: 0.98 }}
+              className={`p-6 rounded-2xl border transition-all duration-300 cursor-pointer relative overflow-hidden ${
+                isActive
+                  ? "bg-gradient-to-r from-emerald-950/80 via-slate-900 to-slate-900 border-emerald-500/70 shadow-2xl shadow-emerald-500/20"
+                  : "bg-slate-900/40 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60"
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeStepIndicator"
+                  className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 via-teal-400 to-cyan-400"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
 
-            <div className="flex-1 flex flex-col justify-center items-center my-2">
-              <p className="text-xs text-slate-400 mb-2 font-medium">Dibuja la firma sobre la línea</p>
-              <div className="w-full h-32 rounded-xl border border-slate-900 bg-[#05070c] flex items-center justify-center relative overflow-hidden">
-                {/* signature line */}
-                <div className="absolute bottom-6 left-6 right-6 border-b border-dashed border-slate-800/80" />
-                
-                {/* animated SVG signature */}
-                <svg className="w-48 h-24 relative z-10" viewBox="0 0 200 100">
-                  <motion.path 
-                    d="M20,50 Q40,20 60,70 T100,30 T140,80 T180,40" 
-                    fill="none" 
-                    stroke="#10b981" 
-                    strokeWidth="3.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{
-                      duration: 2.2,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                      repeatDelay: 1,
-                    }}
-                  />
-                </svg>
+              <div className="flex items-start gap-4">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform ${
+                  isActive
+                    ? "bg-emerald-500/25 border border-emerald-500/50 text-emerald-400 scale-110 shadow-lg shadow-emerald-500/20"
+                    : "bg-slate-950 border border-slate-800 text-slate-500"
+                }`}>
+                  <Icon className="w-5 h-5" />
+                </div>
 
-                <div className="absolute top-2 right-2 rounded bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 text-[8px] font-bold text-emerald-400 font-mono uppercase">
-                  Encriptado
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase block">
+                    {step.sub}
+                  </span>
+                  <h3 className={`text-base font-heading font-bold transition-colors ${isActive ? "text-white" : "text-slate-300"}`}>
+                    {step.title}
+                  </h3>
+                  <p className="text-xs font-sans text-slate-400 leading-relaxed pt-0.5">
+                    {step.desc}
+                  </p>
                 </div>
               </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Right Column: Dynamic Interactive Terminal / Visual Canvas */}
+      <div className="lg:col-span-6">
+        <div className="relative rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden min-h-[480px] flex flex-col">
+          <BorderBeam size={180} duration={6} colorFrom="#10b981" colorTo="#06b6d4" />
+
+          {/* Window Header */}
+          <div className="bg-slate-900/90 px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
+              </div>
+              <span className="ml-2 text-xs font-mono text-slate-400">ifsinrem_control_center.app</span>
             </div>
 
-            <div className="rounded-xl bg-[#090d16]/50 border border-slate-900/60 p-3 text-center font-sans">
-              <p className="text-[11px] text-slate-400 font-medium">
-                🔒 <span className="font-bold text-slate-300">Resguardo Legal:</span> La firma táctil registra dirección IP, geolocalización y marca de tiempo (timestamp) para total validez jurídica.
-              </p>
+            <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>SRT N° 299/11 VALIDO</span>
             </div>
-          </motion.div>
-        );
-      case 2:
-        return (
-          <motion.div
-            key="step-2"
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.25 }}
-            className="h-full flex flex-col justify-between p-6"
-          >
-            <div className="flex items-center justify-between border-b border-slate-900/60 pb-3 mb-4">
-              <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-widest uppercase">Formulario 299/11 PDF</span>
-              <span className="text-[10px] text-slate-500 font-mono">Certificado</span>
-            </div>
+          </div>
 
-            <div className="flex-1 flex flex-col justify-center items-center my-3">
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, duration: 0.35 }}
-                className="w-44 h-28 bg-[#090d16] border border-slate-800/80 rounded-xl p-3 relative overflow-hidden shadow-lg shadow-emerald-950/5 flex flex-col justify-between"
-              >
-                <div className="space-y-1.5">
-                  <div className="h-2 w-12 bg-slate-800 rounded" />
-                  <div className="h-1.5 w-24 bg-slate-900 rounded" />
-                  <div className="h-1.5 w-20 bg-slate-900 rounded" />
-                  <div className="h-1.5 w-28 bg-slate-900 rounded" />
-                </div>
-                <div className="flex items-center justify-between border-t border-slate-900 pt-2">
-                  <div className="flex items-center gap-1">
-                    <div className="h-4 w-4 rounded bg-emerald-500/10 flex items-center justify-center">
-                      <CheckCircle2 size={10} className="text-emerald-400" />
-                    </div>
-                    <span className="text-[7px] text-emerald-400 font-bold uppercase font-mono">100% Válido</span>
-                  </div>
-                  <div className="h-3 w-10 bg-[#34d399]/20 rounded border border-[#34d399]/30" />
-                </div>
-              </motion.div>
-
-              <div className="mt-4 flex gap-2">
-                <motion.button 
-                  animate={{
-                    scale: [1, 1.05, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 shadow border-0 transition-colors"
+          {/* Dynamic Interactive Stage Screen */}
+          <div className="p-8 flex-grow flex flex-col items-center justify-center bg-gradient-to-b from-[#040814] via-[#02050c] to-[#040814] text-center relative">
+            <AnimatePresence mode="wait">
+              {activeStep === 0 && (
+                <motion.div
+                  key="step0"
+                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-5 w-full max-w-sm"
                 >
-                  Descargar Planilla Legal
-                </motion.button>
-              </div>
-            </div>
+                  <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
+                    <div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 relative z-10 shadow-xl shadow-emerald-500/20">
+                      <Mic className="w-10 h-10 animate-bounce" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                      ▲ Carga Interactiva por Voz o Selección
+                    </span>
+                    <p className="text-sm font-heading font-bold text-white pt-2">
+                      "Casco Dieléctrico + Calzado de Seguridad N° 42 para operario en yacimiento"
+                    </p>
+                    <p className="text-xs font-mono text-slate-400">
+                      Certificación IRAM #48293 autocompletada
+                    </p>
+                  </div>
+                </motion.div>
+              )}
 
-            <div className="rounded-xl bg-[#090d16]/50 border border-slate-900/60 p-3 text-center font-sans">
-              <p className="text-[11px] text-slate-400 font-medium">
-                📄 <span className="font-bold text-slate-300">Listo para Auditorías:</span> Planilla digital homologada idéntica a la exigida por el Ministerio de Trabajo y la SRT.
-              </p>
-            </div>
-          </motion.div>
-        );
-      case 3:
-        return (
-          <motion.div
-            key="step-3"
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.25 }}
-            className="h-full flex flex-col justify-between p-6"
-          >
-            <div className="flex items-center justify-between border-b border-slate-900/60 pb-3 mb-4">
-              <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-widest uppercase">Validación QR & Hash SHA-256</span>
-              <span className="text-[10px] text-slate-500 font-mono">Trazabilidad SRT</span>
-            </div>
+              {activeStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4 w-full max-w-sm"
+                >
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 text-left space-y-3 shadow-2xl">
+                    <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-2">
+                      <span className="font-heading font-bold text-white">Captura de Firma Digital</span>
+                      <span className="text-emerald-400 font-mono">IP: 190.220.42.18</span>
+                    </div>
 
-            <div className="flex-1 flex flex-col justify-center items-center my-2">
-              <div className="relative p-3 rounded-2xl border border-emerald-500/30 bg-[#060911] shadow-xl text-center space-y-2">
-                <div className="mx-auto w-24 h-24 rounded-xl border border-emerald-500/40 bg-slate-950 p-2 flex items-center justify-center relative overflow-hidden">
-                  <QrCode className="w-20 h-20 text-emerald-400 animate-pulse" />
-                  <motion.div 
-                    className="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_8px_#10b981]"
-                    animate={{ top: ["10%", "90%", "10%"] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  />
-                </div>
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-[9px] font-bold text-emerald-400 uppercase">
-                  <ShieldCheck size={12} />
-                  Constancia Auténtica 299/11
-                </div>
-                <p className="text-[9px] font-mono text-slate-400 truncate max-w-[200px]">
-                  Hash: 9a4f8b2c1e8d7f6a5b4c...
-                </p>
-              </div>
-            </div>
+                    <div className="h-28 bg-slate-950 rounded-xl border border-slate-800/90 flex items-center justify-center relative overflow-hidden">
+                      <span className="text-slate-600 text-[10px] font-mono absolute top-2 left-2">Firma Táctil Operario:</span>
+                      <svg className="w-56 h-20 stroke-emerald-400 fill-none stroke-2">
+                        <motion.path
+                          d="M 15 45 Q 35 15, 75 40 T 140 25 T 195 50"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 1.8, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 }}
+                        />
+                      </svg>
+                    </div>
 
-            <div className="rounded-xl bg-[#090d16]/50 border border-slate-900/60 p-3 text-center font-sans">
-              <p className="text-[11px] text-slate-400 font-medium">
-                📱 <span className="font-bold text-slate-300">Acceso Público:</span> Cualquier inspector o auditor valida la entrega escaneando el QR sin requerir usuario ni contraseña.
-              </p>
-            </div>
-          </motion.div>
-        );
-      default:
-        return null;
-    }
-  };
+                    <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between pt-1">
+                      <span>GPS: 24.7859° S, 65.4117° W</span>
+                      <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">INMUTABLE</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeStep === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4 w-full max-w-sm"
+                >
+                  <div className="bg-slate-900/95 border border-emerald-500/40 rounded-2xl p-5 text-left space-y-3.5 shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <span className="text-xs font-heading font-black text-white">FORMULARIO SRT 299/11</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">PDF GENERADO</span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between text-slate-300 font-semibold border-b border-slate-800/60 pb-1">
+                        <span>Constancia N°:</span>
+                        <span className="font-mono text-emerald-400">#EPP-2026-4892</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400 text-[11px]">
+                        <span>Trabajador:</span>
+                        <span className="text-white font-medium">Martín Pérez (Legajo #4820)</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400 text-[11px]">
+                        <span>Empresa:</span>
+                        <span className="text-white font-medium">Industrial & Constructora S.A.</span>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] font-mono">
+                      <span className="text-slate-400">Homologación:</span>
+                      <span className="text-emerald-400 font-bold">✓ Cumple Res. 299/11 SRT</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeStep === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4 w-full max-w-sm"
+                >
+                  <motion.div
+                    whileHover={{ scale: 1.06 }}
+                    onClick={() => setScanned(!scanned)}
+                    className="w-36 h-36 rounded-2xl bg-slate-900 border-2 border-emerald-500/60 p-3 flex flex-col items-center justify-center mx-auto shadow-2xl cursor-pointer relative group"
+                  >
+                    <QrCode className="w-20 h-20 text-emerald-400 group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-mono text-emerald-400 font-bold mt-1.5 uppercase tracking-wider">
+                      {scanned ? "✓ AUDITADO Y VALIDO" : "TOCÁ PARA ESCANEAR"}
+                    </span>
+                  </motion.div>
+
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-heading font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-lg">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span>PUBLIC VERIFICATION PORTAL</span>
+                    </div>
+                    <p className="text-[11px] font-mono text-slate-400 pt-1">
+                      Hash SHA-256: 9a4f8b2c1e8d7f6a5b4c...
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom Bar Info */}
+          <div className="bg-slate-900/70 p-3.5 border-t border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between px-6">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>Verificación libre sin contraseña para inspectores</span>
+            </span>
+            <span className="text-emerald-400 font-bold">Módulo {activeStep + 1} de 4</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+export default function Index() {
+  const { language, t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-[#04060a] text-slate-100 overflow-x-hidden relative">
-      {/* Stars / Particles */}
-      <FloatingParticles />
+    <div className="min-h-screen bg-[#02050e] text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
+      
+      {/* Background Glow Mesh & Animated Floating Orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-emerald-500/15 via-teal-500/10 to-transparent rounded-full blur-[140px] animate-glow-pulse" />
+        <div className="absolute top-[35%] -left-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] animate-float" />
+        <div className="absolute top-[70%] -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: "2s" }} />
+      </div>
 
-      {/* Cyberpunk Grid Background */}
-      <div 
-        className="pointer-events-none absolute inset-0 opacity-[0.03] z-0" 
-        style={{
-          backgroundImage: `linear-gradient(to right, #10b981 1px, transparent 1px), linear-gradient(to bottom, #10b981 1px, transparent 1px)`,
-          backgroundSize: "40px 40px"
-        }}
-      />
-
-      {/* ── NAV */}
-      <motion.header
-        initial={{ y: -60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="sticky top-0 z-50 border-b border-slate-950 bg-[#04060a]/80 backdrop-blur-xl animate-fade-in"
-      >
-        <div className="container mx-auto flex items-center justify-between px-4 py-4 sm:px-8">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl overflow-hidden shadow-md border border-emerald-500/30 flex items-center justify-center bg-slate-950/80">
-              <img src="/logo.png" alt="Logo" className="h-full w-full object-cover rounded-xl" />
-            </div>
-            <span className="text-lg font-bold text-white tracking-tight">ifsin<span className="text-emerald-400">rem</span></span>
-          </div>
-          <div className="flex items-center gap-3 font-sans font-semibold">
-            <LanguageSelector />
-            <button
-              onClick={() => navigate("/auth")}
-              className="text-sm text-slate-400 hover:text-white transition-colors"
-            >
-              {t('header.login')}
-            </button>
-          </div>
-        </div>
-      </motion.header>
-
-      {/* ── HERO */}
-      <section className="relative px-4 py-20 sm:py-32 sm:px-8 text-center overflow-hidden z-10">
-        {/* background glow */}
-        <div className="pointer-events-none absolute inset-0 z-0">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/[0.08] rounded-full blur-[130px]" />
-          <div className="absolute top-40 left-1/4 w-[350px] h-[350px] bg-teal-500/[0.04] rounded-full blur-[90px]" />
-        </div>
-
-        <div className="relative mx-auto max-w-4xl z-10">
-          <div className="mb-6 inline-block">
-            <ShimmerBadge icon={<Sparkles size={14} className="text-emerald-400" />}>
-              {t('hero.badge')}
-            </ShimmerBadge>
-          </div>
-
-          <div className="mb-5">
-            <TextReveal
-              key={`tr-h1-${language}`}
-              text={t('hero.title1')}
-              as="h1"
-              delay={0.1}
-              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-white justify-center"
-            />
-            {" "}
-            <motion.span
-              animate={{
-                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{
-                backgroundImage: "linear-gradient(90deg, #10b981, #34d399, #06b6d4, #10b981)",
-                backgroundSize: "200% auto",
-              }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-transparent bg-clip-text inline-block"
-            >
-              {t('hero.titleGradient')}
-            </motion.span>{" "}
-            <TextReveal
-              key={`tr-h2-${language}`}
-              text={t('hero.title2')}
-              as="span"
-              delay={0.3}
-              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-white"
-            />
-          </div>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            className="text-base sm:text-lg text-slate-400 mb-8 max-w-xl mx-auto leading-relaxed font-sans font-medium"
-          >
-            {t('hero.subtitle')}
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
-          >
-            <MagneticButton onClick={() => navigate("/auth")}>
-              <div className="group relative overflow-hidden rounded-2xl bg-emerald-600 px-8 h-14 flex items-center justify-center gap-2 text-base font-bold text-white shadow-xl shadow-emerald-950/30 transition-all hover:bg-emerald-500">
-                <BorderBeam size={100} duration={6} colorFrom="#34d399" colorTo="#10b981" />
-                <span>{t('hero.btnStart')}</span>
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+      {/* ─── HEADER BAR ────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-[#02050e]/90 backdrop-blur-xl border-b border-slate-800/80">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="h-10 w-10 rounded-xl overflow-hidden border border-emerald-500/40 flex items-center justify-center bg-slate-950 shadow-lg shadow-emerald-500/10 group-hover:border-emerald-400 transition-colors">
+                <img src="/logo.png" alt="IfsinRem" className="h-full w-full object-cover" />
               </div>
-            </MagneticButton>
+              <span className="text-2xl font-display font-black text-white tracking-tight">
+                ifsin<span className="text-emerald-400">rem</span>
+              </span>
+            </Link>
 
-            <MagneticButton>
-              <a
-                href="https://calendly.com/ifsinrem"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={openCalendly}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-[#090d16]/80 px-8 h-14 text-base font-bold text-slate-300 hover:border-slate-700 hover:text-white transition-all cursor-pointer font-sans"
-              >
-                {t('hero.btnDemo')}
+            {/* Header Navigation Links */}
+            <nav className="hidden md:flex items-center gap-6 text-sm font-heading font-semibold text-slate-300">
+              <a href="#prueba-social" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Field Proven" : "Prueba en Terreno"}
               </a>
-            </MagneticButton>
-          </motion.div>
+              <a href="#sectores" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Sectors" : "Sectores"}
+              </a>
+              <a href="#como-funciona" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "How it Works" : "Cómo Funciona"}
+              </a>
+              <a href="#seguridad-criptografica" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Security & Legal" : "Seguridad & Leyes"}
+              </a>
+            </nav>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#090d16]/80 border border-slate-900 px-4 py-2.5 text-xs text-slate-300 font-semibold font-sans"
-          >
-            <span className="text-emerald-400">{t('hero.legalVal')}</span> {t('hero.legalValDesc')}
-          </motion.div>
-        </div>
-      </section>
+            {/* Header Right Actions */}
+            <div className="flex items-center gap-4">
+              <LanguageSelector />
 
-      {/* ── PAIN STAT BAR */}
-      <section className="border-y border-slate-900/60 bg-[#05070d] px-4 py-8 sm:px-8 relative z-10">
-        <div className="mx-auto max-w-5xl">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            {[
-              { num: t('stats.f299'), text: t('stats.f299Desc') },
-              { num: t('stats.clicks'), text: t('stats.clicksDesc') },
-              { num: t('stats.paperless'), text: t('stats.paperlessDesc') },
-            ].map((s, idx) => (
-              <FadeIn key={s.text} delay={idx * 0.12} y={15} className="py-2">
-                <p className="text-2xl sm:text-3xl font-black text-emerald-400 mb-1">{s.num}</p>
-                <p className="text-xs sm:text-sm text-slate-400 font-medium px-4 font-sans">{s.text}</p>
-              </FadeIn>
-            ))}
+              <Link
+                to="/auth"
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-heading font-bold text-sm transition-colors shadow-md hover:border-emerald-500/50"
+              >
+                {t('header.login')}
+              </Link>
+            </div>
+
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* ── PANEL PREVIEW */}
-      <section className="px-4 py-20 sm:py-28 sm:px-8 relative z-10" id="como-funciona-panel">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <FadeIn delay={0}>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-semibold text-emerald-400">
-                <Zap size={12} className="text-emerald-400" />
-                {t('control.tag')}
+      {/* Marquee Ticker */}
+      <MarqueeTicker />
+
+      <main className="relative z-10">
+        
+        {/* ─── HERO SECTION WITH CURSIVE ACCENTS & FLOATING GLASS BADGES ─────── */}
+        <section className="pt-16 pb-20 sm:pt-24 sm:pb-28 text-center relative overflow-hidden">
+          
+          {/* Talentum-style Floating Glass Micro Badges */}
+          <div className="hidden lg:block pointer-events-none">
+            <motion.div
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-28 left-8 p-3.5 rounded-2xl bg-slate-900/80 border border-emerald-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20"
+            >
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                <ShieldCheck className="w-4 h-4" />
               </div>
-              <h2 className="text-3xl sm:text-4xl font-black mb-6 leading-tight text-white">
-                {t('control.title1')}
-                <br />
-                <span className="text-slate-500">{t('control.title2')}</span>
-              </h2>
-              <p className="text-slate-400 text-base sm:text-lg mb-8 leading-relaxed font-sans">
-                {t('control.desc')}
-              </p>
-              <ul className="space-y-4 font-sans">
-                {[
-                  { title: t('control.feat1Title'), desc: t('control.feat1Desc') },
-                  { title: t('control.feat2Title'), desc: t('control.feat2Desc') },
-                  { title: t('control.feat3Title'), desc: t('control.feat3Desc') },
-                ].map((item) => (
-                  <li key={item.title} className="flex gap-3">
-                    <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-bold text-white">{item.title}</p>
-                      <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="text-left">
+                <span className="font-bold block text-white">Res. SRT N° 299/11</span>
+                <span className="text-[10px] text-emerald-400">✓ Homologado Oficial</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              animate={{ y: [0, 12, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="absolute top-36 right-8 p-3.5 rounded-2xl bg-slate-900/80 border border-teal-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20"
+            >
+              <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400">
+                <Lock className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <span className="font-bold block text-white">Sello SHA-256</span>
+                <span className="text-[10px] text-teal-300">Inalterabilidad Criptográfica</span>
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+            
+            <FadeIn>
+              <ShimmerBadge className="mb-8 font-mono text-xs tracking-wider">
+                {language === 'en'
+                  ? "PROVEN IN REAL OPERATIONS | MINING, CONSTRUCTION & HEAVY INDUSTRY"
+                  : "PROBADO EN ENTORNOS REALES | MINERÍA, CONSTRUCCIÓN E INDUSTRIA PESADA"
+                }
+              </ShimmerBadge>
+            </FadeIn>
+
+            <FadeIn delay={0.1}>
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-display font-black text-white tracking-tight leading-[1.08] mb-6">
+                {language === 'en' ? (
+                  <>
+                    Digitize your PPE delivery{" "}
+                    <span className="font-serif italic font-normal text-emerald-400 border-b-2 border-emerald-400/30 pb-0.5">
+                      with unalterable legal validity.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Digitalizá la entrega de EPP{" "}
+                    <span className="font-serif italic font-normal text-emerald-400 border-b-2 border-emerald-400/30 pb-0.5">
+                      con validez legal inalterable.
+                    </span>
+                  </>
+                )}
+              </h1>
             </FadeIn>
 
             <FadeIn delay={0.15}>
-              <MockPanel />
+              <p className="text-lg sm:text-xl font-sans text-slate-300 leading-relaxed max-w-3xl mx-auto mb-10">
+                {language === 'en'
+                  ? "SaaS platform operating in worksites with over 400 workers simultaneously. Official Form SRT N° 299/11, touch signatures with GPS location, public QR verification, and SHA-256 cryptographic seal."
+                  : "Plataforma SaaS probada en campo operando en obras con más de 400 operarios en simultáneo y +200 entregas firmadas. Res. SRT N° 299/11 oficial, firmas táctiles con GPS, código QR de verificación pública y Hash criptográfico SHA-256."
+                }
+              </p>
+            </FadeIn>
+
+            <FadeIn delay={0.2}>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                <a
+                  href="#agendar-demo"
+                  className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 hover:brightness-110 text-slate-950 font-heading font-black text-base px-8 py-4 rounded-2xl shadow-2xl shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 hover:scale-105"
+                >
+                  <Calendar className="w-5 h-5" />
+                  {language === 'en' ? "Schedule Commercial Demo" : "Agendar Demo en Vivo"}
+                </a>
+
+                <a
+                  href="#prueba-social"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-slate-200 font-heading font-bold text-base transition-colors hover:border-emerald-500/40"
+                >
+                  {language === 'en' ? "See Real Usage Data" : "Ver Prueba en Terreno"} <ArrowRight className="w-4 h-4 ml-2 text-emerald-400" />
+                </a>
+              </div>
+            </FadeIn>
+
+            {/* Quick Enterprise Badges Bar */}
+            <FadeIn delay={0.25}>
+              <div className="pt-6 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono font-semibold text-slate-300">
+                <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'en' ? "Res. SRT N° 299/11 Official" : "Res. SRT N° 299/11 Oficial"}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
+                  <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'en' ? "SHA-256 Crypto Seal" : "Sello Criptográfico SHA-256"}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
+                  <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'en' ? "100% Mobile & Tablet Ready" : "100% Funciona en Celulares y Tablets"}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
+                  <QrCode className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'en' ? "Open QR Public Inspection" : "Verificación QR Pública"}</span>
+                </div>
+              </div>
+            </FadeIn>
+
+          </div>
+        </section>
+
+        {/* ─── SECCIÓN: METRICAS Y PRUEBA SOCIAL EN TERRENO REAL ───────────────── */}
+        <section id="prueba-social" className="py-20 bg-slate-950/90 border-y border-slate-800/80">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            
+            <FadeIn className="text-center max-w-3xl mx-auto mb-14">
+              <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                {language === 'en' ? "OPERATIONAL METRICS" : "METRICAS DE OPERACIÓN"}
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-display font-black text-white mt-4 mb-4">
+                {language === 'en' ? (
+                  <>
+                    Battle-tested performance in{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">demanding operations</span>
+                  </>
+                ) : (
+                  <>
+                    Desempeño verificado en{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">operaciones de campo</span>
+                  </>
+                )}
+              </h2>
+              <p className="text-slate-400 font-sans text-base sm:text-lg">
+                {language === 'en'
+                  ? "Designed for mining and construction environments where zero paper loss and audit safety are essential."
+                  : "Diseñado para yacimientos y obras donde la velocidad, la cero pérdida de papeles y la seguridad ante inspecciones son esenciales."
+                }
+              </p>
+            </FadeIn>
+
+            {/* Metrics Counters Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  metric: "+400",
+                  label: language === 'en' ? "Active Workers per Site" : "Operarios Activos en Obra",
+                  desc: language === 'en' ? "Simultaneous signature collection without server lag or bottlenecks." : "Gestión simultánea de firmas en obras y yacimientos sin latencia ni cuellos de botella."
+                },
+                {
+                  metric: "+200",
+                  label: language === 'en' ? "Signed PPE Receipts" : "Constancias EPP Firmadas",
+                  desc: language === 'en' ? "Legally validated receipts with touch signature, GPS coordinates, and IP." : "Constancias de indumentaria y protección con firma táctil, IP y GPS inalterable."
+                },
+                {
+                  metric: "100%",
+                  label: language === 'en' ? "ART & SRT Compliance" : "Validez Legal SRT 299/11",
+                  desc: language === 'en' ? "Approved by labor inspectors and insurance auditors via instant QR scan." : "Cumplimiento garantizado ante la Superintendencia de Riesgos del Trabajo y ART."
+                },
+                {
+                  metric: "0.4s",
+                  label: language === 'en' ? "Voice Dictation Speed" : "Dictado por Voz en Campo",
+                  desc: language === 'en' ? "Hands-free field equipment logging without manual typing." : "Carga ultra rápida por voz de cascos, calzado y marcas sin escribir a mano."
+                },
+              ].map((stat, idx) => (
+                <FadeIn key={idx} delay={0.08 * idx}>
+                  <TiltCard
+                    spotlightColor="rgba(16, 185, 129, 0.25)"
+                    borderColor="rgba(16, 185, 129, 0.35)"
+                    className="p-6 h-full flex flex-col justify-between space-y-4 bg-slate-900/60 border-slate-800"
+                  >
+                    <div>
+                      <div className="text-4xl sm:text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 tracking-tight mb-2">
+                        {stat.metric}
+                      </div>
+                      <h3 className="text-base font-heading font-bold text-white mb-2">{stat.label}</h3>
+                      <p className="text-slate-400 font-sans text-xs leading-relaxed">{stat.desc}</p>
+                    </div>
+                  </TiltCard>
+                </FadeIn>
+              ))}
+            </div>
+
+          </div>
+        </section>
+
+        {/* ─── SECCIÓN: SECTORES INDUSTRIALES (MINERÍA, CONSTRUCCIÓN, ENERGÍA) ──── */}
+        <section id="sectores" className="py-24 border-b border-slate-800/80">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            
+            <FadeIn className="text-center max-w-3xl mx-auto mb-16">
+              <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                {language === 'en' ? "INDUSTRY FOCUS" : "SECTORES DE APLICACIÓN"}
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-display font-black text-white mt-4 mb-6">
+                {language === 'en' ? (
+                  <>
+                    Engineered for{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">high-rigor industries</span>
+                  </>
+                ) : (
+                  <>
+                    Construido para sectores de{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">alta exigencia</span>
+                  </>
+                )}
+              </h2>
+              <p className="text-slate-400 font-sans text-base sm:text-lg">
+                {language === 'en'
+                  ? "Where physical paperwork fails and legal accountability demands bulletproof technology."
+                  : "Donde el papel físico falla y la responsabilidad legal requiere tecnología blindada."
+                }
+              </p>
+            </FadeIn>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[
+                {
+                  icon: HardHat,
+                  tag: language === 'en' ? "MINING & EXTRACTION" : "MINERÍA Y YACIMIENTOS",
+                  title: language === 'en' ? "High-altitude & Off-grid Mining Operations" : "Minería y Operaciones de Altura",
+                  desc: language === 'en'
+                    ? "Works seamlessly in remote mining operations and field camps. Registrations sync receipts automatically when connected."
+                    : "Operatividad ininterrumpida en campamentos remotos. Permite registrar entregas y firmas de forma rápida con sincronización automática.",
+                  badges: [language === 'en' ? "Mobile Field Sync" : "Sincronización en Terreno", language === 'en' ? "Hands-free Voice" : "Dictado por Voz", language === 'en' ? "GPS Seal" : "GPS Inalterable"]
+                },
+                {
+                  icon: Building2,
+                  tag: language === 'en' ? "LARGE SCALE CONSTRUCTION" : "OBRAS Y CONSTRUCCIÓN",
+                  title: language === 'en' ? "Heavy Construction & 400+ Worker Worksites" : "Obras y Construcción de Gran Envergadura",
+                  desc: language === 'en'
+                    ? "Eliminate queues at site entry. Supervisors issue footwear and helmets in seconds, generating instant digital forms."
+                    : "Eliminá las filas de entrega en el ingreso a obra. Los supervisores emiten calzado e indumentaria en segundos con firma táctil.",
+                  badges: [language === 'en' ? "Mass Upload" : "Control Masivo", language === 'en' ? "Instant Forms" : "Firma en Tablet", language === 'en' ? "0 Bottlenecks" : "Sin Demoras"]
+                },
+                {
+                  icon: Factory,
+                  tag: language === 'en' ? "HEAVY INDUSTRY & MANUFACTURING" : "INDUSTRIA PESADA Y MANUFACTURA",
+                  title: language === 'en' ? "Manufacturing Plants & Certification Control" : "Plantas Industriales y Control IRAM/IQC",
+                  desc: language === 'en'
+                    ? "Strict tracking of dielectric boots, respirators, and harnesses certificates. Prevent expired equipment usage with preventive alerts."
+                    : "Seguimiento estricto de números de certificado IRAM e IQC para cascos, arneses y antiparras. Prevení el uso de elementos vencidos.",
+                  badges: [language === 'en' ? "IRAM Tracking" : "Certificados IRAM", language === 'en' ? "Expiration Alerts" : "Alerta de Vencimiento", language === 'en' ? "Audit Trail" : "Trazabilidad Total"]
+                },
+                {
+                  icon: Zap,
+                  tag: language === 'en' ? "ENERGY & UTILITIES" : "ENERGÍA Y PETRÓLEO",
+                  title: language === 'en' ? "Energy & Public Services Infrastructure" : "Energía, Gas y Servicios Públicos",
+                  desc: language === 'en'
+                    ? "Pass labor audits instantly. Auditors scan printed or digital QR codes to verify authenticity in real time without calling IT."
+                    : "Superá auditorías de ART y SRT en segundos. Los inspectores escanean el QR público y validan la autenticidad sin requerir clave.",
+                  badges: [language === 'en' ? "Public QR Portal" : "Portal QR Público", language === 'en' ? "SRT Audit Ready" : "Aprobado ART/SRT", language === 'en' ? "SHA-256 Seal" : "Hash Criptográfico"]
+                },
+              ].map((sec, idx) => (
+                <FadeIn key={idx} delay={0.1 * idx}>
+                  <TiltCard
+                    spotlightColor="rgba(16, 185, 129, 0.2)"
+                    borderColor="rgba(16, 185, 129, 0.35)"
+                    className="p-8 h-full flex flex-col justify-between space-y-6 bg-slate-900/50 border-slate-800"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                          <sec.icon className="w-6 h-6" />
+                        </div>
+                        <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase">
+                          {sec.tag}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xl font-heading font-bold text-white">{sec.title}</h3>
+                      <p className="text-slate-300 font-sans text-sm leading-relaxed">{sec.desc}</p>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-800/80 flex flex-wrap gap-2">
+                      {sec.badges.map((b, bi) => (
+                        <span key={bi} className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-slate-950 text-slate-300 border border-slate-800">
+                          ✓ {b}
+                        </span>
+                      ))}
+                    </div>
+                  </TiltCard>
+                </FadeIn>
+              ))}
+            </div>
+
+          </div>
+        </section>
+
+        {/* ─── SECCIÓN: CÓMO FUNCIONA (SIMULADOR DE 4 PASOS) ────────────────── */}
+        <section id="como-funciona" className="py-24 bg-slate-950/80 border-b border-slate-800/80">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            <FadeIn className="text-center max-w-3xl mx-auto mb-16">
+              <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                {language === 'en' ? "SIMULATION DEMO" : "EXPERIENCIA INTERACTIVA EN VIVO"}
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-display font-black text-white mt-4 mb-6">
+                {language === 'en' ? (
+                  <>
+                    How does IfsinRem work{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">in the field?</span>
+                  </>
+                ) : (
+                  <>
+                    ¿Cómo funciona IfsinRem{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">en el terreno?</span>
+                  </>
+                )}
+              </h2>
+              <p className="text-slate-400 font-sans text-base sm:text-lg">
+                {language === 'en'
+                  ? "Designed for field operators and executive directors. Select each module to test the interactive simulation."
+                  : "Diseñado para supervisores de obra y directores corporativos. Seleccioná cada módulo para probar la simulación."
+                }
+              </p>
+            </FadeIn>
+
+            <FadeIn delay={0.2}>
+              <FourStepInteractiveSimulator />
             </FadeIn>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── INTERACTIVE WORKFLOW (REPLACING TYPICAL CARDS) */}
-      <section className="px-4 py-20 sm:py-28 sm:px-8 bg-[#05070d] border-y border-slate-900/60 relative z-10" id="como-funciona">
-        <div className="mx-auto max-w-5xl">
-          <FadeIn className="text-center mb-16">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-bold text-emerald-400 uppercase tracking-widest">
-              {t('workflow.tag')}
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black mb-4 text-white">
-              {t('workflow.title')}
-            </h2>
-            <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto font-sans">
-              {t('workflow.subtitle')}
-            </p>
-          </FadeIn>
+        {/* ─── SECCIÓN: BLINDAJE CRIPTOGRÁFICO Y SEGURIDAD LEGAL ───────────────── */}
+        <section id="seguridad-criptografica" className="py-24 bg-gradient-to-b from-[#02050e] via-[#050c1e] to-[#02050e] border-b border-slate-800/80">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              
+              <div className="lg:col-span-6 space-y-6">
+                <FadeIn>
+                  <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "ENTERPRISE SECURITY & LEGAL SHIELD" : "BLINDAJE CRIPTOGRÁFICO Y AUDITORÍA"}
+                  </span>
+                  <h2 className="text-3xl sm:text-5xl font-display font-black text-white tracking-tight leading-tight mt-4">
+                    {language === 'en' ? (
+                      <>
+                        Unshakeable legal evidence &{" "}
+                        <span className="font-serif italic font-normal text-emerald-400">bank-grade security</span>
+                      </>
+                    ) : (
+                      <>
+                        Evidencia legal inalterable y{" "}
+                        <span className="font-serif italic font-normal text-emerald-400">seguridad nivel bancario</span>
+                      </>
+                    )}
+                  </h2>
+                  <p className="text-slate-300 font-sans text-base leading-relaxed">
+                    {language === 'en'
+                      ? "Every signed receipt generates an immutable SHA-256 hash containing timestamp, geolocation, IP, and worker ID. Public QR code verification lets auditors inspect authenticity without user credentials."
+                      : "Cada planilla firmada genera un Hash SHA-256 inmutable que concatena sello de tiempo, coordenadas GPS, IP y metadata del trabajador. El código QR permite a inspectores certificar autenticidad sin necesidad de claves."
+                    }
+                  </p>
+                </FadeIn>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-            {/* Step Selection Column */}
-            <div className="lg:col-span-7 flex flex-col justify-center gap-4">
-              {steps.map((step, idx) => {
-                const isActive = activeStep === step.id;
-                return (
-                  <FadeIn key={step.id} delay={idx * 0.1} y={10}>
-                    <button
-                      onClick={() => setActiveStep(step.id)}
-                      className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 flex items-start gap-4 relative overflow-hidden ${
-                        isActive 
-                          ? "bg-[#090d16] border-emerald-500/40 shadow-lg shadow-emerald-500/5" 
-                          : "bg-[#06080e]/40 border-slate-900 hover:border-slate-800 hover:bg-[#06080e]/80"
-                      }`}
-                    >
-                      <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center transition-colors ${
-                        isActive ? "bg-emerald-500/20 border border-emerald-500/40" : "bg-slate-900 border border-slate-800"
-                      }`}>
-                        {step.icon}
+                <FadeIn delay={0.2}>
+                  <div className="space-y-4 pt-2">
+                    {[
+                      {
+                        title: language === 'en' ? "SHA-256 Digital Hashing" : "Sello Criptográfico SHA-256",
+                        desc: language === 'en' ? "Generates a unique fingerprint for each receipt, preventing post-signature modifications." : "Genera una huella digital única e inmodificable por cada constancia de entrega."
+                      },
+                      {
+                        title: language === 'en' ? "Open QR Public Inspection Portal" : "Portal QR de Verificación Pública",
+                        desc: language === 'en' ? "Inspectors scan the PDF QR code to view the live verification badge on an official URL." : "Los inspectores escanean el QR del PDF impreso y comprueban la insignia verde de validez en tiempo real."
+                      },
+                      {
+                        title: language === 'en' ? "Multi-Tenant Row Level Security (RLS)" : "Aislamiento de Datos Multi-Tenant (RLS)",
+                        desc: language === 'en' ? "Strict PostgreSQL database policies guarantee your company data remains isolated." : "Políticas estrictas de base de datos PostgreSQL garantizan el aislamiento absoluto entre empresas."
+                      },
+                    ].map((secItem, sidx) => (
+                      <div key={sidx} className="flex items-start gap-3.5 p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-heading font-bold text-white">{secItem.title}</h4>
+                          <p className="text-xs font-sans text-slate-400 leading-relaxed mt-0.5">{secItem.desc}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 font-sans">
-                        <p className={`text-[10px] font-bold uppercase tracking-widest ${isActive ? "text-emerald-400" : "text-slate-500"}`}>
-                          {step.subtitle}
-                        </p>
-                        <h3 className="text-base font-bold text-white mt-1 font-sans">
-                          {step.title}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed font-medium">
-                          {step.desc}
+                    ))}
+                  </div>
+                </FadeIn>
+              </div>
+
+              <div className="lg:col-span-6">
+                <FadeIn delay={0.3}>
+                  <div className="bg-slate-950 p-6 sm:p-8 rounded-3xl border border-emerald-500/40 shadow-2xl relative overflow-hidden space-y-6">
+                    <BorderBeam size={180} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
+
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-emerald-400" />
+                        <span className="text-sm font-mono font-bold text-white">REPORTE_CRIPTOGRAFICO_SRT29911.PDF</span>
+                      </div>
+                      <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono border border-emerald-500/30 font-bold">
+                        VERIFICADO
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 font-mono text-xs text-slate-300">
+                      <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                        <span className="text-[10px] text-slate-500 uppercase">HASH SHA-256 PAYLOAD:</span>
+                        <p className="text-emerald-400 break-all text-[11px]">
+                          e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
                         </p>
                       </div>
 
-                      {/* Animated Progress Bar indicating auto-rotation timer */}
-                      {isActive && (
-                        <motion.div
-                          key={`step-progress-${activeStep}`}
-                          initial={{ width: "0%" }}
-                          animate={{ width: "100%" }}
-                          transition={{ duration: 4, ease: "linear" }}
-                          className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-b-2xl"
-                        />
-                      )}
-                    </button>
-                  </FadeIn>
-                );
-              })}
+                      <div className="grid grid-cols-2 gap-3 text-[11px]">
+                        <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                          <span className="text-slate-500 block text-[10px]">TIMESTAMP UTC:</span>
+                          <span className="text-white font-semibold">2026-08-13 12:24:10</span>
+                        </div>
+                        <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                          <span className="text-slate-500 block text-[10px]">COORDENADAS GPS:</span>
+                          <span className="text-white font-semibold">24.7859° S, 65.4117° W</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <span className="text-slate-400">RESOLUCIÓN OFICIAL SRT:</span>
+                        <span className="text-emerald-400 font-bold">Res. SRT N° 299/11</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 text-center">
+                      <span className="text-xs font-mono text-slate-400">
+                        {language === 'en'
+                          ? "✓ Validador público accesible sin instalar software adicional"
+                          : "✓ Validador público accesible desde cualquier teléfono o computadora"
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </FadeIn>
+              </div>
+
             </div>
 
-            {/* Interactive Simulation Pane */}
-            <div className="lg:col-span-5 flex flex-col justify-between">
-              <div className="h-full rounded-2xl border border-slate-800 bg-[#070b14]/90 backdrop-blur-xl shadow-2xl overflow-hidden relative flex flex-col">
-                {/* Browser Chrome Header */}
-                <div className="flex items-center gap-2 px-4 py-3 bg-[#05070d] border-b border-slate-900/60 shrink-0">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                  <span className="ml-3 text-[9px] text-slate-600 font-mono">simulador_ifsinrem.exe</span>
-                </div>
+          </div>
+        </section>
 
-                {/* Simulated Content */}
-                <div className="flex-1 bg-[#04060b] relative min-h-[300px]">
-                  <AnimatePresence mode="wait">
-                    {renderSimulator()}
-                  </AnimatePresence>
-                </div>
+        {/* ─── SECCIÓN: CTA FINAL CON EMBED DIRECTO DE CAL.COM ───────────────── */}
+        <section id="agendar-demo" className="py-24 bg-gradient-to-b from-[#02050e] to-[#040918]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+            <div className="bg-gradient-to-br from-emerald-950/80 via-slate-900 to-[#040918] border border-emerald-500/40 rounded-3xl p-8 sm:p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">
+              <BorderBeam size={200} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
+
+              <div className="space-y-4">
+                <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                  {language === 'en' ? "TAKE THE STEP TO DIGITAL" : "DA EL PASO A LA DIGITALIZACIÓN TOTAL"}
+                </span>
+                <h2 className="text-3xl sm:text-5xl font-display font-black text-white tracking-tight leading-tight">
+                  {language === 'en' ? (
+                    <>
+                      Ready to digitize{" "}
+                      <span className="font-serif italic font-normal text-emerald-400">your company's safety?</span>
+                    </>
+                  ) : (
+                    <>
+                      ¿Listo para digitalizar{" "}
+                      <span className="font-serif italic font-normal text-emerald-400">la seguridad de tu empresa?</span>
+                    </>
+                  )}
+                </h2>
+                <p className="text-slate-300 font-sans text-base sm:text-lg max-w-xl mx-auto">
+                  {language === 'en'
+                    ? "Schedule your personalized demo directly below with our engineering team."
+                    : "Agendá tu demostración comercial en vivo directamente a continuación con nuestro equipo técnico."
+                  }
+                </p>
+              </div>
+
+              {/* Inline Embedded Cal.com Calendar Widget */}
+              <div className="mt-8 rounded-2xl overflow-hidden border border-emerald-500/40 bg-slate-950/90 shadow-2xl max-w-3xl mx-auto">
+                <iframe
+                  src="https://cal.com/ifsinrem?embed=true"
+                  title="Agendar demo en Cal.com"
+                  className="w-full h-[620px] border-0 bg-slate-950"
+                />
+              </div>
+
+              <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-slate-300">
+                <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "No lock-in contract" : "Sin compromiso de permanencia"}</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "Full setup support included" : "Acompañamiento en la implementación"}</span>
+                <span className="flex items-center gap-1.5"><Lock className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "Bank-grade data isolation" : "Aislamiento de datos nivel bancario"}</span>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── LEGAL AUDIT FEATURE */}
-      <section className="px-4 py-20 sm:py-28 sm:px-8 relative z-10">
-        <div className="mx-auto max-w-5xl">
-          <TiltCard tiltMaxAngle={5} spotlightColor="rgba(16, 185, 129, 0.2)">
-            <div className="relative rounded-3xl border border-slate-900 bg-[#06080e] p-8 sm:p-12 shadow-2xl shadow-emerald-500/5 overflow-hidden">
-              <BorderBeam size={180} duration={10} colorFrom="#10b981" colorTo="#34d399" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center relative z-10">
-                <div>
-                  <div className="mb-6 inline-block">
-                    <ShimmerBadge>{t('legal.tag')}</ShimmerBadge>
-                  </div>
-                  <h2 className="text-3xl sm:text-4xl font-black mb-5 leading-tight text-white">
-                    {t('legal.title')}
-                  </h2>
-                  <p className="text-slate-400 text-sm sm:text-base mb-8 leading-relaxed font-sans font-medium">
-                    {t('legal.desc')}
-                  </p>
-                  <MagneticButton onClick={() => navigate("/auth")}>
-                    <Button
-                      className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-7 font-bold rounded-xl border-0 shadow-lg shadow-emerald-500/10 font-sans"
-                    >
-                      {t('legal.btn')} <ArrowRight size={16} />
-                    </Button>
-                  </MagneticButton>
-                </div>
-
-                <div className="space-y-3 font-sans">
-                  {[
-                    { icon: <Smartphone size={16} className="text-emerald-400" />, text: language === 'en' ? "Mobile app optimized for offline field use" : "App móvil optimizada para zonas con poca señal" },
-                    { icon: <FileSpreadsheet size={16} className="text-teal-400" />, text: language === 'en' ? "Automatic PDF Form 299 generation" : "Generación automática del PDF de Planilla 299" },
-                    { icon: <Users size={16} className="text-indigo-400" />, text: language === 'en' ? "Company, Supervisor & Worker roles" : "Roles para Empresa, Supervisor y Operario" },
-                    { icon: <Boxes size={16} className="text-amber-400" />, text: language === 'en' ? "Categorized PPE Inventory Catalog" : "Catálogo de EPP organizado por categorías" },
-                  ].map((f) => (
-                    <div key={f.text} className="flex items-center gap-3 rounded-xl border border-slate-900 bg-[#080b12] px-4 py-3 hover:border-emerald-500/30 transition-colors">
-                      <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shadow-sm">
-                        {f.icon}
-                      </div>
-                      <p className="text-xs sm:text-sm font-semibold text-slate-300">{f.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </TiltCard>
-        </div>
-      </section>
-
-      {/* ── FINAL CTA / DEMO BOOKING */}
-      <section id="demo" className="px-4 py-20 sm:py-28 sm:px-8 relative overflow-hidden z-10">
-        <div className="pointer-events-none absolute inset-0 z-0">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/[0.06] rounded-full blur-[110px]" />
-        </div>
-
-        <div className="relative mx-auto max-w-5xl z-10">
-          <FadeIn>
-            <TiltCard tiltMaxAngle={6} spotlightColor="rgba(16, 185, 129, 0.25)">
-              <div className="relative rounded-3xl border border-slate-800/80 bg-gradient-to-br from-[#0a0f1a] via-[#0c1220] to-[#080b14] p-8 sm:p-12 overflow-hidden">
-                <BorderBeam size={220} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
-                {/* subtle grid */}
-                <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
-                <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl" />
-
-                <div className="relative grid grid-cols-1 md:grid-cols-2 gap-10 items-start z-10">
-                  <div className="space-y-6">
-                    <div>
-                      <div className="mb-4 inline-block">
-                        <ShimmerBadge>{t('demo.badge')}</ShimmerBadge>
-                      </div>
-                      <h2 className="text-3xl sm:text-4xl font-black leading-tight text-white mb-4">
-                        {t('demo.title1')}
-                        <br />
-                        <span className="text-slate-500">{t('demo.title2')}</span>
-                      </h2>
-                      <p className="text-slate-400 text-sm sm:text-base font-medium leading-relaxed font-sans">
-                        {t('demo.desc')}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3 font-sans">
-                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{language === 'en' ? "What do we cover in the meeting?" : "¿Qué resolvemos en la reunión?"}</h3>
-                      <ul className="space-y-2.5">
-                        {[
-                          language === 'en' ? "Interactive live demo tailored to your industry." : "Demostración interactiva en vivo adaptada a tu sector.",
-                          language === 'en' ? "Express consulting on SRT Resolution 299/11 compliance." : "Consultoría exprés sobre el cumplimiento de la Resol. SRT 299/11.",
-                          language === 'en' ? "Feasibility analysis for integration with your current ERP." : "Análisis de viabilidad para integración con tu ERP actual.",
-                          language === 'en' ? "Setup of your Sandbox testing environment." : "Habilitación de tu cuenta Sandbox para testeo."
-                        ].map((feat) => (
-                          <li key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300 font-medium">
-                            <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-                            <span>{feat}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-4 md:mt-12">
-                    <div className="mb-2 bg-slate-950/80 border border-slate-900 rounded-2xl p-4 w-full text-center">
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{language === 'en' ? "Next Step" : "Siguiente Paso"}</p>
-                      <p className="text-sm font-bold text-white mt-1">Calendly</p>
-                      <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">{language === 'en' ? "Slots available this week" : "Disponibilidad esta semana"}</p>
-                    </div>
-
-                    <MagneticButton>
-                      <a
-                        href="https://calendly.com/ifsinrem"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={openCalendly}
-                        className="group w-full flex items-center justify-between gap-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-6 h-14 text-base font-bold text-white shadow-xl shadow-emerald-500/20 transition-colors cursor-pointer"
-                      >
-                        <span className="flex items-center gap-3">
-                          <Calendar size={18} />
-                          {t('demo.btnCalendly')}
-                        </span>
-                        <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                      </a>
-                    </MagneticButton>
-
-                    <a
-                      href="mailto:contacto@ifsinrem.site"
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-[#090d16]/60 hover:border-slate-700 hover:text-white px-6 h-14 text-sm font-semibold text-slate-300 transition-all"
-                    >
-                      <span className="flex items-center gap-3">
-                        <Mail size={16} className="text-emerald-400" />
-                        contacto@ifsinrem.site
-                      </span>
-                      <ArrowRight size={16} className="opacity-50" />
-                    </a>
-
-                    <p className="text-[11px] text-slate-500 font-medium px-1 text-center md:text-left">
-                      Sin compromiso · Respuesta en menos de 24h hábiles
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </TiltCard>
-          </FadeIn>
-        </div>
-      </section>
+      </main>
 
       <Footer />
     </div>
   );
-};
-
-export default Index;
+}

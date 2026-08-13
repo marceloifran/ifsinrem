@@ -13,6 +13,14 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+        heading: ["'Space Grotesk'", "'Outfit'", "sans-serif"],
+        display: ["'Syne'", "'Space Grotesk'", "sans-serif"],
+        mono: ["'JetBrains Mono'", "monospace"],
+        serif: ["'Instrument Serif'", "Georgia", "serif"],
+        cursive: ["'Instrument Serif'", "Georgia", "serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -110,6 +118,18 @@ export default {
             transform: "translateX(100%)",
           },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { opacity: "0.4", filter: "blur(20px)" },
+          "50%": { opacity: "0.8", filter: "blur(30px)" },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -119,6 +139,9 @@ export default {
         "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
         "border-beam": "border-beam var(--duration) infinite linear",
         shimmer: "shimmer 2.5s infinite",
+        float: "float 4s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 5s ease-in-out infinite",
+        marquee: "marquee 25s linear infinite",
       },
     },
   },
