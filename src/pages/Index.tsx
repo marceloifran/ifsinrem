@@ -50,6 +50,7 @@ import { openCalDemo } from "@/utils/cal";
 import { TiltCard } from "@/components/ui/amicro/TiltCard";
 import { BorderBeam } from "@/components/ui/amicro/BorderBeam";
 import { ShimmerBadge } from "@/components/ui/amicro/ShimmerBadge";
+import KineticGrid from "@/components/ui/amicro/KineticGrid";
 
 // Smooth FadeIn with customizable spring motion
 function FadeIn({
@@ -437,15 +438,15 @@ export default function Index() {
 
       <main className="relative z-10">
         
-        {/* ─── HERO SECTION WITH CURSIVE ACCENTS & FLOATING GLASS BADGES ─────── */}
-        <section className="pt-16 pb-20 sm:pt-24 sm:pb-28 text-center relative overflow-hidden">
+        {/* ─── HERO SECTION WITH KINETIC GRID & FLOATING GLASS BADGES ─────── */}
+        <KineticGrid globalColor="emerald" className="pt-16 pb-20 sm:pt-24 sm:pb-28 text-center border-b border-slate-800/80">
           
           {/* Talentum-style Floating Glass Micro Badges */}
           <div className="hidden lg:block pointer-events-none">
             <motion.div
               animate={{ y: [0, -12, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-28 left-8 p-3.5 rounded-2xl bg-slate-900/80 border border-emerald-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20"
+              className="absolute top-28 left-8 p-3.5 rounded-2xl bg-slate-900/80 border border-emerald-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20 pointer-events-auto"
             >
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
                 <ShieldCheck className="w-4 h-4" />
@@ -459,7 +460,7 @@ export default function Index() {
             <motion.div
               animate={{ y: [0, 12, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute top-36 right-8 p-3.5 rounded-2xl bg-slate-900/80 border border-teal-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20"
+              className="absolute top-36 right-8 p-3.5 rounded-2xl bg-slate-900/80 border border-teal-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20 pointer-events-auto"
             >
               <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400">
                 <Lock className="w-4 h-4" />
@@ -502,8 +503,6 @@ export default function Index() {
               </h1>
             </FadeIn>
 
-
-
             {/* Quick Enterprise Badges Bar */}
             <FadeIn delay={0.25}>
               <div className="pt-10 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono font-semibold text-slate-300">
@@ -527,7 +526,7 @@ export default function Index() {
             </FadeIn>
 
           </div>
-        </section>
+        </KineticGrid>
 
         {/* ─── SECCIÓN SEPARADA: IFSinRem EN OPERACIONES REALES ─── */}
         <section id="obras-destacadas" className="py-16 bg-[#02050e] border-b border-slate-800/80 relative">
@@ -571,41 +570,6 @@ export default function Index() {
 
                 </div>
 
-              </div>
-            </FadeIn>
-          </div>
-        </section>
-
-        {/* ─── SECCIÓN DEDICADA: AGENDAR DEMO / ASESORÍA CON CAL.COM (INLINE EMBED) ─── */}
-        <section id="agendar-demo" className="py-20 bg-[#040816] border-b border-slate-800/80 relative overflow-hidden">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
-            <FadeIn>
-              <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-slate-900/90 to-[#040816] p-6 sm:p-10 shadow-2xl relative overflow-hidden space-y-6">
-                <BorderBeam size={220} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
-                
-                <div className="space-y-2 text-center max-w-2xl mx-auto">
-                  <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block">
-                    {language === 'en' ? "INTERACTIVE SCHEDULING" : "ASESORÍA PERSONALIZADA"}
-                  </span>
-                  <h2 className="text-2xl sm:text-4xl font-display font-black text-white tracking-tight">
-                    {language === 'en' ? "Schedule a live demo on Cal.com" : "Agendá una reunión o demo en vivo"}
-                  </h2>
-                  <p className="text-slate-300 font-sans text-xs sm:text-sm leading-relaxed">
-                    {language === 'en'
-                      ? "Coordinate a 1-on-1 session with our engineering team directly below."
-                      : "Coordiná una sesión 1-a-1 con nuestro equipo técnico seleccionando fecha y horario directamente aquí abajo."
-                    }
-                  </p>
-                </div>
-
-                {/* Embedded Cal.com Calendar Widget */}
-                <div className="w-full rounded-2xl overflow-hidden border border-slate-800 bg-[#080c14] shadow-inner min-h-[620px]">
-                  <iframe
-                    src="https://cal.com/ifsinrem?embed=true"
-                    className="w-full h-[620px] border-0"
-                    title="Agendar Asesoría en Cal.com"
-                  />
-                </div>
               </div>
             </FadeIn>
           </div>
@@ -867,7 +831,7 @@ export default function Index() {
                       },
                       {
                         title: language === 'en' ? "Multi-Tenant Row Level Security (RLS)" : "Aislamiento de Datos Multi-Tenant (RLS)",
-                        desc: language === 'en' ? "Strict PostgreSQL database policies guarantee your company data remains isolated." : "Políticas estrictas de base de datos PostgreSQL garantizan el aislamiento absoluto entre empresas."
+                        desc: language === 'en' ? "Strict PostgreSQL database policies guarantee your company data remains isolated." : "Políticas strictly de base de datos PostgreSQL garantizan el aislamiento absoluto entre empresas."
                       },
                     ].map((secItem, sidx) => (
                       <div key={sidx} className="flex items-start gap-3.5 p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition-colors">
@@ -938,6 +902,41 @@ export default function Index() {
 
             </div>
 
+          </div>
+        </section>
+
+        {/* ─── SECCIÓN DEDICADA: AGENDAR DEMO / ASESORÍA CON CAL.COM (INLINE EMBED) ─── */}
+        <section id="agendar-demo" className="py-24 bg-[#040816] border-b border-slate-800/80 relative overflow-hidden">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+            <FadeIn>
+              <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-slate-900/90 to-[#040816] p-6 sm:p-10 shadow-2xl relative overflow-hidden space-y-6">
+                <BorderBeam size={220} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
+                
+                <div className="space-y-2 text-center max-w-2xl mx-auto">
+                  <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block">
+                    {language === 'en' ? "INTERACTIVE SCHEDULING" : "ASESORÍA PERSONALIZADA"}
+                  </span>
+                  <h2 className="text-2xl sm:text-4xl font-display font-black text-white tracking-tight">
+                    {language === 'en' ? "Schedule a live demo on Cal.com" : "Agendá una reunión o demo en vivo"}
+                  </h2>
+                  <p className="text-slate-300 font-sans text-xs sm:text-sm leading-relaxed">
+                    {language === 'en'
+                      ? "Coordinate a 1-on-1 session with our engineering team directly below."
+                      : "Coordiná una sesión 1-a-1 con nuestro equipo técnico seleccionando fecha y horario directamente aquí abajo."
+                    }
+                  </p>
+                </div>
+
+                {/* Embedded Cal.com Calendar Widget */}
+                <div className="w-full rounded-2xl overflow-hidden border border-slate-800 bg-[#080c14] shadow-inner min-h-[620px]">
+                  <iframe
+                    src="https://cal.com/ifsinrem?embed=true"
+                    className="w-full h-[620px] border-0"
+                    title="Agendar Asesoría en Cal.com"
+                  />
+                </div>
+              </div>
+            </FadeIn>
           </div>
         </section>
 
