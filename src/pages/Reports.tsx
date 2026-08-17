@@ -36,6 +36,10 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DashboardSkeleton } from "@/components/skeletons/Skeletons";
 import { motion } from "framer-motion";
+import { MonoRoundedDonut } from "@/components/ui/amicro/MonoRoundedDonut";
+import { MonoRoundedFunnel } from "@/components/ui/amicro/MonoRoundedFunnel";
+import { MonoActivityBlue } from "@/components/ui/amicro/MonoActivityBlue";
+import { MonoRoundedTreemap } from "@/components/ui/amicro/MonoRoundedTreemap";
 import {
   getEmployees,
   getEPPItems,
@@ -261,6 +265,49 @@ const Reports = () => {
     }));
   }, [filteredDeliveries, language]);
 
+  // Donut data formatted for MonoRoundedDonut chart
+  const donutData = useMemo(() => {
+    return categoryData.map(c => ({
+      name: c.name,
+      value: Number(c.Cantidad || 0),
+    }));
+  }, [categoryData]);
+
+  // Treemap tile data for MonoRoundedTreemap chart
+  const treemapItems = useMemo(() => {
+    const inventoryTiles = eppItems.map((item) => ({
+      id: `item-${item.id}`,
+      label: item.name,
+      category: item.category || "Equipamiento",
+      value: Number(item.stock || 0),
+      unit: "u.",
+      status: item.stock <= 5 ? ("critical" as const) : ("info" as const),
+    }));
+
+    if (inventoryTiles.length === 0) {
+      return [
+        {
+          id: "signed",
+          label: "Entregas Firmadas",
+          category: "Cumplimiento",
+          value: metrics.signed,
+          unit: "u.",
+          status: "optimal" as const,
+        },
+        {
+          id: "pending",
+          label: "Pendientes de Firma",
+          category: "Cumplimiento",
+          value: metrics.pending,
+          unit: "u.",
+          status: metrics.pending > 0 ? ("critical" as const) : ("optimal" as const),
+        },
+      ];
+    }
+
+    return inventoryTiles;
+  }, [eppItems, metrics]);
+
   // Monthly trend (Line chart data)
   const trendData = useMemo(() => {
     const signedKey = language === 'en' ? "Signed" : "Firmados";
@@ -442,121 +489,40 @@ const Reports = () => {
           transition={{ delay: 0.1 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          {/* Signature Distribution Card */}
-          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] p-6 shadow-sm flex flex-col justify-between">
-            <div>
-              <CardHeader className="p-0 pb-4">
-                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-                  {language === 'en' ? "Signature Distribution" : "Distribución de Firmas"}
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-                  {language === 'en' ? "Percentage of digitally signed vs pending items" : "Porcentaje de elementos firmados digitalmente vs pendientes"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 space-y-4">
-                {/* Overall Compliance Badge */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-emerald-500/20">
-                      {metrics.complianceRate}%
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">
-                        {language === 'en' ? "Digital Signature Rate" : "Tasa de Firmas Digitales"}
-                      </p>
-                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                        {metrics.signed} {language === 'en' ? "of" : "de"} {metrics.total} {language === 'en' ? "items signed" : "elementos firmados"}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                    {metrics.complianceRate >= 80 ? (language === 'en' ? "Optimal" : "Óptimo") : (language === 'en' ? "Pending" : "Pendiente")}
-                  </span>
-                </div>
+          {/* Mono Rounded Funnel Chart (Replaces Distribución de Firmas) */}
+          <MonoRoundedFunnel
+            total={metrics.total}
+            signed={metrics.signed}
+            pending={metrics.pending}
+            complianceRate={metrics.complianceRate}
+            title={language === 'en' ? "Signature & Compliance Funnel" : "Flujo de Firmas y Cumplimiento"}
+            subtitle={language === 'en' ? "Conversion pipeline of deliveries through digital signature" : "Funnel de conversión de entregas desde la creación hasta la firma digital"}
+            isDark={isDark}
+          />
 
-                {/* Firmados Progress Item */}
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-900 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                      {language === 'en' ? "Digitally Signed Items" : "Elementos Firmados Digitalmente"}
-                    </span>
-                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{metrics.signed} u. ({metrics.complianceRate}%)</span>
-                  </div>
-                  <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${metrics.complianceRate}%` }} />
-                  </div>
-                </div>
+          {/* Mono Rounded Donut Chart for EPP Categories */}
+          <MonoRoundedDonut
+            data={donutData}
+            title={language === 'en' ? "Deliveries by PPE Category" : "Entregas por Categoría EPP"}
+            subtitle={language === 'en' ? "Quantity of units provided by protection type" : "Cantidad de unidades provistas por tipo de protección"}
+            totalLabel={language === 'en' ? "Total Delivered" : "Total Entregados"}
+            unitLabel={language === 'en' ? "u." : "u."}
+            isDark={isDark}
+          />
+        </motion.div>
 
-                {/* Pendientes Progress Item */}
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-900 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                      {language === 'en' ? "Pending Signature Items" : "Elementos Pendientes de Firma"}
-                    </span>
-                    <span className="font-extrabold text-amber-500">{metrics.pending} u. ({100 - metrics.complianceRate}%)</span>
-                  </div>
-                  <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${100 - metrics.complianceRate}%` }} />
-                  </div>
-                </div>
-              </CardContent>
-            </div>
-            <CardFooter className="p-0 pt-4 text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-900 mt-4">
-              <span>{language === 'en' ? "Audited under SRT Res. 299/11" : "Auditado bajo Res. SRT 299/11"}</span>
-            </CardFooter>
-          </Card>
-
-          {/* Horizontal Bar Chart for Categories */}
-          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-                {language === 'en' ? "Deliveries by PPE Category" : "Entregas por Categoría EPP"}
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-                {language === 'en' ? "Quantity of units provided by protection type" : "Cantidad de unidades provistas por tipo de protección"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {categoryData.length === 0 ? (
-                <div className="flex h-48 items-center justify-center text-xs text-slate-400 dark:text-slate-555">
-                  {language === 'en' ? "No deliveries recorded" : "Sin entregas registradas"}
-                </div>
-              ) : (
-                <ChartContainer config={chartConfig} className="h-56 w-full">
-                  <BarChart
-                    accessibilityLayer
-                    data={categoryData}
-                    layout="vertical"
-                    margin={{ left: 5, right: 25, top: 5, bottom: 5 }}
-                  >
-                    <XAxis type="number" hide />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      tickLine={false}
-                      tickMargin={8}
-                      axisLine={false}
-                      tick={{ fontSize: 11, fill: isDark ? "#cbd5e1" : "#334155" }}
-                      width={140}
-                    />
-                    <ChartTooltip cursor={{ fill: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }} content={<ChartTooltipContent hideLabel />} />
-                    <Bar
-                      dataKey={language === 'en' ? "Quantity" : "Cantidad"}
-                      fill="#10b981"
-                      radius={6}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              )}
-            </CardContent>
-            <CardFooter className="pt-2 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 font-medium leading-none text-slate-500 dark:text-slate-400">
-                {language === 'en' ? "Sorted by distribution volume" : "Ordenado por volumen distribuido"}
-              </div>
-            </CardFooter>
-          </Card>
+        {/* ROW 2: Activity Heatmap (mono-activity-blue) */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <MonoActivityBlue
+            deliveries={deliveries}
+            title={language === 'en' ? "ACTIVITY HEATMAP" : "MAPA DE ACTIVIDAD DEL SISTEMA"}
+            subtitle={language === 'en' ? "Daily system usage and delivery activity grid" : "Registro de uso del sistema y entregas por día (20 Semanas)"}
+            badgeLabel="Sky Blue Grid"
+          />
         </motion.div>
 
         {/* ROW 2: Gradient Area Chart for Monthly Trend */}
@@ -722,56 +688,14 @@ const Reports = () => {
             </Button>
           </Card>
 
-          {/* Inventory Status Card */}
-          <Card className="rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-[#080b11] p-6 shadow-sm flex flex-col justify-between">
-            <div>
-              <CardHeader className="p-0 pb-4">
-                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
-                  {language === 'en' ? "Inventory Status" : "Estado del Inventario"}
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
-                  {language === 'en' ? "Ratio of stock items vs critical stock thresholds" : "Relación de elementos en stock frente al stock crítico"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 space-y-3 max-h-[260px] overflow-y-auto pr-1">
-                {eppItems.length === 0 ? (
-                  <div className="flex h-40 items-center justify-center text-xs text-slate-400 dark:text-slate-550">
-                    {language === 'en' ? "No stock recorded" : "Sin stock registrado"}
-                  </div>
-                ) : (
-                  eppItems.map(item => {
-                    const isLow = item.stock <= 5;
-                    return (
-                      <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/50 dark:border-slate-900">
-                        <div>
-                          <p className="text-xs font-bold text-slate-800 dark:text-white">{item.name}</p>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                            {item.category ? `${language === 'en' ? 'Category' : 'Categoría'}: ${item.category}` : (language === 'en' ? 'Uncategorized' : 'Sin categoría')}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{item.stock} u.</span>
-                          <span className={cn(
-                            "text-[9px] font-bold px-2 py-0.5 rounded-full border",
-                            isLow 
-                              ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-200 dark:border-red-500/25" 
-                              : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400"
-                          )}>
-                            {isLow ? (language === 'en' ? "CRITICAL" : "CRÍTICO") : (language === 'en' ? "Sufficient" : "Suficiente")}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </CardContent>
-            </div>
-            <CardFooter className="p-0 pt-4 text-xs text-muted-foreground border-t border-slate-100 dark:border-slate-900 mt-4">
-              <span className="text-[11px] text-slate-400 font-medium">
-                {language === 'en' ? "Threshold alert triggers at 5 units" : "Alerta de umbral activada a las 5 unidades"}
-              </span>
-            </CardFooter>
-          </Card>
+          {/* Mono Tile Treemap (mono-rounded-treemap) replacing raw inventory status */}
+          <MonoRoundedTreemap
+            items={treemapItems}
+            title={language === 'en' ? "TILE TREEMAP" : "PARTICIONES DE INVENTARIO Y STOCK"}
+            subtitle={language === 'en' ? "Inventory distribution treemap with critical stock thresholds" : "Relación de elementos en stock frente al stock crítico en formato Treemap"}
+            badgeLabel="Allocation"
+            isDark={isDark}
+          />
         </motion.div>
       </main>
     </div>

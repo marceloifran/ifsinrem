@@ -19,8 +19,6 @@ import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 import AboutUs from "./pages/AboutUs";
 import Security from "./pages/Security";
-import Contact from "./pages/Contact";
-import Resources from "./pages/Resources";
 
 import { useEffect } from "react";
 
@@ -67,8 +65,6 @@ const App = () => {
                 <Route path="/verificar-constancia/:id" element={<VerifyDelivery />} />
                 <Route path="/nosotros" element={<AboutUs />} />
                 <Route path="/seguridad" element={<Security />} />
-                <Route path="/contacto" element={<Contact />} />
-                <Route path="/recursos" element={<Resources />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

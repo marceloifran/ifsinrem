@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BarChart3, Users, Boxes, Shield, Sun, Moon, Menu, X, Snowflake, ShieldAlert } from "lucide-react";
+import { LogOut, User, LayoutDashboard, BarChart3, Users, Boxes, Shield, Sun, Moon, Menu, X, Snowflake, ShieldAlert, Calendar } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useEffect, useState } from "react";
 import { checkRolePermission } from "@/services/permissionService";
+import { openCalDemo } from "@/utils/cal";
 
 interface HeaderProps {
   userName?: string;
@@ -17,8 +18,21 @@ interface HeaderProps {
 const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: HeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading, signOut } = useAuth();
   const [permissionsVer, setPermissionsVer] = useState(0);
+
+  const handleSignOut = async () => {
+    try {
+      if (onLogout) {
+        await onLogout();
+      }
+      await signOut();
+    } catch (err) {
+      console.error("Error al cerrar sesión:", err);
+    } finally {
+      navigate('/auth');
+    }
+  };
 
   const isSuperAdminPage = location.pathname === '/superadmin';
 
@@ -193,7 +207,7 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
             <Button
               variant="ghost"
               size="icon"
-              onClick={onLogout}
+              onClick={handleSignOut}
               className="text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-white"
               title="Cerrar sesión"
             >
@@ -271,7 +285,7 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                if (onLogout) onLogout();
+                handleSignOut();
               }}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-500/10"
             >

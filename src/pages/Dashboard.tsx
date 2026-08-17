@@ -21,7 +21,9 @@ import {
   TrendingUp,
   Eye,
   Loader2,
+  Calendar,
 } from "lucide-react";
+import { openCalDemo } from "@/utils/cal";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -110,7 +112,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/");
+    navigate("/auth");
   };
 
   // Stats calculation
@@ -315,25 +317,38 @@ export default function Dashboard() {
           <>
             {/* Greetings and CTA */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
-              {profile?.company_name || (language === 'en' ? "My Company" : "Mi Empresa")}
-            </h1>
-            <p className="text-base text-slate-500 dark:text-slate-400 mt-1">
-              {t("dashboard.subtitle")}
-            </p>
+          <div className="flex items-center gap-3.5">
+            {profile?.logo_url ? (
+              <img
+                src={profile.logo_url}
+                alt={profile?.company_name || "Logo"}
+                className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl object-contain bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1.5 shadow-sm shrink-0"
+              />
+            ) : (
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center font-black text-2xl shrink-0">
+                {(profile?.company_name || "M").charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
+                {profile?.company_name || (language === 'en' ? "My Company" : "Mi Empresa")}
+              </h1>
+              <p className="text-base text-slate-500 dark:text-slate-400 mt-0.5">
+                {t("dashboard.subtitle")}
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
               onClick={() => navigate("/operarios")}
               variant="outline"
-              className="border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl bg-white dark:bg-[#080b11] text-base h-11 px-5"
+              className="border-slate-200 dark:border-slate-850 text-slate-600 dark:text-slate-300 rounded-xl bg-white dark:bg-[#080b11] text-sm h-11 px-4"
             >
               {t("dashboard.viewPersonnel")}
             </Button>
             <Button
               onClick={handleOpenDelivery}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl shadow-sm border-0 font-semibold text-base h-11 px-5"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl shadow-sm border-0 font-semibold text-sm h-11 px-4"
             >
               <Plus size={18} /> {t("dashboard.deliverEPP")}
             </Button>

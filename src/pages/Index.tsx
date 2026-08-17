@@ -33,11 +33,18 @@ import {
   Activity,
   FileSpreadsheet
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { openCalDemo } from "@/utils/cal";
 
 // Amicro Micro-interaction Components
 import { TiltCard } from "@/components/ui/amicro/TiltCard";
@@ -407,21 +414,7 @@ export default function Index() {
               </span>
             </Link>
 
-            {/* Header Navigation Links */}
-            <nav className="hidden md:flex items-center gap-6 text-sm font-heading font-semibold text-slate-300">
-              <a href="#prueba-social" className="hover:text-emerald-400 transition-colors">
-                {language === 'en' ? "Field Proven" : "Prueba en Terreno"}
-              </a>
-              <a href="#sectores" className="hover:text-emerald-400 transition-colors">
-                {language === 'en' ? "Sectors" : "Sectores"}
-              </a>
-              <a href="#como-funciona" className="hover:text-emerald-400 transition-colors">
-                {language === 'en' ? "How it Works" : "Cómo Funciona"}
-              </a>
-              <a href="#seguridad-criptografica" className="hover:text-emerald-400 transition-colors">
-                {language === 'en' ? "Security & Legal" : "Seguridad & Leyes"}
-              </a>
-            </nav>
+
 
             {/* Header Right Actions */}
             <div className="flex items-center gap-4">
@@ -509,37 +502,11 @@ export default function Index() {
               </h1>
             </FadeIn>
 
-            <FadeIn delay={0.15}>
-              <p className="text-lg sm:text-xl font-sans text-slate-300 leading-relaxed max-w-3xl mx-auto mb-10">
-                {language === 'en'
-                  ? "SaaS platform operating in worksites with over 400 workers simultaneously. Official Form SRT N° 299/11, touch signatures with GPS location, public QR verification, and SHA-256 cryptographic seal."
-                  : "Plataforma SaaS probada en campo operando en obras con más de 400 operarios en simultáneo y +200 entregas firmadas. Res. SRT N° 299/11 oficial, firmas táctiles con GPS, código QR de verificación pública y Hash criptográfico SHA-256."
-                }
-              </p>
-            </FadeIn>
 
-            <FadeIn delay={0.2}>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                <a
-                  href="#agendar-demo"
-                  className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 hover:brightness-110 text-slate-950 font-heading font-black text-base px-8 py-4 rounded-2xl shadow-2xl shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 hover:scale-105"
-                >
-                  <Calendar className="w-5 h-5" />
-                  {language === 'en' ? "Schedule Commercial Demo" : "Agendar Demo en Vivo"}
-                </a>
-
-                <a
-                  href="#prueba-social"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-slate-200 font-heading font-bold text-base transition-colors hover:border-emerald-500/40"
-                >
-                  {language === 'en' ? "See Real Usage Data" : "Ver Prueba en Terreno"} <ArrowRight className="w-4 h-4 ml-2 text-emerald-400" />
-                </a>
-              </div>
-            </FadeIn>
 
             {/* Quick Enterprise Badges Bar */}
             <FadeIn delay={0.25}>
-              <div className="pt-6 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono font-semibold text-slate-300">
+              <div className="pt-10 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono font-semibold text-slate-300">
                 <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>{language === 'en' ? "Res. SRT N° 299/11 Official" : "Res. SRT N° 299/11 Oficial"}</span>
@@ -559,6 +526,88 @@ export default function Index() {
               </div>
             </FadeIn>
 
+          </div>
+        </section>
+
+        {/* ─── SECCIÓN SEPARADA: IFSinRem EN OPERACIONES REALES ─── */}
+        <section id="obras-destacadas" className="py-16 bg-[#02050e] border-b border-slate-800/80 relative">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+            <FadeIn>
+              <div className="rounded-3xl border border-slate-800/90 bg-[#060a17]/90 p-8 sm:p-12 shadow-2xl space-y-8 backdrop-blur-xl">
+                
+                {/* Header Title & Subtitle */}
+                <div className="text-center space-y-3 max-w-3xl mx-auto">
+                  <h2 className="text-2xl sm:text-4xl font-display font-black text-white tracking-tight">
+                    {language === 'en' ? "IFSinRem in real operations" : "IFSinRem en operaciones reales"}
+                  </h2>
+                  <p className="text-slate-300 font-sans text-sm sm:text-base leading-relaxed">
+                    {language === 'en'
+                      ? "IFSinRem was used in worksites of the following companies to digitize personnel management, generate QR credentials, and record operational documentation."
+                      : "IFSinRem fue utilizado en obras de las siguientes empresas para digitalizar la gestión del personal, generar credenciales con código QR y registrar documentación operativa."
+                    }
+                  </p>
+                </div>
+
+                {/* 2-Column Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  
+                  {/* Card 1: TECHINT & SACDE */}
+                  <div className="rounded-2xl border border-slate-800/90 bg-[#030611] p-6 flex items-center justify-center min-h-[150px] shadow-lg group hover:border-slate-700 transition-colors">
+                    <img
+                      src="/logos/logo-techint-sacde.png"
+                      alt="TECHINT & SACDE"
+                      className="max-h-12 sm:max-h-14 max-w-[220px] object-contain filter grayscale contrast-125 opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Card 2: SAMJIN BMI UTE */}
+                  <div className="rounded-2xl border border-slate-800/90 bg-[#030611] p-6 flex items-center justify-center min-h-[150px] shadow-lg group hover:border-slate-700 transition-colors">
+                    <img
+                      src="/logos/logo-samjin-bmi.png"
+                      alt="SAMJIN BMI UTE"
+                      className="max-h-12 sm:max-h-14 max-w-[220px] object-contain filter grayscale contrast-125 opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                    />
+                  </div>
+
+                </div>
+
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+
+        {/* ─── SECCIÓN DEDICADA: AGENDAR DEMO / ASESORÍA CON CAL.COM (INLINE EMBED) ─── */}
+        <section id="agendar-demo" className="py-20 bg-[#040816] border-b border-slate-800/80 relative overflow-hidden">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+            <FadeIn>
+              <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-slate-900/90 to-[#040816] p-6 sm:p-10 shadow-2xl relative overflow-hidden space-y-6">
+                <BorderBeam size={220} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
+                
+                <div className="space-y-2 text-center max-w-2xl mx-auto">
+                  <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block">
+                    {language === 'en' ? "INTERACTIVE SCHEDULING" : "ASESORÍA PERSONALIZADA"}
+                  </span>
+                  <h2 className="text-2xl sm:text-4xl font-display font-black text-white tracking-tight">
+                    {language === 'en' ? "Schedule a live demo on Cal.com" : "Agendá una reunión o demo en vivo"}
+                  </h2>
+                  <p className="text-slate-300 font-sans text-xs sm:text-sm leading-relaxed">
+                    {language === 'en'
+                      ? "Coordinate a 1-on-1 session with our engineering team directly below."
+                      : "Coordiná una sesión 1-a-1 con nuestro equipo técnico seleccionando fecha y horario directamente aquí abajo."
+                    }
+                  </p>
+                </div>
+
+                {/* Embedded Cal.com Calendar Widget */}
+                <div className="w-full rounded-2xl overflow-hidden border border-slate-800 bg-[#080c14] shadow-inner min-h-[620px]">
+                  <iframe
+                    src="https://cal.com/ifsinrem?embed=true"
+                    className="w-full h-[620px] border-0"
+                    title="Agendar Asesoría en Cal.com"
+                  />
+                </div>
+              </div>
+            </FadeIn>
           </div>
         </section>
 
@@ -788,12 +837,12 @@ export default function Index() {
                     {language === 'en' ? (
                       <>
                         Unshakeable legal evidence &{" "}
-                        <span className="font-serif italic font-normal text-emerald-400">bank-grade security</span>
+                        <span className="font-serif italic font-normal text-emerald-400">maximum digital traceability</span>
                       </>
                     ) : (
                       <>
                         Evidencia legal inalterable y{" "}
-                        <span className="font-serif italic font-normal text-emerald-400">seguridad nivel bancario</span>
+                        <span className="font-serif italic font-normal text-emerald-400">máxima trazabilidad digital</span>
                       </>
                     )}
                   </h2>
@@ -892,15 +941,15 @@ export default function Index() {
           </div>
         </section>
 
-        {/* ─── SECCIÓN: CTA FINAL CON EMBED DIRECTO DE CAL.COM ───────────────── */}
-        <section id="agendar-demo" className="py-24 bg-gradient-to-b from-[#02050e] to-[#040918]">
+        {/* ─── SECCIÓN: CTA FINAL PARA INGRESAR A LA PLATAFORMA ───────────────── */}
+        <section id="acceso-plataforma" className="py-24 bg-gradient-to-b from-[#02050e] to-[#040918]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
             <div className="bg-gradient-to-br from-emerald-950/80 via-slate-900 to-[#040918] border border-emerald-500/40 rounded-3xl p-8 sm:p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">
               <BorderBeam size={200} duration={8} colorFrom="#10b981" colorTo="#06b6d4" />
 
               <div className="space-y-4">
                 <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
-                  {language === 'en' ? "TAKE THE STEP TO DIGITAL" : "DA EL PASO A LA DIGITALIZACIÓN TOTAL"}
+                  {language === 'en' ? "DIGITAL MANAGEMENT PLATFORM" : "GESTIÓN DOCUMENTAL DIGITAL"}
                 </span>
                 <h2 className="text-3xl sm:text-5xl font-display font-black text-white tracking-tight leading-tight">
                   {language === 'en' ? (
@@ -917,25 +966,25 @@ export default function Index() {
                 </h2>
                 <p className="text-slate-300 font-sans text-base sm:text-lg max-w-xl mx-auto">
                   {language === 'en'
-                    ? "Schedule your personalized demo directly below with our engineering team."
-                    : "Agendá tu demostración comercial en vivo directamente a continuación con nuestro equipo técnico."
+                    ? "Access the platform with your corporate credentials to manage personnel and PPE deliveries."
+                    : "Ingresá a la plataforma con tus credenciales corporativas para la gestión digital de personal y entregas de EPP."
                   }
                 </p>
               </div>
 
-              {/* Inline Embedded Cal.com Calendar Widget */}
-              <div className="mt-8 rounded-2xl overflow-hidden border border-emerald-500/40 bg-slate-950/90 shadow-2xl max-w-3xl mx-auto">
-                <iframe
-                  src="https://cal.com/ifsinrem?embed=true"
-                  title="Agendar demo en Cal.com"
-                  className="w-full h-[620px] border-0 bg-slate-950"
-                />
+              <div className="pt-2 flex justify-center">
+                <Link
+                  to="/auth"
+                  className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 hover:brightness-110 text-slate-950 font-heading font-black text-base px-8 py-4 rounded-2xl shadow-2xl shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 hover:scale-105"
+                >
+                  {language === 'en' ? "Access Platform" : "Ingresar a la Plataforma"} <ArrowRight className="w-5 h-5" />
+                </Link>
               </div>
 
               <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-slate-300">
-                <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "No lock-in contract" : "Sin compromiso de permanencia"}</span>
-                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "Full setup support included" : "Acompañamiento en la implementación"}</span>
-                <span className="flex items-center gap-1.5"><Lock className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "Bank-grade data isolation" : "Aislamiento de datos nivel bancario"}</span>
+                <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "Res. SRT N° 299/11 Official" : "Cumplimiento Res. SRT N° 299/11"}</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "SHA-256 Crypto Seal" : "Sello Criptográfico Inalterable"}</span>
+                <span className="flex items-center gap-1.5"><Lock className="w-4 h-4 text-emerald-400" /> {language === 'en' ? "Data isolation & encryption" : "Aislamiento y cifrado de datos"}</span>
               </div>
             </div>
           </div>

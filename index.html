@@ -39,7 +39,15 @@
 
   <!-- Cal.com Embed Script -->
   <script type="text/javascript">
-    (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; window.Cal = window.Cal || function () { let cal = window.Cal; let args = arguments; if (!cal.q) { cal.q = []; } p(cal, args); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+    (function (C, A, L) {
+      let p = function (a, ar) { a.q.push(ar); };
+      let d = C.document;
+      C.Cal = C.Cal || function () { let cal = C.Cal; let args = arguments; if (!cal.q) { cal.q = []; } p(cal, args); };
+      let s = d.createElement("script");
+      s.async = true;
+      s.src = A;
+      d.head.appendChild(s);
+    })(window, "https://app.cal.com/embed/embed.js", "init");
     if (window.Cal) { window.Cal("init", { origin: "https://cal.com" }); }
   </script>
 
