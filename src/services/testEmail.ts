@@ -1,30 +1,31 @@
-import { sendObligationAlert } from './emailService';
+import { sendTestNotificationEmail } from './emailService';
 
 /**
- * Función de prueba para enviar un email de prueba
- * Llama a esta función desde la consola del navegador o desde un componente
+ * DEPRECATED: Use sendTestNotificationEmail from emailService instead.
+ * This function is kept for backward compatibility only.
  */
 export async function sendTestEmail() {
-    const testEmail = prompt('Ingresa tu email para recibir el email de prueba:');
+    const userEmail = prompt('Ingresa tu email para recibir el email de prueba:');
     
-    if (!testEmail) {
+    if (!userEmail) {
         console.log('Email cancelado');
         return;
     }
 
+    const userName = prompt('Ingresa tu nombre:') || 'Usuario de Prueba';
+
     try {
         console.log('📧 Enviando email de prueba...');
         
-        await sendObligationAlert({
-            to: testEmail,
-            userName: 'Usuario de Prueba',
-            obligationName: 'Obligación de Prueba - Habilitación Comercial',
-            daysUntilDue: 7,
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        });
-
-        console.log('✅ Email de prueba enviado exitosamente!');
-        alert('✅ Email de prueba enviado exitosamente! Revisa tu bandeja de entrada.');
+        const result = await sendTestNotificationEmail(userName, userEmail);
+        
+        if (result.success) {
+            console.log('✅ Email de prueba enviado exitosamente!');
+            alert('✅ Email de prueba enviado exitosamente! Revisa tu bandeja de entrada.');
+        } else {
+            console.error('❌ Error enviando email de prueba:', result.error);
+            alert('❌ Error enviando email: ' + result.error);
+        }
     } catch (error) {
         console.error('❌ Error enviando email de prueba:', error);
         alert('❌ Error enviando email: ' + (error as Error).message);

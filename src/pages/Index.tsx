@@ -45,6 +45,7 @@ import Footer from "@/components/Footer";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { openCalDemo } from "@/utils/cal";
+import AnimatedBeamIfsinrem from "@/components/ui/AnimatedBeamIfsinrem";
 
 // Amicro Micro-interaction Components
 import { TiltCard } from "@/components/ui/amicro/TiltCard";
@@ -904,6 +905,9 @@ export default function Index() {
 
           </div>
         </section>
+
+        {/* ─── SECCIÓN: ANIMATED BEAM DATA PIPELINE IFSINREM ───────────────── */}
+        <AnimatedBeamIfsinrem />
 
         {/* ─── SECCIÓN DEDICADA: AGENDAR DEMO / ASESORÍA CON CAL.COM (INLINE EMBED) ─── */}
         <section id="agendar-demo" className="py-24 bg-[#040816] border-b border-slate-800/80 relative overflow-hidden">

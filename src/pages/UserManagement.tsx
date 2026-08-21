@@ -93,7 +93,7 @@ const UserManagement = () => {
 
     if (authLoading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 dark:bg-[#04060a] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         );
@@ -102,7 +102,7 @@ const UserManagement = () => {
     if (!user || !isAdmin) return null;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-slate-50 dark:bg-[#04060a]">
             <Header
                 userName={profile?.name || user.email || 'Usuario'}
                 onLogout={handleLogout}
@@ -111,14 +111,6 @@ const UserManagement = () => {
             />
 
             <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    {language === 'en' ? "Back to Dashboard" : "Volver al dashboard"}
-                </button>
-
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
                         <Users className="w-8 h-8 text-primary" />

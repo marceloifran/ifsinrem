@@ -8,12 +8,10 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Mail, Lock, Save, ArrowLeft, Users, Building2, Upload, Image as ImageIcon, Trash2, FileText, Loader2, Shield } from 'lucide-react';
+import { User, Mail, Lock, Save, Users, Building2, Upload, Image as ImageIcon, Trash2, FileText, Loader2, Shield } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getAllUsers, UserWithRole, roleLabels } from '@/services/userService';
 import { getCompanyDetails, updateCompanyDetails, uploadCompanyLogo, removeCompanyLogo, Company } from '@/services/companyService';
-import InviteUserDialog from '@/components/InviteUserDialog';
-import { checkRolePermission } from '@/services/permissionService';
+import NotificationSettings from '@/components/NotificationSettings';
 
 const SettingsSkeletonLoader = () => (
     <div className="space-y-6 animate-pulse">
@@ -65,8 +63,6 @@ const UserSettings = () => {
     const [name, setName] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [companyUsers, setCompanyUsers] = useState<UserWithRole[]>([]);
-    const [loadingUsers, setLoadingUsers] = useState(false);
 
     // Company & Logo state
     const [company, setCompany] = useState<Company | null>(null);
@@ -100,45 +96,34 @@ const UserSettings = () => {
     }, [profile]);
 
     useEffect(() => {
-        const fetchCompanyAndUsers = async () => {
-            if (!user) return;
-
-            // Run requests in parallel using Promise.all
-            const promises: Promise<any>[] = [getAllUsers().catch((err) => {
-                console.error('Error fetching users:', err);
-                return [];
-            })];
-
-            if (profile?.company_id) {
-                promises.push(getCompanyDetails(profile.company_id).catch((err) => {
-                    console.error('Error fetching company details:', err);
-                    return null;
-                }));
+        const fetchCompanyDetails = async () => {
+            if (!user || !profile?.company_id) {
+                setLoadingCompany(false);
+                return;
             }
 
-            const [usersData, compData] = await Promise.all(promises);
+            try {
+                const compData = await getCompanyDetails(profile.company_id);
 
-            if (usersData) {
-                setCompanyUsers(usersData);
+                if (compData) {
+                    setCompany(compData);
+                    setCompanyName(compData.name || '');
+                    setCompanyCuit(compData.cuit || '');
+                    setCompanyAddress(compData.address || '');
+                    setCompanyCity(compData.city || '');
+                    setCompanyZipCode(compData.zip_code || '');
+                    setCompanyState(compData.state || '');
+                    setLogoUrl(compData.logo_url || null);
+                }
+            } catch (error) {
+                console.error('Error fetching company details:', error);
+            } finally {
+                setLoadingCompany(false);
             }
-
-            if (compData) {
-                setCompany(compData);
-                setCompanyName(compData.name || '');
-                setCompanyCuit(compData.cuit || '');
-                setCompanyAddress(compData.address || '');
-                setCompanyCity(compData.city || '');
-                setCompanyZipCode(compData.zip_code || '');
-                setCompanyState(compData.state || '');
-                setLogoUrl(compData.logo_url || null);
-            }
-
-            setLoadingCompany(false);
-            setLoadingUsers(false);
         };
 
         if (user) {
-            fetchCompanyAndUsers();
+            fetchCompanyDetails();
         } else if (!authLoading) {
             setLoadingCompany(false);
             setLoadingUsers(false);
@@ -298,7 +283,7 @@ const UserSettings = () => {
     const isInitialLoading = authLoading || (loadingCompany && !company);
 
     return (
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-250">
+        <div className="min-h-screen bg-slate-50 dark:bg-[#04060a] text-foreground transition-colors duration-250">
             <Header
                 userName={profile?.name || user?.email || 'Usuario'}
                 onLogout={handleLogout}
@@ -307,15 +292,6 @@ const UserSettings = () => {
             />
 
             <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl">
-                <Button
-                    variant="ghost"
-                    onClick={() => navigate('/dashboard')}
-                    className="mb-6 gap-2 text-muted-foreground hover:text-foreground"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Volver al dashboard
-                </Button>
-
                 <h1 className="text-3xl font-bold text-foreground mb-8 text-center sm:text-left">Configuración de Cuenta y Empresa</h1>
 
                 {isInitialLoading ? (
@@ -619,98 +595,15 @@ const UserSettings = () => {
                             </div>
                         </Card>
 
-                        {/* Organization details */}
-                        <Card className="p-6 border-primary/10 shadow-md bg-card">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                                    <Users className="w-6 h-6 text-primary" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-foreground">Mi Organización</h2>
-                                    <p className="text-sm text-muted-foreground">Datos de tu empresa y miembros del equipo</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Empresa / Razón Social</Label>
-                                    <p className="text-lg font-bold text-foreground mt-1">
-                                        {companyName || profile?.name || 'Sin empresa configurada'}
-                                    </p>
-                                </div>
-
-                                <div className="border-t border-border/50 pt-4">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                            <span>Miembros de la Organización</span>
-                                            <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
-                                                {companyUsers.length}
-                                            </span>
-                                        </h3>
-                                        {checkRolePermission(profile?.role || (isAdmin ? 'admin' : 'operativo'), 'manage_users_roles', profile?.company_id) && (
-                                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                                                <InviteUserDialog onUserInvited={() => {
-                                                    getAllUsers().then(setCompanyUsers).catch(console.error);
-                                                }} />
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => navigate('/usuarios')}
-                                                    className="gap-2 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold w-full sm:w-auto shrink-0"
-                                                >
-                                                    <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
-                                                    <span className="whitespace-nowrap">Gestionar Usuarios y Roles</span>
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {loadingUsers ? (
-                                        <div className="py-4 text-center text-xs text-muted-foreground">Cargando miembros...</div>
-                                    ) : companyUsers.length === 0 ? (
-                                        <div className="py-4 text-center text-xs text-muted-foreground">No se encontraron otros miembros.</div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {companyUsers.map((u) => {
-                                                const isCurrentUser = u.id === user?.id;
-                                                return (
-                                                    <div 
-                                                        key={u.id} 
-                                                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 gap-2"
-                                                    >
-                                                        <div className="flex items-center gap-3 min-w-0">
-                                                            <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
-                                                                {u.name ? u.name.charAt(0).toUpperCase() : u.email.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="flex items-center gap-1.5 font-sans">
-                                                                    <p className="text-sm font-bold text-foreground truncate">{u.name || 'Usuario'}</p>
-                                                                    {isCurrentUser && (
-                                                                        <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold shrink-0">
-                                                                            Tú
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-left sm:text-right shrink-0">
-                                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider inline-block whitespace-nowrap ${
-                                                                u.role === 'admin' || u.role === 'owner'
-                                                                    ? 'bg-rose-500/10 text-rose-500 border border-rose-500/10'
-                                                                    : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/10'
-                                                            }`}>
-                                                                {roleLabels[u.role] || u.role}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </Card>
+                        {/* Notification Preferences */}
+                        {profile && (
+                            <NotificationSettings
+                                userId={user?.id || ''}
+                                userEmail={profile.email || ''}
+                                userName={profile.name || ''}
+                                companyId={profile.company_id || ''}
+                            />
+                        )}
 
                         {/* Change Password */}
                         <Card className="p-6 border-primary/10 shadow-md bg-card">
