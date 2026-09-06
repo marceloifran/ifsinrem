@@ -52,6 +52,7 @@ import { TiltCard } from "@/components/ui/amicro/TiltCard";
 import { BorderBeam } from "@/components/ui/amicro/BorderBeam";
 import { ShimmerBadge } from "@/components/ui/amicro/ShimmerBadge";
 import KineticGrid from "@/components/ui/amicro/KineticGrid";
+import PressStorySection from "@/components/landing/PressStorySection";
 
 // Smooth FadeIn with customizable spring motion
 function FadeIn({
@@ -418,6 +419,25 @@ export default function Index() {
 
 
 
+            {/* Center Navigation Links (Desktop) */}
+            <nav className="hidden lg:flex items-center gap-6 text-xs font-mono font-semibold text-slate-300">
+              <a href="#prensa-historia" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Press & Story" : "Prensa & Historia"}
+              </a>
+              <a href="#sectores" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Industries" : "Sectores"}
+              </a>
+              <a href="#como-funciona" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "How it Works" : "Cómo funciona"}
+              </a>
+              <a href="#seguridad-criptografica" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Security & Audit" : "Seguridad"}
+              </a>
+              <a href="#agendar-demo" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
+                {language === 'en' ? "Demo" : "Agendar Demo"}
+              </a>
+            </nav>
+
             {/* Header Right Actions */}
             <div className="flex items-center gap-4">
               <LanguageSelector />
@@ -649,6 +669,9 @@ export default function Index() {
 
           </div>
         </section>
+
+        {/* ─── SECCIÓN: PRENSA iProUP & HISTORIA DEL FUNDADOR ───────────────── */}
+        <PressStorySection />
 
         {/* ─── SECCIÓN: SECTORES INDUSTRIALES (MINERÍA, CONSTRUCCIÓN, ENERGÍA) ──── */}
         <section id="sectores" className="py-24 border-b border-slate-800/80">
