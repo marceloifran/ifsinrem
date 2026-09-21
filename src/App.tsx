@@ -13,6 +13,9 @@ import Reports from "./pages/Reports";
 import Welcome from "./pages/Welcome";
 import Employees from "./pages/Employees";
 import EPPInventory from "./pages/EPPInventory";
+import Locations from "./pages/Locations";
+import Transfers from "./pages/Transfers";
+import MobileReception from "./pages/MobileReception";
 import VerifyDelivery from "./pages/VerifyDelivery";
 import UserManagement from "./pages/UserManagement";
 import SuperAdmin from "./pages/SuperAdmin";
@@ -55,8 +58,12 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/operarios" element={<Employees />} />
+                <Route path="/ubicaciones" element={<Locations />} />
                 <Route path="/inventario" element={<EPPInventory />} />
+                <Route path="/transferencias" element={<Transfers />} />
+                <Route path="/recepcion" element={<MobileReception />} />
+                <Route path="/recepcion/:trackingCode" element={<MobileReception />} />
+                <Route path="/operarios" element={<Employees />} />
                 <Route path="/configuracion" element={<UserSettings />} />
                 <Route path="/usuarios" element={<UserManagement />} />
                 <Route path="/superadmin" element={<SuperAdmin />} />

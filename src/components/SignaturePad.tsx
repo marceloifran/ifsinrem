@@ -1,39 +1,65 @@
 import { useRef, useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Check } from "lucide-react";
+import { RotateCcw, Check, FileSignature, ShieldCheck, X } from "lucide-react";
 
 interface SignaturePadProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  employeeName?: string;
   onSave: (signatureDataUrl: string) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   title?: string;
 }
 
-export function SignaturePad({ onSave, onCancel, title = "Firma manuscrita del operario" }: SignaturePadProps) {
+export function SignaturePad({
+  open,
+  onOpenChange,
+  employeeName,
+  onSave,
+  onCancel,
+  title = "Firma Digital en Obra (Res. SRT N° 299/2011)",
+}: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
 
-  // Set canvas resolution/size on mount
-  useEffect(() => {
+  // Setup canvas resolution and styling
+  const initCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Adjust canvas layout size
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
+    if (rect.width === 0 || rect.height === 0) {
+      setTimeout(initCanvas, 100);
+      return;
+    }
+
+    canvas.width = rect.width * (window.devicePixelRatio || 1);
+    canvas.height = rect.height * (window.devicePixelRatio || 1);
 
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      ctx.lineWidth = 3.5; // Slightly thicker brush stroke for signature readability
+      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      ctx.lineWidth = 3.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      
-      // Brush stroke color must always be black
       ctx.strokeStyle = "#000000";
     }
-  }, []);
+  };
+
+  useEffect(() => {
+    if (open !== false) {
+      const timer = setTimeout(initCanvas, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -42,14 +68,12 @@ export function SignaturePad({ onSave, onCancel, title = "Firma manuscrita del o
     const rect = canvas.getBoundingClientRect();
 
     if ("touches" in e) {
-      // Touch Event
       if (e.touches.length === 0) return { x: 0, y: 0 };
       return {
         x: e.touches[0].clientX - rect.left,
         y: e.touches[0].clientY - rect.top,
       };
     } else {
-      // Mouse Event
       return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
@@ -91,8 +115,9 @@ export function SignaturePad({ onSave, onCancel, title = "Firma manuscrita del o
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
@@ -102,26 +127,40 @@ export function SignaturePad({ onSave, onCancel, title = "Firma manuscrita del o
     const canvas = canvasRef.current;
     if (!canvas || !hasDrawn) return;
 
-    // Convert canvas content to base64 image data URL (will be transparent png)
     const dataUrl = canvas.toDataURL("image/png");
     onSave(dataUrl);
+    clearCanvas();
   };
 
-  return (
-    <div className="flex flex-col gap-5 p-6 w-full bg-white dark:bg-[#0c101d] transition-colors duration-200">
-      <div className="text-center">
-        <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">{title}</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Firme con el dedo o puntero dentro del recuadro
-        </p>
-      </div>
+  const handleClose = () => {
+    clearCanvas();
+    if (onCancel) onCancel();
+    if (onOpenChange) onOpenChange(false);
+  };
 
-      <div className="relative border border-slate-250 bg-white rounded-xl overflow-hidden h-44 transition-all duration-200 focus-within:border-slate-400">
-        {/* Guide elements behind the transparent canvas */}
-        <div className="absolute inset-0 pointer-events-none flex flex-col justify-end pb-3 select-none">
-          <div className="w-[85%] mx-auto border-b border-dashed border-slate-200 h-0 mb-4" />
-          <div className="text-[9px] text-slate-450 text-center font-mono tracking-widest uppercase">
-            Área de firma
+  const padContent = (
+    <div className="flex flex-col gap-4 p-6 w-full bg-card text-foreground">
+      <DialogHeader className="text-left space-y-1">
+        <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+          <FileSignature className="w-5 h-5 text-emerald-500 shrink-0" />
+          {title}
+        </DialogTitle>
+        <DialogDescription className="text-xs text-muted-foreground">
+          {employeeName ? (
+            <>Constancia de entrega y recepción legal para <strong className="text-foreground">{employeeName}</strong>.</>
+          ) : (
+            "Firme con el dedo o puntero táctil dentro del recuadro para certificar la entrega."
+          )}
+        </DialogDescription>
+      </DialogHeader>
+
+      {/* Signature Canvas Area - High Contrast Paper Sheet */}
+      <div className="relative border-2 border-emerald-500/40 bg-white rounded-2xl overflow-hidden h-52 shadow-md ring-4 ring-emerald-500/10">
+        {/* Guide Line */}
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-end pb-4 select-none">
+          <div className="w-[85%] mx-auto border-b-2 border-dashed border-slate-300 h-0 mb-3" />
+          <div className="text-[10px] text-slate-500 text-center font-mono tracking-widest uppercase font-bold">
+            Espacio para Firma Manuscrita en Obra
           </div>
         </div>
 
@@ -134,38 +173,61 @@ export function SignaturePad({ onSave, onCancel, title = "Firma manuscrita del o
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className="relative w-full h-full cursor-crosshair touch-none z-10"
+          className="relative w-full h-full cursor-crosshair touch-none z-10 bg-white"
         />
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Legal Hash Badge */}
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 flex items-center justify-between text-[11px] text-emerald-600 dark:text-emerald-400">
+        <span className="flex items-center gap-1.5 font-medium">
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+          Sellado criptográfico y Hash SHA-256
+        </span>
+        <span className="font-mono text-[10px] opacity-75">Res. SRT 299/11</span>
+      </div>
+
+      {/* Buttons Toolbar */}
+      <div className="flex items-center gap-3 pt-1">
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={clearCanvas}
-          className="flex-1 gap-1.5 border-slate-200 dark:border-slate-850 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 text-xs h-10 rounded-xl font-semibold transition-all duration-150"
+          className="flex-1 gap-1.5 border-border text-xs h-10 rounded-xl font-semibold hover:bg-accent"
         >
-          <RotateCcw size={14} className="text-slate-400" /> Limpiar
+          <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" /> Limpiar
         </Button>
+
         <Button
           type="button"
-          size="sm"
           onClick={handleSave}
           disabled={!hasDrawn}
-          className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/50 disabled:opacity-50 text-white text-xs h-10 rounded-xl font-semibold border-0 transition-all duration-150 shadow-sm"
+          className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-10 rounded-xl font-bold border-0 shadow-sm disabled:opacity-50"
         >
-          <Check size={14} /> Guardar Firma
+          <Check className="w-4 h-4" /> Confirmar Firma
         </Button>
       </div>
-      
+
       <button
         type="button"
-        onClick={onCancel}
-        className="text-xs text-slate-550 hover:text-slate-800 dark:text-slate-500 dark:hover:text-slate-350 text-center font-medium mt-1 transition-colors duration-150"
+        onClick={handleClose}
+        className="text-xs text-muted-foreground hover:text-foreground text-center font-medium mt-0.5 transition-colors"
       >
         Cancelar
       </button>
     </div>
   );
+
+  // If used as a Dialog Modal
+  if (open !== undefined) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl bg-card border-border shadow-2xl">
+          {padContent}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // If used standalone inline
+  return padContent;
 }

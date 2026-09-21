@@ -31,13 +31,21 @@ import {
   Layers,
   CheckSquare,
   Activity,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Truck,
+  ScanLine,
+  Warehouse,
+  Download,
+  ArrowRightLeft,
+  Search,
+  BadgeCheck
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
@@ -85,12 +93,13 @@ function FadeIn({
 function MarqueeTicker() {
   const { language } = useLanguage();
   const items = [
-    language === 'en' ? "RESOLUTION SRT N° 299/11 COMPLIANT" : "RESOLUCIÓN SRT N° 299/11 OFICIAL",
-    language === 'en' ? "IN-SITU TABLET DIGITAL SIGNATURE" : "FIRMA DIGITAL EN PANTALLA TÁCTIL",
-    language === 'en' ? "SHA-256 CRYPTOGRAPHIC SEAL" : "SELLO CRIPTOGRÁFICO SHA-256 INMUTABLE",
-    language === 'en' ? "PROVEN IN +400 WORKER WORKSITES" : "PROBADO EN OBRAS DE +400 OPERARIOS",
-    language === 'en' ? "PUBLIC QR AUDIT INSPECTION" : "CÓDIGO QR PÚBLICO DE VERIFICACIÓN",
-    language === 'en' ? "INSTANT FIELD MOBILE SYNC" : "SINCRONIZACIÓN INSTANTÁNEA EN CAMPO",
+    language === 'en' ? "MULTI-SITE LOGISTICS & REAL-TIME STOCK" : "LOGÍSTICA MULTI-SEDE & CONTROL DE STOCK EN TIEMPO REAL",
+    language === 'en' ? "QR DIGITAL DISPATCHES & INTER-SITE TRANSFERS" : "REMITOS DIGITALES & DESPACHOS CON CÓDIGO QR",
+    language === 'en' ? "MOBILE FIELD INTAKE WITH CAMERA SCANNER" : "RECEPCIÓN MÓVIL EN CAMPO CON ESCÁNER ÓPTICO",
+    language === 'en' ? "RESOLUTION SRT N° 299/11 OFFICIAL COMPLIANCE" : "RESOLUCIÓN SRT N° 299/11 OFICIAL HOMOLOGADA",
+    language === 'en' ? "IN-SITU TOUCH SIGNATURE & SHA-256 SEAL" : "FIRMA DIGITAL EN PANTALLA TÁCTIL CON SELLO SHA-256",
+    language === 'en' ? "MASS EXCEL IMPORT & KARDEX TRACEABILITY" : "IMPORTACIÓN MASIVA EXCEL & TRAZABILIDAD KARDEX",
+    language === 'en' ? "PUBLIC QR INSPECTION WITHOUT PASSWORD" : "PORTAL PÚBLICO DE AUDITORÍA ART SIN CONTRASEÑA",
   ];
 
   return (
@@ -107,56 +116,56 @@ function MarqueeTicker() {
   );
 }
 
-// ─── 4-STEP INTERACTIVE SIMULATOR WITH TALENTUM-INSPIRED FLOATING PIPELINE ──────
+// ─── 4-STEP INTERACTIVE SIMULATOR (FULL OPERATIONAL WORKFLOW) ─────────────────
 function FourStepInteractiveSimulator() {
   const { language } = useLanguage();
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
   const [scanned, setScanned] = useState(false);
 
-  // Auto cycle simulator steps every 7 seconds
+  // Auto cycle simulator steps every 8 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveStep((prev) => ((prev + 1) % 4) as any);
-    }, 7000);
+    }, 8000);
     return () => clearInterval(timer);
   }, []);
 
   const steps = [
     {
       id: 0,
-      sub: language === 'en' ? "HANDS-FREE FIELD LOGGING" : "CARGA RÁPIDA EN CAMPO",
-      title: language === 'en' ? "1. Voice & Equipment Selection" : "1. Selección de EPP o Dictado",
+      sub: language === 'en' ? "CENTRALIZED MULTI-SITE INVENTORY" : "CONTROL MULTI-SEDE CENTRALIZADO",
+      title: language === 'en' ? "1. Multi-Site Stock & IRAM Catalog" : "1. Stock por Sedes & Catálogo IRAM",
       desc: language === 'en'
-        ? "Supervisors pick items from inventory or speak naturally. System fills sizes, brand, and certificate numbers instantly."
-        : "El supervisor selecciona calzado, cascos o dicta por voz. El sistema autocompleta marcas y certificados IRAM.",
-      icon: Mic,
+        ? "Real-time stock across Central Depots, Worksites, and Mining Camps. Automated minimum stock alerts & replenishment."
+        : "Visualizá el stock en tiempo real en Base Central, Obras y Yacimientos. Configurá stock mínimo con alertas automáticas de reposición.",
+      icon: Building2,
     },
     {
       id: 1,
-      sub: language === 'en' ? "TOUCH SIGNATED AUDIT TRAIL" : "FIRMA TÁCTIL E IP GEOLOCALIZADA",
-      title: language === 'en' ? "2. E-Signature & Audit Trail" : "2. Firma en Pantalla & Audit Trail",
+      sub: language === 'en' ? "INTER-SITE DISPATCHES & TRANSFERS" : "TRANSFERENCIAS Y DESPACHOS ENTRE SEDES",
+      title: language === 'en' ? "2. Digital Dispatches & QR Tracking" : "2. Remitos Digitales con Código QR",
       desc: language === 'en'
-        ? "The worker signs directly on screen. GPS coordinates, site IP address, device specs, and timestamp are captured."
-        : "El operario dibuja su firma táctil. Se capturan coordenadas GPS de la obra, IP del dispositivo y fecha/hora inalterable.",
-      icon: FileSignature,
+        ? "Generate digital waybills between plants. Tracks carrier, dispatch status (Draft -> In Transit -> Received), and movement kardex."
+        : "Generá remitos de despacho con chofer, origen y destino. Seguimiento en vivo con estados Borrador, En Tránsito y Recibido.",
+      icon: Truck,
     },
     {
       id: 2,
-      sub: language === 'en' ? "OFFICIAL PDF GENERATION" : "EMISIÓN AUTOMÁTICA DE CONSTANCIA",
-      title: language === 'en' ? "3. Form 299/11 SRT Official" : "3. Formulario 299/11 Oficial SRT",
+      sub: language === 'en' ? "OPTICAL CAMERA SCAN IN THE FIELD" : "ESCANEO ÓPTICO IN-SITU EN CELULAR",
+      title: language === 'en' ? "3. Mobile Field Intake via Camera" : "3. Recepción en Terreno con Cámara",
       desc: language === 'en'
-        ? "Generates official PDF format compliant with Superintendencia de Riesgos del Trabajo (SRT) and ART requirements."
-        : "Genera el PDF oficial homologado con la cuadrícula reglamentaria de la SRT para indumentaria y protección laboral.",
-      icon: FileCheck,
+        ? "Storekeepers and site supervisors scan transfer QR codes with their phone camera. Instantly validates and adds items to local stock."
+        : "Los pañoleros y supervisores escanean el remito con la cámara de su celular. Acredita los elementos al stock de obra al instante.",
+      icon: Smartphone,
     },
     {
       id: 3,
-      sub: language === 'en' ? "SHA-256 CRYPTOGRAPHIC QR" : "INMUNIDAD DIGITAL Y VERIFICACIÓN QR",
-      title: language === 'en' ? "4. Public QR Code Audit" : "4. Código QR & Validación Pública",
+      sub: language === 'en' ? "LEGAL COMPLIANCE & SHA-256 SEAL" : "BLINDAJE JURÍDICO & SELLO SHA-256",
+      title: language === 'en' ? "4. Touch E-Signature & Res. SRT 299/11" : "4. Firma Táctil & Formulario SRT 299/11",
       desc: language === 'en'
-        ? "Printed receipts contain a unique QR. Labor inspectors scan it to verify authenticity live without password."
-        : "Cada planilla incluye un código QR único. Inspectores de la SRT o ART escanean el comprobante e inspeccionan la validez en tiempo real.",
-      icon: QrCode,
+        ? "Workers sign on mobile/tablet. Captures GPS, IP, and timestamp to generate official SRT 299/11 PDF with public QR verification."
+        : "El operario firma en pantalla táctil con captura de GPS e IP. Genera la constancia oficial homologada por la SRT con sello inalterable.",
+      icon: FileSignature,
     },
   ];
 
@@ -175,7 +184,7 @@ function FourStepInteractiveSimulator() {
               onClick={() => setActiveStep(step.id as any)}
               whileHover={{ scale: 1.02, x: 6 }}
               whileTap={{ scale: 0.98 }}
-              className={`p-6 rounded-2xl border transition-all duration-300 cursor-pointer relative overflow-hidden ${
+              className={`p-5 sm:p-6 rounded-2xl border transition-all duration-300 cursor-pointer relative overflow-hidden ${
                 isActive
                   ? "bg-gradient-to-r from-emerald-950/80 via-slate-900 to-slate-900 border-emerald-500/70 shadow-2xl shadow-emerald-500/20"
                   : "bg-slate-900/40 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60"
@@ -217,7 +226,7 @@ function FourStepInteractiveSimulator() {
 
       {/* Right Column: Dynamic Interactive Terminal / Visual Canvas */}
       <div className="lg:col-span-6">
-        <div className="relative rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden min-h-[480px] flex flex-col">
+        <div className="relative rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden min-h-[500px] flex flex-col">
           <BorderBeam size={180} duration={6} colorFrom="#10b981" colorTo="#06b6d4" />
 
           {/* Window Header */}
@@ -228,149 +237,264 @@ function FourStepInteractiveSimulator() {
                 <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
               </div>
-              <span className="ml-2 text-xs font-mono text-slate-400">ifsinrem_control_center.app</span>
+              <span className="ml-2 text-xs font-mono text-slate-400">ifsinrem_ops_center.app</span>
             </div>
 
             <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>SRT N° 299/11 VALIDO</span>
+              <span>SISTEMA ACTIVO</span>
             </div>
           </div>
 
           {/* Dynamic Interactive Stage Screen */}
-          <div className="p-8 flex-grow flex flex-col items-center justify-center bg-gradient-to-b from-[#040814] via-[#02050c] to-[#040814] text-center relative">
+          <div className="p-6 sm:p-8 flex-grow flex flex-col items-center justify-center bg-gradient-to-b from-[#040814] via-[#02050c] to-[#040814] text-center relative overflow-hidden">
             <AnimatePresence mode="wait">
+              
+              {/* STEP 0: Multi-Site Stock Control */}
               {activeStep === 0 && (
                 <motion.div
                   key="step0"
-                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.96 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-5 w-full max-w-sm"
+                  className="space-y-4 w-full max-w-md"
                 >
-                  <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                    <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-                    <div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 relative z-10 shadow-xl shadow-emerald-500/20">
-                      <Mic className="w-10 h-10 animate-bounce" />
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-left space-y-3 shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <span className="text-xs font-heading font-black text-white flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-emerald-400" />
+                        INVENTARIO POR SEDES & PAÑOLES
+                      </span>
+                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        SINCRONIZADO
+                      </span>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                      ▲ Carga Interactiva por Voz o Selección
-                    </span>
-                    <p className="text-sm font-heading font-bold text-white pt-2">
-                      "Casco Dieléctrico + Calzado de Seguridad N° 42 para operario en yacimiento"
-                    </p>
-                    <p className="text-xs font-mono text-slate-400">
-                      Certificación IRAM #48293 autocompletada
-                    </p>
+
+                    <div className="space-y-2 text-xs font-mono">
+                      {/* Sede 1 */}
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                            <Warehouse className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-white block text-[11px]">Base Central Logística</span>
+                            <span className="text-[9px] text-slate-400">Almacén Principal</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-emerald-400 font-bold text-xs block">450 u.</span>
+                          <span className="text-[9px] text-emerald-500">Stock Óptimo</span>
+                        </div>
+                      </div>
+
+                      {/* Sede 2 */}
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                            <Factory className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-white block text-[11px]">Obra Yacimiento Norte</span>
+                            <span className="text-[9px] text-slate-400">Pañol de Campo</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-amber-400 font-bold text-xs block">18 u.</span>
+                          <span className="text-[9px] text-amber-400 font-bold">⚠️ Bajo Mínimo</span>
+                        </div>
+                      </div>
+
+                      {/* Sede 3 */}
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                            <Building2 className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-white block text-[11px]">Depósito Puerto Seco</span>
+                            <span className="text-[9px] text-slate-400">Distribución</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-cyan-400 font-bold text-xs block">120 u.</span>
+                          <span className="text-[9px] text-slate-400">Normal</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>Artículos IRAM Catalogados: <b className="text-white">64</b></span>
+                      <span className="text-emerald-400 font-bold">✓ Alertas Activas</span>
+                    </div>
                   </div>
                 </motion.div>
               )}
 
+              {/* STEP 1: Inter-Site Dispatches & QR Waybill */}
               {activeStep === 1 && (
                 <motion.div
                   key="step1"
-                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.96 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-4 w-full max-w-sm"
+                  className="space-y-4 w-full max-w-md"
                 >
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 text-left space-y-3 shadow-2xl">
-                    <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-2">
-                      <span className="font-heading font-bold text-white">Captura de Firma Digital</span>
-                      <span className="text-emerald-400 font-mono">IP: 190.220.42.18</span>
+                  <div className="bg-slate-900/95 border border-emerald-500/40 rounded-2xl p-4 text-left space-y-3 shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-heading font-black text-white">REMITO DE DESPACHO #REM-2026-8941</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold animate-pulse">
+                        EN TRÁNSITO
+                      </span>
                     </div>
 
-                    <div className="h-28 bg-slate-950 rounded-xl border border-slate-800/90 flex items-center justify-center relative overflow-hidden">
-                      <span className="text-slate-600 text-[10px] font-mono absolute top-2 left-2">Firma Táctil Operario:</span>
-                      <svg className="w-56 h-20 stroke-emerald-400 fill-none stroke-2">
-                        <motion.path
-                          d="M 15 45 Q 35 15, 75 40 T 140 25 T 195 50"
-                          initial={{ pathLength: 0 }}
-                          animate={{ pathLength: 1 }}
-                          transition={{ duration: 1.8, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 }}
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+                      <div className="flex items-center justify-between text-slate-300 font-mono text-[11px]">
+                        <span>Base Central</span>
+                        <ArrowRight className="w-4 h-4 text-emerald-400 animate-pulse" />
+                        <span className="text-emerald-400 font-bold">Obra Yacimiento</span>
+                      </div>
+                      <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
+                          initial={{ width: "20%" }}
+                          animate={{ width: "80%" }}
+                          transition={{ duration: 2.5, repeat: Infinity, repeatType: "reverse" }}
                         />
-                      </svg>
+                      </div>
                     </div>
 
-                    <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between pt-1">
-                      <span>GPS: 24.7859° S, 65.4117° W</span>
-                      <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">INMUTABLE</span>
+                    <div className="space-y-1.5 text-[11px] font-mono">
+                      <div className="flex justify-between text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                        <span className="text-white font-medium">📦 Casco Dieléctrico 3M (Cert. IRAM)</span>
+                        <span className="text-emerald-400 font-bold">x 30 u.</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                        <span className="text-white font-medium">🥾 Calzado Seguridad N°42 Puntera</span>
+                        <span className="text-emerald-400 font-bold">x 20 u.</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-mono">
+                      <span className="text-slate-400">Chofer: Juan Ramos (Camión #14)</span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <QrCode className="w-3.5 h-3.5" /> QR Emitido
+                      </span>
                     </div>
                   </div>
                 </motion.div>
               )}
 
+              {/* STEP 2: Mobile Field Camera Reception */}
               {activeStep === 2 && (
                 <motion.div
                   key="step2"
-                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.96 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-4 w-full max-w-sm"
+                  className="space-y-4 w-full max-w-xs"
                 >
-                  <div className="bg-slate-900/95 border border-emerald-500/40 rounded-2xl p-5 text-left space-y-3.5 shadow-2xl">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                      <span className="text-xs font-heading font-black text-white">FORMULARIO SRT 299/11</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">PDF GENERADO</span>
+                  <div className="relative mx-auto rounded-3xl border-2 border-slate-700 bg-slate-900 p-4 shadow-2xl space-y-3">
+                    {/* Mobile notch & header */}
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 border-b border-slate-800 pb-2">
+                      <span className="text-white font-bold flex items-center gap-1.5">
+                        <ScanLine className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                        Recepción Móvil
+                      </span>
+                      <span className="text-emerald-400">● Cámara Activa</span>
                     </div>
-                    <div className="space-y-2 text-xs">
+
+                    {/* Camera Viewfinder */}
+                    <div className="h-36 rounded-2xl bg-slate-950 border border-emerald-500/50 relative overflow-hidden flex items-center justify-center">
+                      <QrCode className="w-20 h-20 text-slate-600 opacity-60" />
+                      
+                      {/* Laser scanning line */}
+                      <motion.div
+                        className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-lg shadow-emerald-400"
+                        animate={{ top: ["10%", "90%", "10%"] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      />
+
+                      {/* Viewfinder Target Brackets */}
+                      <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-emerald-400" />
+                      <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-emerald-400" />
+                      <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-emerald-400" />
+                      <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-emerald-400" />
+                    </div>
+
+                    {/* Instant intake confirmation badge */}
+                    <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-left space-y-1">
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-heading font-black text-xs">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>¡REMITO #8941 RECIBIDO!</span>
+                      </div>
+                      <p className="text-[10px] font-mono text-slate-300">
+                        +50 unidades acreditadas a Obra Yacimiento
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 3: Touch E-Signature & Form 299/11 SRT */}
+              {activeStep === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.96 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4 w-full max-w-md"
+                >
+                  <div className="bg-slate-900/95 border border-emerald-500/40 rounded-2xl p-4 text-left space-y-3 shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <span className="text-xs font-heading font-black text-white">FORMULARIO OFICIAL SRT 299/11</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                        FIRMADO & SELLADO
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs font-mono">
                       <div className="flex justify-between text-slate-300 font-semibold border-b border-slate-800/60 pb-1">
-                        <span>Constancia N°:</span>
-                        <span className="font-mono text-emerald-400">#EPP-2026-4892</span>
+                        <span>Constancia Digital:</span>
+                        <span className="text-emerald-400">#EPP-2026-4892</span>
                       </div>
                       <div className="flex justify-between text-slate-400 text-[11px]">
                         <span>Trabajador:</span>
                         <span className="text-white font-medium">Martín Pérez (Legajo #4820)</span>
                       </div>
-                      <div className="flex justify-between text-slate-400 text-[11px]">
-                        <span>Empresa:</span>
-                        <span className="text-white font-medium">Industrial & Constructora S.A.</span>
+                    </div>
+
+                    {/* Touch Signature Preview Sheet */}
+                    <div className="h-20 bg-white rounded-xl border border-slate-700 flex items-center justify-center relative overflow-hidden shadow-inner">
+                      <span className="text-slate-400 text-[9px] font-mono absolute top-1 left-2">Firma Operario:</span>
+                      <svg className="w-56 h-16 stroke-slate-950 fill-none stroke-2">
+                        <motion.path
+                          d="M 15 35 Q 35 10, 75 30 T 140 18 T 195 40"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 1.8, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 }}
+                        />
+                      </svg>
+                      <div className="absolute bottom-1 right-2 text-[9px] font-mono text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 rounded">
+                        ✓ SHA-256 MATCH
                       </div>
                     </div>
-                    <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] font-mono">
-                      <span className="text-slate-400">Homologación:</span>
-                      <span className="text-emerald-400 font-bold">✓ Cumple Res. 299/11 SRT</span>
+
+                    <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>GPS: 24.7859° S, 65.4117° W</span>
+                      <span className="text-emerald-400 font-bold">✓ Homologado SRT</span>
                     </div>
                   </div>
                 </motion.div>
               )}
 
-              {activeStep === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-4 w-full max-w-sm"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.06 }}
-                    onClick={() => setScanned(!scanned)}
-                    className="w-36 h-36 rounded-2xl bg-slate-900 border-2 border-emerald-500/60 p-3 flex flex-col items-center justify-center mx-auto shadow-2xl cursor-pointer relative group"
-                  >
-                    <QrCode className="w-20 h-20 text-emerald-400 group-hover:scale-110 transition-transform" />
-                    <span className="text-[9px] font-mono text-emerald-400 font-bold mt-1.5 uppercase tracking-wider">
-                      {scanned ? "✓ AUDITADO Y VALIDO" : "TOCÁ PARA ESCANEAR"}
-                    </span>
-                  </motion.div>
-
-                  <div className="space-y-1.5">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-heading font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-lg">
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                      <span>PUBLIC VERIFICATION PORTAL</span>
-                    </div>
-                    <p className="text-[11px] font-mono text-slate-400 pt-1">
-                      Hash SHA-256: 9a4f8b2c1e8d7f6a5b4c...
-                    </p>
-                  </div>
-                </motion.div>
-              )}
             </AnimatePresence>
           </div>
 
@@ -378,9 +502,9 @@ function FourStepInteractiveSimulator() {
           <div className="bg-slate-900/70 p-3.5 border-t border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between px-6">
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>Verificación libre sin contraseña para inspectores</span>
+              <span>Plataforma operativa integral sin fisuras de auditoría</span>
             </span>
-            <span className="text-emerald-400 font-bold">Módulo {activeStep + 1} de 4</span>
+            <span className="text-emerald-400 font-bold">Paso {activeStep + 1} de 4</span>
           </div>
         </div>
       </div>
@@ -417,21 +541,22 @@ export default function Index() {
               </span>
             </Link>
 
-
-
             {/* Center Navigation Links (Desktop) */}
             <nav className="hidden lg:flex items-center gap-6 text-xs font-mono font-semibold text-slate-300">
-              <a href="#prensa-historia" className="hover:text-emerald-400 transition-colors">
-                {language === 'en' ? "Press & Story" : "Prensa & Historia"}
-              </a>
-              <a href="#sectores" className="hover:text-emerald-400 transition-colors">
-                {language === 'en' ? "Industries" : "Sectores"}
+              <a href="#modulos" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Platform Modules" : "Módulos"}
               </a>
               <a href="#como-funciona" className="hover:text-emerald-400 transition-colors">
                 {language === 'en' ? "How it Works" : "Cómo funciona"}
               </a>
+              <a href="#sectores" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Industries" : "Sectores"}
+              </a>
               <a href="#seguridad-criptografica" className="hover:text-emerald-400 transition-colors">
-                {language === 'en' ? "Security & Audit" : "Seguridad"}
+                {language === 'en' ? "Legal Security" : "Seguridad & SRT"}
+              </a>
+              <a href="#prensa-historia" className="hover:text-emerald-400 transition-colors">
+                {language === 'en' ? "Press & Story" : "Prensa & Historia"}
               </a>
               <a href="#agendar-demo" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
                 {language === 'en' ? "Demo" : "Agendar Demo"}
@@ -462,7 +587,7 @@ export default function Index() {
         {/* ─── HERO SECTION WITH KINETIC GRID & FLOATING GLASS BADGES ─────── */}
         <KineticGrid globalColor="emerald" className="pt-16 pb-20 sm:pt-24 sm:pb-28 text-center border-b border-slate-800/80">
           
-          {/* Talentum-style Floating Glass Micro Badges */}
+          {/* Floating Glass Micro Badges */}
           <div className="hidden lg:block pointer-events-none">
             <motion.div
               animate={{ y: [0, -12, 0] }}
@@ -470,11 +595,11 @@ export default function Index() {
               className="absolute top-28 left-8 p-3.5 rounded-2xl bg-slate-900/80 border border-emerald-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20 pointer-events-auto"
             >
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                <ShieldCheck className="w-4 h-4" />
+                <Building2 className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <span className="font-bold block text-white">Res. SRT N° 299/11</span>
-                <span className="text-[10px] text-emerald-400">✓ Homologado Oficial</span>
+                <span className="font-bold block text-white">Logística Multi-Sede</span>
+                <span className="text-[10px] text-emerald-400">Stock & Remitos QR en Vivo</span>
               </div>
             </motion.div>
 
@@ -484,11 +609,11 @@ export default function Index() {
               className="absolute top-36 right-8 p-3.5 rounded-2xl bg-slate-900/80 border border-teal-500/30 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs font-mono text-slate-200 z-20 pointer-events-auto"
             >
               <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400">
-                <Lock className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <span className="font-bold block text-white">Sello SHA-256</span>
-                <span className="text-[10px] text-teal-300">Inalterabilidad Criptográfica</span>
+                <span className="font-bold block text-white">Res. SRT N° 299/11</span>
+                <span className="text-[10px] text-teal-300">Firma Táctil & Sello SHA-256</span>
               </div>
             </motion.div>
           </div>
@@ -498,8 +623,8 @@ export default function Index() {
             <FadeIn>
               <ShimmerBadge className="mb-8 font-mono text-xs tracking-wider">
                 {language === 'en'
-                  ? "PROVEN IN REAL OPERATIONS | MINING, CONSTRUCTION & HEAVY INDUSTRY"
-                  : "PROBADO EN ENTORNOS REALES | MINERÍA, CONSTRUCCIÓN E INDUSTRIA PESADA"
+                  ? "FULL ENTERPRISE OPERATIONS | MULTI-DEPOT LOGISTICS & LEGAL SAFETY"
+                  : "PLATAFORMA OPERATIVA INTEGRAL | LOGÍSTICA MULTI-SEDE & FIRMA DIGITAL SRT 299/11"
                 }
               </ShimmerBadge>
             </FadeIn>
@@ -508,40 +633,49 @@ export default function Index() {
               <h1 className="text-4xl sm:text-6xl md:text-7xl font-display font-black text-white tracking-tight leading-[1.08] mb-6">
                 {language === 'en' ? (
                   <>
-                    Digitize your PPE delivery{" "}
+                    Full control of multi-site stock, QR dispatches &{" "}
                     <span className="font-serif italic font-normal text-emerald-400 border-b-2 border-emerald-400/30 pb-0.5">
-                      with unalterable legal validity.
+                      PPE delivery with legal validity.
                     </span>
                   </>
                 ) : (
                   <>
-                    Digitalizá la entrega de EPP{" "}
+                    Control total de stock por sedes, remitos QR y{" "}
                     <span className="font-serif italic font-normal text-emerald-400 border-b-2 border-emerald-400/30 pb-0.5">
-                      con validez legal inalterable.
+                      entregas con firma legal inalterable.
                     </span>
                   </>
                 )}
               </h1>
             </FadeIn>
 
+            <FadeIn delay={0.2}>
+              <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto font-sans leading-relaxed mb-8">
+                {language === 'en'
+                  ? "Centralize multi-depot inventory, track inter-site transfers via QR waybills, scan receipts on mobile in the field, and issue official SRT 299/11 certificates signed on touch screens."
+                  : "Centralizá el inventario de múltiples bases y obras, despachá remitos digitales con código QR, recibí mercadería en campo con la cámara de tu celular y emití constancias oficiales SRT 299/11 firmadas en pantalla táctil."
+                }
+              </p>
+            </FadeIn>
+
             {/* Quick Enterprise Badges Bar */}
             <FadeIn delay={0.25}>
-              <div className="pt-10 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono font-semibold text-slate-300">
+              <div className="pt-6 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono font-semibold text-slate-300">
                 <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{language === 'en' ? "Res. SRT N° 299/11 Official" : "Res. SRT N° 299/11 Oficial"}</span>
+                  <Building2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'en' ? "Multi-Site Inventory" : "Gestión Multi-Sede"}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
-                  <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{language === 'en' ? "SHA-256 Crypto Seal" : "Sello Criptográfico SHA-256"}</span>
+                  <Truck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'en' ? "QR Digital Dispatches" : "Remitos Digitales QR"}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
                   <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{language === 'en' ? "100% Mobile & Tablet Ready" : "100% Funciona en Celulares y Tablets"}</span>
+                  <span>{language === 'en' ? "Mobile Camera Scanner" : "Recepción Móvil en Campo"}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-colors">
-                  <QrCode className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{language === 'en' ? "Open QR Public Inspection" : "Verificación QR Pública"}</span>
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'en' ? "Res. SRT N° 299/11" : "Res. SRT N° 299/11 Oficial"}</span>
                 </div>
               </div>
             </FadeIn>
@@ -672,6 +806,127 @@ export default function Index() {
 
         {/* ─── SECCIÓN: PRENSA iProUP & HISTORIA DEL FUNDADOR ───────────────── */}
         <PressStorySection />
+
+        {/* ─── SECCIÓN: MÓDULOS OPERATIVOS DE LA PLATAFORMA (BENTO GRID) ──── */}
+        <section id="modulos" className="py-24 border-b border-slate-800/80 bg-gradient-to-b from-[#02050e] via-[#040918] to-[#02050e]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            
+            <FadeIn className="text-center max-w-3xl mx-auto mb-16">
+              <span className="text-emerald-400 font-mono font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                {language === 'en' ? "COMPLETE PLATFORM ARCHITECTURE" : "ARQUITECTURA MODULAR OPERATIVA"}
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-display font-black text-white mt-4 mb-6">
+                {language === 'en' ? (
+                  <>
+                    An integrated ecosystem for{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">total operational control</span>
+                  </>
+                ) : (
+                  <>
+                    Un ecosistema integrado para el{" "}
+                    <span className="font-serif italic font-normal text-emerald-400">control operativo total</span>
+                  </>
+                )}
+              </h2>
+              <p className="text-slate-400 font-sans text-base sm:text-lg">
+                {language === 'en'
+                  ? "From central warehouses to remote worksite sign-offs: complete digital tracking with zero paper loss."
+                  : "Desde el depósito central hasta la firma in-situ en el yacimiento: trazabilidad punta a punta sin pérdida de papeles."
+                }
+              </p>
+            </FadeIn>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: Warehouse,
+                  tag: language === 'en' ? "MULTI-SITE LOGISTICS" : "LOGÍSTICA MULTI-SEDE",
+                  title: language === 'en' ? "Real-Time Multi-Depot Stock" : "Stock por Sedes & Almacenes",
+                  desc: language === 'en'
+                    ? "Manage inventory across base stations, mining projects, and satellite tool rooms. Set automatic minimum thresholds and restocking alerts."
+                    : "Controlá existencias en tiempo real por base central, obras y pañoles remotos. Configurá puntos de reorden y alertas automáticas de stock mínimo.",
+                  badges: [language === 'en' ? "Depots & Worksites" : "Bases & Obras", language === 'en' ? "Auto Reorder" : "Puntos de Reorden", language === 'en' ? "Live Sync" : "Stock en Vivo"]
+                },
+                {
+                  icon: Truck,
+                  tag: language === 'en' ? "INTER-SITE TRANSFERS" : "DESPACHOS & TRANSFERENCIAS",
+                  title: language === 'en' ? "Digital Dispatches with QR" : "Remitos Digitales con QR",
+                  desc: language === 'en'
+                    ? "Issue official digital waybills between facilities. Track carrier, vehicle, itemized manifest, and live status (Draft -> In Transit -> Delivered)."
+                    : "Emití remitos electrónicos entre sedes con asignación de transportista, vehículo y manifiesto detallado. Trazabilidad Borrador, En Tránsito y Recibido.",
+                  badges: [language === 'en' ? "QR Waybills" : "Remito con QR", language === 'en' ? "Status Tracking" : "Estados en Vivo", language === 'en' ? "Kardex Movement" : "Kardex Inalterable"]
+                },
+                {
+                  icon: ScanLine,
+                  tag: language === 'en' ? "MOBILE FIELD INTAKE" : "RECEPCIÓN MÓVIL EN CAMPO",
+                  title: language === 'en' ? "Optical Camera Scanner" : "Recepción con Cámara Móvil",
+                  desc: language === 'en'
+                    ? "Site supervisors scan transfer QR codes directly using their phone or tablet camera. Instantly validates contents and credits local stock."
+                    : "Los pañoleros en obra escanean el QR del remito con la cámara de su celular. Valida la carga recibida e ingresa automáticamente el stock sin tipear.",
+                  badges: [language === 'en' ? "Camera Optical Scan" : "Escaneo Óptico", language === 'en' ? "Instant In-Situ Intake" : "Ingreso Inmediato", language === 'en' ? "Zero Manual Entry" : "0 Carga Manual"]
+                },
+                {
+                  icon: FileSignature,
+                  tag: language === 'en' ? "LEGAL COMPLIANCE" : "VALIDEZ LEGAL SRT 299/11",
+                  title: language === 'en' ? "Touch E-Sign & SHA-256 Seal" : "Firma Táctil & Planilla Oficial",
+                  desc: language === 'en'
+                    ? "Official Resolution SRT 299/11 grid format. Captures touch signature, site IP, GPS coordinates, and binds an immutable SHA-256 hash."
+                    : "Planilla oficial con cuadrícula obligatoria de la Resolución SRT 299/11. Firma manuscrita en pantalla, geolocalización GPS y sello criptográfico SHA-256.",
+                  badges: [language === 'en' ? "Res. SRT 299/11" : "Res. SRT N° 299/11", language === 'en' ? "SHA-256 Hash" : "Sello Criptográfico", language === 'en' ? "Public QR Audit" : "Portal QR Público"]
+                },
+                {
+                  icon: Users,
+                  tag: language === 'en' ? "WORKFORCE MANAGEMENT" : "PADRÓN DE OPERARIOS",
+                  title: language === 'en' ? "Worker Profile & Delivery Log" : "Padrón & Historial por Legajo",
+                  desc: language === 'en'
+                    ? "Centralized worker database with assigned depot, job role, apparel sizes, and full historical log of delivered safety gear and renewals."
+                    : "Ficha digital de cada trabajador con sede asignada, puesto, talles de indumentaria y trazabilidad completa de todos los EPPs entregados.",
+                  badges: [language === 'en' ? "Digital File" : "Ficha por Legajo", language === 'en' ? "Size Management" : "Control de Talles", language === 'en' ? "Renewal Reminders" : "Alertas de Recambio"]
+                },
+                {
+                  icon: FileSpreadsheet,
+                  tag: language === 'en' ? "INTEGRATIONS & EXCEL" : "IMPORTACIÓN & REPORTES",
+                  title: language === 'en' ? "Mass Excel Import & Reports" : "Carga Masiva Excel & Reportes",
+                  desc: language === 'en'
+                    ? "Download ready-to-use templates to upload hundreds of inventory items or workers in 1 click. Export legal audit books in PDF and Excel."
+                    : "Descargá plantillas oficiales para cargar cientos de artículos o personal en segundos. Exportá libros de entrega y planillas listas para la ART.",
+                  badges: [language === 'en' ? "Excel Templates" : "Plantillas Excel", language === 'en' ? "1-Click Bulk Upload" : "Carga en 1 Clic", language === 'en' ? "PDF/XLS Exports" : "Exportación Oficial"]
+                },
+              ].map((mod, idx) => (
+                <FadeIn key={idx} delay={0.08 * idx}>
+                  <TiltCard
+                    spotlightColor="rgba(16, 185, 129, 0.25)"
+                    borderColor="rgba(16, 185, 129, 0.4)"
+                    className="p-7 h-full flex flex-col justify-between space-y-5 bg-slate-900/60 border-slate-800"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                          <mod.icon className="w-6 h-6" />
+                        </div>
+                        <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 uppercase">
+                          {mod.tag}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xl font-heading font-bold text-white">{mod.title}</h3>
+                      <p className="text-slate-300 font-sans text-xs sm:text-sm leading-relaxed">{mod.desc}</p>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-800/80 flex flex-wrap gap-2">
+                      {mod.badges.map((b, bi) => (
+                        <span key={bi} className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-slate-950 text-slate-300 border border-slate-800">
+                          ✓ {b}
+                        </span>
+                      ))}
+                    </div>
+                  </TiltCard>
+                </FadeIn>
+              ))}
+            </div>
+
+          </div>
+        </section>
 
         {/* ─── SECCIÓN: SECTORES INDUSTRIALES (MINERÍA, CONSTRUCCIÓN, ENERGÍA) ──── */}
         <section id="sectores" className="py-24 border-b border-slate-800/80">

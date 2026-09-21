@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import AppLayout from "@/components/AppLayout";
 import { SuperAdminPlanManager } from "@/components/SuperAdminPlanManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,15 +41,8 @@ export default function SuperAdmin() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      <Header
-        userName={profile?.name || user?.email || "SuperAdmin"}
-        onLogout={handleLogout}
-        isAdmin={true}
-        userPlan="enterprise"
-      />
-
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppLayout>
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
@@ -102,7 +95,7 @@ export default function SuperAdmin() {
             <SuperAdminPlanManager />
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

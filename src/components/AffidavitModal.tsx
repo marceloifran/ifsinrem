@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,15 @@ export function AffidavitModal({
   return (
     <Dialog open={open} onOpenChange={(val) => !val && handleCancel()}>
       <DialogContent className="sm:max-w-lg rounded-2xl bg-white dark:bg-[#0c101d] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white p-0 overflow-hidden shadow-2xl">
+        <DialogHeader className="sr-only">
+          <DialogTitle>
+            {language === "en" ? "Sworn Statement & Legal Validity" : "Declaración Jurada y Validez Legal"}
+          </DialogTitle>
+          <DialogDescription>
+            {language === "en" ? "First signature legal notification for worker" : "Notificación de validez jurídica para primera firma de operario"}
+          </DialogDescription>
+        </DialogHeader>
+
         {/* Top Banner Accent */}
         <div className="bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/20 px-6 py-4 flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">

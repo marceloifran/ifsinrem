@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import AppLayout from "@/components/AppLayout";
 import UserTable from "@/components/UserTable";
 import InviteUserDialog from "@/components/InviteUserDialog";
 import { Button } from "@/components/ui/button";
@@ -102,15 +102,8 @@ const UserManagement = () => {
     if (!user || !isAdmin) return null;
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#04060a]">
-            <Header
-                userName={profile?.name || user.email || 'Usuario'}
-                onLogout={handleLogout}
-                isAdmin={isAdmin}
-                userPlan={profile?.plan}
-            />
-
-            <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <AppLayout>
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
                         <Users className="w-8 h-8 text-primary" />
@@ -233,7 +226,6 @@ const UserManagement = () => {
                 ) : (
                     <UserTable users={filteredUsers} onRoleChanged={loadUsers} />
                 )}
-            </main>
 
             {/* Invitation Cancellation Alert Dialog */}
             <AlertDialog open={!!invToCancel} onOpenChange={(open) => !open && setInvToCancel(null)}>
@@ -259,7 +251,8 @@ const UserManagement = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+            </div>
+        </AppLayout>
     );
 };
 

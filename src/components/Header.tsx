@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, BarChart3, Users, Boxes, Shield, Sun, Moon, Menu, X, Snowflake, ShieldAlert, Calendar } from "lucide-react";
+import { LogOut, User, LayoutDashboard, BarChart3, Users, Boxes, Shield, Sun, Moon, Menu, X, Snowflake, ShieldAlert, Calendar, Building2, Truck, QrCode } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -99,15 +99,25 @@ const Header = ({ userName = "Usuario", onLogout, isAdmin = false, userPlan }: H
       label: t('nav.dashboard'),
       icon: LayoutDashboard,
     }] : []),
-    ...(checkRolePermission(effectiveRole, "view_operarios", companyId) ? [{
-      path: '/operarios',
-      label: t('nav.employees'),
-      icon: Users,
+    ...(checkRolePermission(effectiveRole, "view_locations", companyId) ? [{
+      path: '/ubicaciones',
+      label: t('nav.locations'),
+      icon: Building2,
     }] : []),
     ...(checkRolePermission(effectiveRole, "view_inventario", companyId) ? [{
       path: '/inventario',
       label: t('nav.inventory'),
       icon: Boxes,
+    }] : []),
+    ...(checkRolePermission(effectiveRole, "view_transfers", companyId) ? [{
+      path: '/transferencias',
+      label: t('nav.transfers'),
+      icon: Truck,
+    }] : []),
+    ...(checkRolePermission(effectiveRole, "view_operarios", companyId) ? [{
+      path: '/operarios',
+      label: t('nav.employees'),
+      icon: Users,
     }] : []),
     ...(checkRolePermission(effectiveRole, "view_reportes", companyId) ? [{
       path: '/reportes',

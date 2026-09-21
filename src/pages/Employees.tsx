@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import AppLayout from "@/components/AppLayout";
 import { checkRolePermission } from "@/services/permissionService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,16 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -491,15 +499,8 @@ export default function Employees() {
   }, [allDeliveries, selectedEmployeeForDetail]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#04060a] text-slate-800 dark:text-slate-200 transition-colors duration-250">
-      <Header
-        userName={profile?.name || user?.email || "Usuario"}
-        onLogout={handleLogout}
-        isAdmin={isAdmin}
-        userPlan={profile?.plan}
-      />
-
-      <main className="mx-auto max-w-5xl px-4 py-8 md:px-8">
+    <AppLayout>
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("employees.title")}</h1>
@@ -539,7 +540,17 @@ export default function Employees() {
         {/* Workers Table */}
         <div className="bg-white dark:bg-[#080b11] rounded-2xl border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-slate-400">{language === 'en' ? "Loading workers..." : "Cargando operarios..."}</div>
+            <div className="p-6 space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl animate-pulse">
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+                    <div className="h-3 bg-slate-100 dark:bg-slate-850 rounded w-1/3" />
+                  </div>
+                  <div className="h-7 bg-slate-200 dark:bg-slate-800 rounded-full w-20" />
+                </div>
+              ))}
+            </div>
           ) : filteredEmployees.length === 0 ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
               <UserPlus size={40} className="text-slate-300 dark:text-slate-800 mb-3" />
@@ -715,7 +726,6 @@ export default function Employees() {
             </>
           )}
         </div>
-      </main>
 
       {/* Worker Detail & EPP History Modal */}
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
@@ -737,6 +747,9 @@ export default function Employees() {
                     <Eye size={12} /> Ver Planilla 299
                   </Button>
                 </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500">
+                  Ficha del trabajador, dotación asignada e historial de firmas bajo Res. SRT 299/11.
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-6 pt-4">
@@ -767,17 +780,18 @@ export default function Employees() {
                       <div className="grid grid-cols-3 gap-3">
                         <div className="col-span-2 space-y-1">
                           <label className="text-[10px] text-slate-450 dark:text-slate-450 font-bold uppercase">Elemento</label>
-                          <select
-                            value={quickEppId}
-                            onChange={(e) => setQuickEppId(e.target.value)}
-                            className="select-field select-field-sm dark:bg-[#070b13]"
-                          >
-                            {eppItems.map((item) => (
-                              <option key={item.id} value={item.id} className="dark:bg-[#0c101d]">
-                                {item.name} (Stock: {item.stock})
-                              </option>
-                            ))}
-                          </select>
+                          <Select value={quickEppId} onValueChange={setQuickEppId}>
+                            <SelectTrigger className="h-9 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#070b13] text-slate-900 dark:text-white text-xs rounded-lg">
+                              <SelectValue placeholder="Selecciona el EPP..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {eppItems.map((item) => (
+                                <SelectItem key={item.id} value={item.id}>
+                                  {item.name} (Stock: {item.stock})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] text-slate-455 dark:text-slate-450 font-bold uppercase">Cantidad</label>
@@ -882,6 +896,9 @@ export default function Employees() {
         <DialogContent className="sm:max-w-md rounded-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-slate-900 dark:text-white">Registrar Operario</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Cargá los datos del trabajador para asignarle EPP y registrar sus entregas.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSaveAdd} className="space-y-4 py-2">
             <div className="space-y-1">
@@ -970,6 +987,9 @@ export default function Employees() {
         <DialogContent className="sm:max-w-md rounded-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0c101d] text-slate-900 dark:text-white border-slate-200 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-slate-900 dark:text-white">Editar Operario</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Actualiza los datos del legajo, cargo o estado del operario.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
             <div className="space-y-1">
@@ -1043,14 +1063,15 @@ export default function Employees() {
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-500 uppercase">Estado</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="select-field select-field-md"
-              >
-                <option value="activo" className="dark:bg-[#0c101d]">Activo</option>
-                <option value="inactivo" className="dark:bg-[#0c101d]">Inactivo</option>
-              </select>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="h-11 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <DialogFooter className="pt-4 gap-2">
@@ -1065,16 +1086,14 @@ export default function Employees() {
         </DialogContent>
       </Dialog>
 
-       {/* Signature Capture Pad Dialog */}
-      <Dialog open={showSignatureDialog} onOpenChange={setShowSignatureDialog}>
-        <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c101d]">
-          <SignaturePad
-            title={`Firma de ${deliveryToSign?.employee?.name || "Operario"}`}
-            onSave={handleSaveSignature}
-            onCancel={() => setShowSignatureDialog(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Signature Capture Pad Modal */}
+      <SignaturePad
+        open={showSignatureDialog}
+        onOpenChange={setShowSignatureDialog}
+        employeeName={deliveryToSign?.employee?.name || selectedEmployeeForDetail?.name || "Operario"}
+        onSave={handleSaveSignature}
+        onCancel={() => setShowSignatureDialog(false)}
+      />
 
       {/* EPP (Formulario 299) Preview Modal */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
@@ -1091,6 +1110,9 @@ export default function Employees() {
                 </Button>
               )}
             </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Formulario oficial de entrega y constancia de indumentaria y EPP.
+            </DialogDescription>
           </DialogHeader>
 
           {previewLoading ? (
@@ -1266,6 +1288,7 @@ export default function Employees() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

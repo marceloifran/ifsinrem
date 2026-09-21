@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Mic, Send, Loader2, Sparkles, Zap, AudioLines, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -924,13 +925,18 @@ export function AIAssistantButton() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md h-[550px] flex flex-col p-0 rounded-2xl overflow-hidden border-slate-800 bg-[#0a0d16]">
           <DialogHeader className="p-4 border-b border-slate-800 bg-[#080b11] flex flex-row items-center justify-between space-y-0">
-            <DialogTitle className="flex items-center gap-2 text-white text-base">
-              <Sparkles className="w-5 h-5 text-emerald-400" />
-              Asistente de Voz ifsinrem
-              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                <Zap className="w-3 h-3" /> IA + dictado
-              </span>
-            </DialogTitle>
+            <div>
+              <DialogTitle className="flex items-center gap-2 text-white text-base">
+                <Sparkles className="w-5 h-5 text-emerald-400" />
+                Asistente de Voz ifsinrem
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                  <Zap className="w-3 h-3" /> IA + dictado
+                </span>
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                Asistente por voz e inteligencia artificial para registrar entregas y consultar inventario.
+              </DialogDescription>
+            </div>
             {messages.length > 0 && (
               <Button
                 variant="ghost"

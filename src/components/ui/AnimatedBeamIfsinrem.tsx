@@ -13,6 +13,9 @@ import {
   QrCode,
   Award,
   Zap,
+  Building2,
+  Smartphone,
+  Boxes,
 } from "lucide-react";
 import { BorderBeam } from "@/components/ui/amicro/BorderBeam";
 
@@ -119,47 +122,47 @@ export function AnimatedBeamIfsinrem({
               <div className="flex flex-col justify-center gap-5">
                 <Circle
                   ref={div1Ref}
-                  label={language === 'en' ? "Touch E-Signature" : "Firma Táctil Operario"}
-                  sublabel="Legajo & Georeferencia"
+                  label={language === 'en' ? "Multi-Site Stock" : "Stock Multi-Sede"}
+                  sublabel={language === 'en' ? "Central Depots & Worksites" : "Depósitos & Yacimientos"}
                   className="border-emerald-500/30 text-emerald-400"
+                >
+                  <Building2 className="size-5" />
+                </Circle>
+
+                <Circle
+                  ref={div2Ref}
+                  label={language === 'en' ? "QR Digital Dispatches" : "Remitos Digitales QR"}
+                  sublabel={language === 'en' ? "Inter-Site Transfers" : "Despacho entre Plantas"}
+                  className="border-teal-500/30 text-teal-400"
+                >
+                  <QrCode className="size-5" />
+                </Circle>
+
+                <Circle
+                  ref={div3Ref}
+                  label={language === 'en' ? "Mobile Camera Scan" : "Recepción Móvil en Campo"}
+                  sublabel={language === 'en' ? "Instant In-Situ Intake" : "Cámara & Ingreso Instantáneo"}
+                  className="border-cyan-500/30 text-cyan-400"
+                >
+                  <Smartphone className="size-5" />
+                </Circle>
+
+                <Circle
+                  ref={div4Ref}
+                  label={language === 'en' ? "Touch E-Signature" : "Firma Digital Táctil"}
+                  sublabel={language === 'en' ? "Res. SRT 299/11 Official" : "Res. SRT 299/11 Oficial"}
+                  className="border-purple-500/30 text-purple-400"
                 >
                   <FileSignature className="size-5" />
                 </Circle>
 
                 <Circle
-                  ref={div2Ref}
-                  label={language === 'en' ? "PPE & Stock Catalog" : "Entrega EPP & Stock"}
-                  sublabel="Cascos, Calzado, IRAM"
-                  className="border-teal-500/30 text-teal-400"
-                >
-                  <HardHat className="size-5" />
-                </Circle>
-
-                <Circle
-                  ref={div3Ref}
-                  label={language === 'en' ? "GPS & Device IP Seal" : "GPS & IP Dispositivo"}
-                  sublabel="Auditoría Inalterable"
-                  className="border-cyan-500/30 text-cyan-400"
-                >
-                  <ShieldCheck className="size-5" />
-                </Circle>
-
-                <Circle
-                  ref={div4Ref}
-                  label={language === 'en' ? "AI Legal Assistant" : "Asistente IA Normativo"}
-                  sublabel="Leyes SRT & Consultas"
-                  className="border-purple-500/30 text-purple-400"
-                >
-                  <Sparkles className="size-5" />
-                </Circle>
-
-                <Circle
                   ref={div5Ref}
-                  label={language === 'en' ? "Due Date Notifications" : "Alertas & Notificaciones"}
-                  sublabel="WhatsApp / Resend Email"
+                  label={language === 'en' ? "Stock & Expiry Alerts" : "Alertas & Kardex"}
+                  sublabel={language === 'en' ? "Low Stock Notifications" : "Stock Mínimo & Vencimientos"}
                   className="border-amber-500/30 text-amber-400"
                 >
-                  <Bell className="size-5" />
+                  <Boxes className="size-5" />
                 </Circle>
               </div>
 
