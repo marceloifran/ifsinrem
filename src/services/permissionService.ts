@@ -4,6 +4,10 @@ export interface RolePermissionConfig {
   manage_operarios: boolean;
   view_inventario: boolean;
   manage_inventario: boolean;
+  view_transfers: boolean;
+  manage_transfers: boolean;
+  view_locations: boolean;
+  manage_locations: boolean;
   view_reportes: boolean;
   view_configuracion: boolean;
   manage_company_config: boolean;
@@ -27,6 +31,30 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     description: "Permite ver el panel principal con estadísticas de entregas y stock",
   },
   {
+    key: "view_locations",
+    label: "Ver Red de Ubicaciones",
+    category: "Modulos",
+    description: "Permite ver depósitos, plantas, obras y pañoles",
+  },
+  {
+    key: "manage_locations",
+    label: "Gestionar Ubicaciones",
+    category: "Acciones",
+    description: "Permite crear y editar depósitos, obras y sedes",
+  },
+  {
+    key: "view_transfers",
+    label: "Ver Transferencias y Movimientos",
+    category: "Modulos",
+    description: "Permite ver despachos, tránsitos, remitos y recepciones",
+  },
+  {
+    key: "manage_transfers",
+    label: "Gestionar Transferencias y Despachos",
+    category: "Acciones",
+    description: "Permite crear despachos, emitir remitos y recibir mercadería",
+  },
+  {
     key: "view_operarios",
     label: "Ver Operarios / Personal",
     category: "Modulos",
@@ -40,15 +68,15 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   },
   {
     key: "view_inventario",
-    label: "Ver Catálogo e Inventario EPP",
+    label: "Ver Catálogo e Inventario Unificado",
     category: "Modulos",
-    description: "Permite consultar el catálogo y stock de equipos de protección",
+    description: "Permite consultar catálogo general, stock por ubicación y EPP",
   },
   {
     key: "manage_inventario",
-    label: "Gestionar Stock EPP (Catalogar/Editar/Importar)",
+    label: "Gestionar Stock e Ítems",
     category: "Acciones",
-    description: "Permite agregar nuevos EPPs, actualizar cantidades y modificar datos",
+    description: "Permite catalogar nuevos ítems, ajustar stock y editar datos",
   },
   {
     key: "view_reportes",
@@ -84,6 +112,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, RolePermissionConfig> = {
     manage_operarios: true,
     view_inventario: true,
     manage_inventario: true,
+    view_transfers: true,
+    manage_transfers: true,
+    view_locations: true,
+    manage_locations: true,
     view_reportes: true,
     view_configuracion: true,
     manage_company_config: true,
@@ -95,6 +127,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, RolePermissionConfig> = {
     manage_operarios: true,
     view_inventario: true,
     manage_inventario: true,
+    view_transfers: true,
+    manage_transfers: true,
+    view_locations: true,
+    manage_locations: true,
     view_reportes: true,
     view_configuracion: true,
     manage_company_config: true,
@@ -106,6 +142,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, RolePermissionConfig> = {
     manage_operarios: true,
     view_inventario: true,
     manage_inventario: true,
+    view_transfers: true,
+    manage_transfers: true,
+    view_locations: true,
+    manage_locations: false,
     view_reportes: true,
     view_configuracion: true,
     manage_company_config: false,
@@ -117,6 +157,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, RolePermissionConfig> = {
     manage_operarios: true,
     view_inventario: true,
     manage_inventario: true,
+    view_transfers: true,
+    manage_transfers: true,
+    view_locations: true,
+    manage_locations: false,
     view_reportes: true,
     view_configuracion: true,
     manage_company_config: false,
@@ -128,6 +172,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, RolePermissionConfig> = {
     manage_operarios: false,
     view_inventario: true,
     manage_inventario: false,
+    view_transfers: true,
+    manage_transfers: false,
+    view_locations: false,
+    manage_locations: false,
     view_reportes: false,
     view_configuracion: false,
     manage_company_config: false,
@@ -139,6 +187,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, RolePermissionConfig> = {
     manage_operarios: false,
     view_inventario: true,
     manage_inventario: false,
+    view_transfers: true,
+    manage_transfers: false,
+    view_locations: false,
+    manage_locations: false,
     view_reportes: false,
     view_configuracion: false,
     manage_company_config: false,

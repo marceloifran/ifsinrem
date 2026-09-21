@@ -611,7 +611,7 @@ export async function createCompany(params: {
         plan: newCompany.plan || plan,
         max_users: getPlanMaxUsers(newCompany.plan || plan),
         user_count: 0,
-        status: (newCompany.status as 'active' | 'frozen') || 'active',
+        status: ((newCompany as any).status as 'active' | 'frozen') || 'active',
         created_at: newCompany.created_at,
     };
 }

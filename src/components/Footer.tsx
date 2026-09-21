@@ -1,17 +1,18 @@
-import { Linkedin, Mail, Instagram, Phone, MapPin } from 'lucide-react';
+import { Linkedin, Mail, Instagram, Phone, MapPin, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const year = new Date().getFullYear();
+  const iproupUrl = "https://www.iproup.com/startups/71259-startup-saltena-digitaliza-entregas-de-elementos-de-seguridad-y-se-expande-por-el-mundo";
 
   return (
     <footer className="bg-black text-slate-400 font-sans border-t border-slate-900 py-16">
       <div className="container mx-auto px-4 sm:px-8 max-w-6xl">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start justify-between">
           
           {/* Left Column: Brand, Description, Contact Details */}
-          <div className="space-y-6 max-w-md">
+          <div className="md:col-span-6 space-y-6 max-w-md">
             
             {/* Logo & Name */}
             <div className="flex items-center gap-3">
@@ -48,31 +49,66 @@ const Footer = () => {
 
               <div className="flex items-center gap-2 text-slate-300 font-medium">
                 <MapPin size={16} className="text-slate-400 shrink-0" />
-                <span>Salta, Argentina</span>
+                <span>General Güemes, Salta, Argentina 🇦🇷</span>
               </div>
             </div>
 
           </div>
 
-          {/* Right Column: Social Icons Aligned Top Right */}
-          <div className="flex items-center gap-5 pt-2 md:pt-0">
-            {[
-              { icon: Instagram, href: 'https://www.instagram.com/ifsinrem/', label: 'Instagram' },
-              { icon: Linkedin, href: 'https://www.linkedin.com/company/ifsint/', label: 'LinkedIn' },
-              { icon: Mail, href: 'mailto:contacto@ifsinrem.site', label: 'Email' },
-            ].map((s) => (
-              <motion.a
-                key={s.label}
-                href={s.href}
-                target={s.href.startsWith('http') ? '_blank' : undefined}
-                rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                aria-label={s.label}
-                whileHover={{ scale: 1.15, y: -2 }}
-                className="text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <s.icon size={20} />
-              </motion.a>
-            ))}
+          {/* Center Column: Quick Navigation Links */}
+          <div className="md:col-span-3 space-y-3 text-sm">
+            <h4 className="font-heading font-bold text-white text-xs uppercase tracking-wider">Enlaces</h4>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <Link to="/nosotros" className="hover:text-emerald-400 transition-colors">
+                  Sobre Nosotros & Historia
+                </Link>
+              </li>
+              <li>
+                <a
+                  href={iproupUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1 text-slate-300"
+                >
+                  <span>Nota en iProUP</span>
+                  <ExternalLink size={12} className="text-slate-500" />
+                </a>
+              </li>
+              <li>
+                <a href="/#agendar-demo" className="hover:text-emerald-400 transition-colors">
+                  Agendar Demostración
+                </a>
+              </li>
+              <li>
+                <Link to="/seguridad" className="hover:text-emerald-400 transition-colors">
+                  Privacidad & Seguridad
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Right Column: Social Icons */}
+          <div className="md:col-span-3 flex md:justify-end items-start">
+            <div className="flex items-center gap-5 pt-2 md:pt-0">
+              {[
+                { icon: Instagram, href: 'https://www.instagram.com/ifsinrem/', label: 'Instagram' },
+                { icon: Linkedin, href: 'https://www.linkedin.com/company/ifsint/', label: 'LinkedIn' },
+                { icon: Mail, href: 'mailto:contacto@ifsinrem.site', label: 'Email' },
+              ].map((s) => (
+                <motion.a
+                  key={s.label}
+                  href={s.href}
+                  target={s.href.startsWith('http') ? '_blank' : undefined}
+                  rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  aria-label={s.label}
+                  whileHover={{ scale: 1.15, y: -2 }}
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <s.icon size={20} />
+                </motion.a>
+              ))}
+            </div>
           </div>
 
         </div>
@@ -80,7 +116,11 @@ const Footer = () => {
         {/* Bottom copyright line */}
         <div className="border-t border-slate-900 mt-14 pt-8 text-xs text-slate-600 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© {year} IfsinRem Technologies. Todos los derechos reservados.</p>
-          <Link to="/seguridad" className="hover:text-slate-400 transition-colors">Privacidad & Seguridad</Link>
+          <div className="flex items-center gap-4">
+            <Link to="/nosotros" className="hover:text-slate-400 transition-colors">Nosotros</Link>
+            <span>·</span>
+            <Link to="/seguridad" className="hover:text-slate-400 transition-colors">Privacidad & Seguridad</Link>
+          </div>
         </div>
       </div>
     </footer>

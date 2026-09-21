@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEmployees, useEPPItems, useEPPDeliveries } from "@/hooks/useEPPData";
@@ -422,15 +422,8 @@ const Reports = () => {
   if (!user) { navigate("/auth"); return null; }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-[#070b14] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      <Header
-        userName={profile?.name || user?.email || "Usuario"}
-        onLogout={signOut}
-        isAdmin={isAdmin}
-        userPlan={profile?.plan}
-      />
-
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <AppLayout>
+      <div className="container max-w-7xl mx-auto space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -697,8 +690,8 @@ const Reports = () => {
             isDark={isDark}
           />
         </motion.div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

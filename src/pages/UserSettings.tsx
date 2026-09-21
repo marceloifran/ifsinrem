@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
+import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -283,15 +283,8 @@ const UserSettings = () => {
     const isInitialLoading = authLoading || (loadingCompany && !company);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#04060a] text-foreground transition-colors duration-250">
-            <Header
-                userName={profile?.name || user?.email || 'Usuario'}
-                onLogout={handleLogout}
-                isAdmin={false}
-                userPlan={profile?.plan}
-            />
-
-            <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl">
+        <AppLayout>
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl space-y-6">
                 <h1 className="text-3xl font-bold text-foreground mb-8 text-center sm:text-left">Configuración de Cuenta y Empresa</h1>
 
                 {isInitialLoading ? (
@@ -669,8 +662,8 @@ const UserSettings = () => {
                         </div>
                     </div>
                 )}
-            </main>
-        </div>
+            </div>
+        </AppLayout>
     );
 };
 

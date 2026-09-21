@@ -60,8 +60,8 @@ export interface EPPDelivery {
 // ─── EMPLOYEES CRUD ──────────────────────────────────────────────────────────
 
 export async function getEmployees(companyId: string): Promise<Employee[]> {
-  const { data, error } = await supabase
-    .from('employees' as any)
+  const { data, error } = await (supabase as any)
+    .from('employees')
     .select('*')
     .eq('company_id', companyId)
     .order('name', { ascending: true });
@@ -74,8 +74,8 @@ export async function addEmployee(
   companyId: string,
   employee: Omit<Employee, 'id' | 'company_id' | 'created_at' | 'updated_at'>
 ): Promise<Employee> {
-  const { data, error } = await supabase
-    .from('employees' as any)
+  const { data, error } = await (supabase as any)
+    .from('employees')
     .insert({ ...employee, company_id: companyId })
     .select()
     .single();
@@ -90,8 +90,8 @@ export async function addEmployeesBulk(
 ): Promise<number> {
   if (!employees.length) return 0;
   const rowsToInsert = employees.map(emp => ({ ...emp, company_id: companyId }));
-  const { data, error } = await supabase
-    .from('employees' as any)
+  const { data, error } = await (supabase as any)
+    .from('employees')
     .insert(rowsToInsert)
     .select('id');
 
@@ -103,8 +103,8 @@ export async function updateEmployee(
   employeeId: string,
   updates: Partial<Omit<Employee, 'id' | 'company_id' | 'created_at' | 'updated_at'>>
 ): Promise<Employee> {
-  const { data, error } = await supabase
-    .from('employees' as any)
+  const { data, error } = await (supabase as any)
+    .from('employees')
     .update(updates)
     .eq('id', employeeId)
     .select()
@@ -115,8 +115,8 @@ export async function updateEmployee(
 }
 
 export async function deleteEmployee(employeeId: string): Promise<void> {
-  const { error } = await supabase
-    .from('employees' as any)
+  const { error } = await (supabase as any)
+    .from('employees')
     .delete()
     .eq('id', employeeId);
 
@@ -126,8 +126,8 @@ export async function deleteEmployee(employeeId: string): Promise<void> {
 // ─── EPP ITEMS CRUD ──────────────────────────────────────────────────────────
 
 export async function getEPPItems(companyId: string): Promise<EPPItem[]> {
-  const { data, error } = await supabase
-    .from('epp_items' as any)
+  const { data, error } = await (supabase as any)
+    .from('epp_items')
     .select('*')
     .eq('company_id', companyId)
     .order('name', { ascending: true });
@@ -140,8 +140,8 @@ export async function addEPPItem(
   companyId: string,
   item: Omit<EPPItem, 'id' | 'company_id' | 'created_at' | 'updated_at'>
 ): Promise<EPPItem> {
-  const { data, error } = await supabase
-    .from('epp_items' as any)
+  const { data, error } = await (supabase as any)
+    .from('epp_items')
     .insert({ ...item, company_id: companyId })
     .select()
     .single();
@@ -156,8 +156,8 @@ export async function addEPPItemsBulk(
 ): Promise<number> {
   if (!items.length) return 0;
   const rowsToInsert = items.map(item => ({ ...item, company_id: companyId }));
-  const { data, error } = await supabase
-    .from('epp_items' as any)
+  const { data, error } = await (supabase as any)
+    .from('epp_items')
     .insert(rowsToInsert)
     .select('id');
 
@@ -169,8 +169,8 @@ export async function updateEPPItem(
   itemId: string,
   updates: Partial<Omit<EPPItem, 'id' | 'company_id' | 'created_at' | 'updated_at'>>
 ): Promise<EPPItem> {
-  const { data, error } = await supabase
-    .from('epp_items' as any)
+  const { data, error } = await (supabase as any)
+    .from('epp_items')
     .update(updates)
     .eq('id', itemId)
     .select()
@@ -181,8 +181,8 @@ export async function updateEPPItem(
 }
 
 export async function deleteEPPItem(itemId: string): Promise<void> {
-  const { error } = await supabase
-    .from('epp_items' as any)
+  const { error } = await (supabase as any)
+    .from('epp_items')
     .delete()
     .eq('id', itemId);
 
@@ -192,8 +192,8 @@ export async function deleteEPPItem(itemId: string): Promise<void> {
 // ─── EPP DELIVERIES ──────────────────────────────────────────────────────────
 
 export async function getEPPDeliveries(companyId: string): Promise<EPPDelivery[]> {
-  const { data, error } = await supabase
-    .from('epp_deliveries' as any)
+  const { data, error } = await (supabase as any)
+    .from('epp_deliveries')
     .select('*, employee:employees(name, dni_cuil, job_title), epp_item:epp_items(name, category, type_model, brand, certified)')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
@@ -206,8 +206,8 @@ export async function addEPPDelivery(
   companyId: string,
   delivery: Omit<EPPDelivery, 'id' | 'company_id' | 'signature_path' | 'signed_at' | 'created_at' | 'updated_at'>
 ): Promise<EPPDelivery> {
-  const { data, error } = await supabase
-    .from('epp_deliveries' as any)
+  const { data, error } = await (supabase as any)
+    .from('epp_deliveries')
     .insert({ ...delivery, company_id: companyId })
     .select('*, employee:employees(name, dni_cuil, job_title), epp_item:epp_items(name, category, type_model, brand, certified)')
     .single();
@@ -220,8 +220,8 @@ export async function addEPPDelivery(
 export async function checkWorkerHasSignedBefore(employeeId: string): Promise<boolean> {
   if (!employeeId) return false;
   try {
-    const { count, error } = await supabase
-      .from('epp_deliveries' as any)
+    const { count, error } = await (supabase as any)
+      .from('epp_deliveries')
       .select('id', { count: 'exact', head: true })
       .eq('employee_id', employeeId)
       .eq('status', 'firmado');
@@ -302,8 +302,8 @@ export async function signEPPDelivery(
   const hashSHA256 = await generateSHA256Hash(payloadToHash);
 
   // Update epp_deliveries record with audit metadata & hash
-  const { data, error } = await supabase
-    .from('epp_deliveries' as any)
+  const { data, error } = await (supabase as any)
+    .from('epp_deliveries')
     .update({
       signature_path: filePath,
       status: 'firmado',
@@ -408,13 +408,13 @@ export async function buildForm299PDF(
   });
 
   // 1. Fetch complete data from Supabase to ensure extended fields are filled
-  const { data: companyData } = await supabase
-    .from('companies' as any)
+  const { data: companyData } = await (supabase as any)
+    .from('companies')
     .select('*')
     .eq('id', employeeInfo.company_id)
     .single();
 
-  const company = companyData || {
+  const company: any = companyData || {
     name: companyInfo.name,
     cuit: companyInfo.cuit,
     address: "",
@@ -424,13 +424,13 @@ export async function buildForm299PDF(
     logo_url: null,
   };
 
-  const { data: employeeData } = await supabase
-    .from('employees' as any)
+  const { data: employeeData } = await (supabase as any)
+    .from('employees')
     .select('*')
     .eq('id', employeeInfo.id)
     .single();
 
-  const employee = employeeData || employeeInfo;
+  const employee: Employee = employeeData || employeeInfo;
 
   // Preload company logo if configured
   let companyLogoBase64: string | null = null;
@@ -736,8 +736,8 @@ export async function getDeliveryVerification(deliveryId: string) {
   let mainDelivery: any = null;
 
   // 1. Try fetching exact delivery by ID with extended fields
-  const extRes = await supabase
-    .from('epp_deliveries' as any)
+  const extRes = await (supabase as any)
+    .from('epp_deliveries')
     .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number), company:companies(name, cuit, logo_url)')
     .eq('id', deliveryId)
     .maybeSingle();
@@ -746,8 +746,8 @@ export async function getDeliveryVerification(deliveryId: string) {
     mainDelivery = extRes.data;
   } else {
     // Fallback to basic query if extended schema fields don't exist yet
-    const basicRes = await supabase
-      .from('epp_deliveries' as any)
+    const basicRes = await (supabase as any)
+      .from('epp_deliveries')
       .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category), company:companies(name, cuit, logo_url)')
       .eq('id', deliveryId)
       .maybeSingle();
@@ -759,8 +759,8 @@ export async function getDeliveryVerification(deliveryId: string) {
 
   // 2. Fetch ALL deliveries for this worker so the full EPP list can be validated
   let allDeliveries: any[] = [];
-  const { data: empDeliveries } = await supabase
-    .from('epp_deliveries' as any)
+  const { data: empDeliveries } = await (supabase as any)
+    .from('epp_deliveries')
     .select('*, employee:employees(name, dni_cuil, job_title, file_number, company_id), epp_item:epp_items(name, category, type_model, brand, certified, certification_body, certification_number), company:companies(name, cuit, logo_url)')
     .eq('employee_id', employeeId)
     .order('created_at', { ascending: false });
